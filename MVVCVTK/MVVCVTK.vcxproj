@@ -1,0 +1,246 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{5647dd87-6499-40fc-b1ed-5c8c72d02d16}</ProjectGuid>
+    <RootNamespace>MVVCVTK</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <Keyword>QtVS_v304</Keyword>
+    <QtMsBuild Condition="'$(QtMsBuild)'=='' OR !Exists('$(QtMsBuild)\qt.targets')">$(MSBuildProjectDirectory)\QtMsBuild</QtMsBuild>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="$(QtMsBuild)\qt_defaults.props" Condition="Exists('$(QtMsBuild)\qt_defaults.props')" />
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <QtModules>core;gui;widgets</QtModules>
+  </PropertyGroup>
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <QtModules>core;gui;widgets</QtModules>
+  </PropertyGroup>
+  <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') OR !Exists('$(QtMsBuild)\Qt.props')">
+    <Message Importance="High" Text="QtMsBuild: could not locate qt.targets, qt.props; project may not build correctly." />
+  </Target>
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="Local.props" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="Local.props" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>D:\git\vcpkg-master\installed\x64-windows\include;D:\CT-1209\VTK\lib\vtk_install\include\vtk-9.4;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>D:\CT-1209\VTK\lib\vtk_install\include\vtk-9.4;D:\CT-1209\VTK\lib\vtk_install\include;D:\git\vcpkg-master\installed\x64-windows\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>C:\lib\opencv\build\include;$(SolutionDir)libs\include;C:\lib\vtk_install\include\vtk-9.4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)libs\lib;C:\lib\vtk_install\lib;C:\lib\opencv\build\x64\vc16\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>UIReconstruct3D.lib;UIPhantomCalib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /d "$(SolutionDir)libs\lib\*.dll" "$(TargetDir)"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>C:\lib\opencv\build\include;$(SolutionDir)libs\include;C:\lib\vtk_install\include\vtk-9.4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)libs\lib;C:\lib\vtk_install\lib;C:\lib\opencv\build\x64\vc16\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>UIReconstruct3D.lib;UIPhantomCalib.lib;opencv_world4120.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /d "$(SolutionDir)libs\lib\*.dll" "$(TargetDir)"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <QtMoc Include="AppController.h" />
+    <ClInclude Include="AppInterfaces.h" />
+    <ClInclude Include="AppService.h" />
+    <ClInclude Include="AppState.h" />
+    <QtMoc Include="c_ui\app\app.h" />
+    <ClInclude Include="c_ui\macro\VtkMacros.h" />
+    <QtMoc Include="c_ui\MainWindow.h" />
+    <QtMoc Include="c_ui\panels\SceneTreePanel.h" />
+    <QtMoc Include="c_ui\panels\RenderPanel.h" />
+    <ClInclude Include="c_ui\qt\interaction\handlers\2DViewerHandler.h" />
+    <ClInclude Include="c_ui\qt\interaction\handlers\3DViewerHandler.h" />
+    <ClInclude Include="c_ui\qt\interaction\handlers\TimeUpdateHandler.h" />
+    <ClInclude Include="c_ui\qt\interaction\IInteractionHandler.h" />
+    <ClInclude Include="c_ui\qt\interaction\InteractionEvent.h" />
+    <ClInclude Include="c_ui\qt\interaction\InteractionResult.h" />
+    <ClInclude Include="c_ui\qt\interaction\InteractionRouter.h" />
+    <ClInclude Include="c_ui\qt\QtRenderContext.h" />
+    <QtMoc Include="c_ui\workbenches\AlignmentPage.h" />
+    <QtMoc Include="c_ui\workbenches\AnalysisPage.h" />
+    <QtMoc Include="c_ui\workbenches\AnimationPage.h" />
+    <QtMoc Include="c_ui\workbenches\CADAndThen.h" />
+    <QtMoc Include="c_ui\workbenches\DocumentPage.h" />
+    <QtMoc Include="c_ui\workbenches\EditPage.h" />
+    <QtMoc Include="c_ui\workbenches\GeometryPage.h" />
+    <QtMoc Include="c_ui\workbenches\HelpPage.h" />
+    <QtMoc Include="c_ui\workbenches\MeasurePage.h" />
+    <ClInclude Include="c_ui\workbenches\PerformancePage.h" />
+    <QtMoc Include="c_ui\workbenches\ReconstructPage.h" />
+    <QtMoc Include="c_ui\workbenches\ReportPage.h" />
+    <QtMoc Include="c_ui\workbenches\SelectPage.h" />
+    <QtMoc Include="c_ui\workbenches\StartPage.h" />
+    <QtMoc Include="c_ui\workbenches\VolumePage.h" />
+    <QtMoc Include="c_ui\workbenches\WindowPage.h" />
+    <ClInclude Include="DataConverters.h" />
+    <ClInclude Include="DataManager.h" />
+    <ClInclude Include="StrategyFactory.h" />
+    <ClInclude Include="VisualStrategies.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AppController.cpp" />
+    <ClCompile Include="AppService.cpp" />
+    <ClCompile Include="c_ui\app\app.cpp" />
+    <ClCompile Include="c_ui\main.cpp" />
+    <ClCompile Include="c_ui\MainWindow.cpp" />
+    <ClCompile Include="c_ui\panels\RenderPanel.cpp" />
+    <ClCompile Include="c_ui\panels\SceneTreePanel.cpp" />
+    <ClCompile Include="c_ui\qt\interaction\handlers\2DViewerHandler.cpp" />
+    <ClCompile Include="c_ui\qt\interaction\handlers\3DViewerHandler.cpp" />
+    <ClCompile Include="c_ui\qt\interaction\handlers\TimeUpdateHandler.cpp" />
+    <ClCompile Include="c_ui\qt\interaction\InteractionRouter.cpp" />
+    <ClCompile Include="c_ui\qt\QtRenderContext.cpp" />
+    <ClCompile Include="c_ui\workbenches\AlignmentPage.cpp" />
+    <ClCompile Include="c_ui\workbenches\AnalysisPage.cpp" />
+    <ClCompile Include="c_ui\workbenches\AnimationPage.cpp" />
+    <ClCompile Include="c_ui\workbenches\CADAndThen.cpp" />
+    <ClCompile Include="c_ui\workbenches\DocumentPage.cpp" />
+    <ClCompile Include="c_ui\workbenches\EditPage.cpp" />
+    <ClCompile Include="c_ui\workbenches\GeometryPage.cpp" />
+    <ClCompile Include="c_ui\workbenches\HelpPage.cpp" />
+    <ClCompile Include="c_ui\workbenches\MeasurePage.cpp" />
+    <ClCompile Include="c_ui\workbenches\PerformancePage.cpp" />
+    <ClCompile Include="c_ui\workbenches\ReconstructPage.cpp" />
+    <ClCompile Include="c_ui\workbenches\ReportPage.cpp" />
+    <ClCompile Include="c_ui\workbenches\SelectPage.cpp" />
+    <ClCompile Include="c_ui\workbenches\StartPage.cpp" />
+    <ClCompile Include="c_ui\workbenches\VolumePage.cpp" />
+    <ClCompile Include="c_ui\workbenches\WindowPage.cpp" />
+    <ClCompile Include="DataConverters.cpp" />
+    <ClCompile Include="DataManager.cpp" />
+    <ClCompile Include="ReconInteraction.cpp" />
+    <ClCompile Include="VisualStrategies.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Project="$(QtMsBuild)\qt.targets" Condition="Exists('$(QtMsBuild)\qt.targets')" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
