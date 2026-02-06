@@ -12,7 +12,6 @@
 #include "AppState.h"
 #include "c_ui/workbenches/ReconstructPage.h"
 
-
 class DocumentPage;
 class StartPagePage;
 class EditPage;
@@ -26,7 +25,6 @@ class AnalysisPage;
 class WindowPage;
 class ReportPage;
 class AnimationPage;
-class PerformancePage;
 class ReconstructPage;
 class UIReconstruct3D;
 class AppController;
@@ -44,9 +42,9 @@ protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
 
 private:
-    void buildTitleBar();
-    void buildCentral();
-    void wireSignals();
+    void buildTheTop();
+    void buildTheMiddle();
+    void wireConnect();
     void setDefaults();
     void updateMaximizeButtonIcon();
     void openCtReconUi();
@@ -59,15 +57,19 @@ private:
     QPointer<QWidget> titleBar_;
     QPointer<QWidget> titleLeftArea_;
     QPointer<QWidget> titleCenterArea_;
+
+    QPointer<QWidget> whatEmpty_; //“文件”Tab对应的空ribbon页（占位）
+    QPointer<QWidget> workspacePage_;//contentStack里的workspace容器页
+    QPointer<QWidget> emptyPage_;//contentStack里的“无数据提示”页
+
     QPointer<QLabel>  titleLabel_;
     QPointer<QToolButton> btnTitleUndo_;
     QPointer<QToolButton> btnTitleUndo02_;
     QPointer<QToolButton> btnMinimize_;
     QPointer<QToolButton> btnMaximize_;
     QPointer<QToolButton> btnClose_;
-	QPointer<QTabBar> ribbontabBar_;//主界面状态栏指针
+	QPointer<QTabBar> tabBar_;//主界面状态栏指针
  
-    QPointer<QStackedWidget> stack_;
 	QPointer<DocumentPage> pageDocument_;//文档页面的指针
     QPointer<StartPagePage> pageStart_;
 	QPointer<EditPage> pageEdit_;
@@ -81,10 +83,9 @@ private:
     QPointer<WindowPage> pageWindow_;
 	QPointer<ReportPage> pageReport_;
 	QPointer<AnimationPage> pageAnimation_;
-	QPointer<PerformancePage> pagePerformance_;
     QPointer<ReconstructPage> mprViews_;
-    /*QPointer<UIReconstruct3D> uiRecon3d_;*/
-
+	QPointer<QStackedWidget> stack_;//放开始 编辑 体积 这些工具页 固定高度iconHeight_
+    QPointer<QStackedWidget> secondstack_;//占满剩余高度，放 Backstage(DocumentPage)、Workspace(四视图+右侧面板)、Empty(无数据提示)
   
     std::shared_ptr<AbstractDataManager> m_currentDataMgr;
     std::shared_ptr<SharedInteractionState> m_currentState;
@@ -98,7 +99,7 @@ private:
     QPointer<SceneTreePanel> scenePanel_;
     QPointer<RenderPanel> renderPanel_;
 
-    int ribbonHeight_ = 115;// 功能区高度
+    int iconHeight_ = 100;// 图标区高度
     
     
 };

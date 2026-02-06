@@ -16,10 +16,6 @@
 #include <QCheckBox>
 #include <QWidgetAction>
 
-
-
-//static是作用域限定符，表示该函数仅在当前文件内可见，防止命名冲突
-//辅助函数控制换行
 static QString wrapByWidth(const QString& s, const QFont& font, int maxWidthPx) {//第三个参数为一行允许的最大像素宽度
     QFontMetrics fm(font); //给出这个字体下每个字符或者字符串的像素宽度
     QString out;
@@ -52,7 +48,6 @@ static QString wrapByWidth(const QString& s, const QFont& font, int maxWidthPx) 
     return out;
 }
 
-// 辅助函数  根据按钮文本加载对应图标
 static QIcon loadIconFor(const QString& text) {
     struct Map {
         QString key; //避免编码转换 直接用QString
@@ -88,7 +83,6 @@ static QIcon loadIconFor(const QString& text) {
         { QStringLiteral("重置工具"),  ":/window_icons/icons_other/window_icons/reset_tool.PNG" },
     };
     
-
     for (const auto& m : map) {
         if (text == m.key) {
             const QString path = QString::fromUtf8(m.file);
@@ -102,7 +96,6 @@ static QIcon loadIconFor(const QString& text) {
     
     return QIcon(":/icons/icons/move.png");
 }
-
 
 WindowPage::WindowPage(QWidget* parent)
     : QWidget(parent)
@@ -121,28 +114,6 @@ WindowPage::WindowPage(QWidget* parent)
 
     // 功能区调用
     layout12->addWidget(buildRibbon12(this));
-
-    // 预留的内容区占位，用于后续填充具体的编辑工具界面
-    auto* placeholder = new QFrame(this);
-    placeholder->setObjectName(QStringLiteral("editContentPlaceholder"));
-    placeholder->setStyleSheet(QStringLiteral(
-        "QFrame#editContentPlaceholder{background-color:#1d1d1d; border-radius:8px; border:1px solid #313131;}"
-        "QFrame#editContentPlaceholder QLabel{color:#cccccc;}"));
-
-    auto* placeholderLayout = new QVBoxLayout(placeholder);
-    placeholderLayout->setContentsMargins(0, 0, 0, 0);
-    placeholderLayout->setSpacing(1);
-
-    auto* title = new QLabel(QStringLiteral("选择功能区内容区域"), placeholder);
-    title->setStyleSheet(QStringLiteral("font-size:16px; font-weight:600;"));
-    placeholderLayout->addWidget(title);
-
-    auto* desc = new QLabel(QStringLiteral("这里可以继续扩展体积编辑、几何调整等操作界面。"), placeholder);
-    desc->setWordWrap(true);
-    desc->setStyleSheet(QStringLiteral("font-size:13px;"));
-    placeholderLayout->addWidget(desc);
-    placeholderLayout->addStretch();
-    layout12->addWidget(placeholder, 1);
 }
 
 QWidget* WindowPage::buildRibbon12(QWidget* parent)
@@ -192,7 +163,6 @@ QWidget* WindowPage::buildRibbon12(QWidget* parent)
         { QStringLiteral("重置工具"), 0 },
     };
 
-    // 需要做成两行四列的那 8 个按钮
     const QStringList twoRowGroup = {
          QStringLiteral("四分"), 
          QStringLiteral("切片图靠左"), 
@@ -201,15 +171,12 @@ QWidget* WindowPage::buildRibbon12(QWidget* parent)
          QStringLiteral("旋转"), 
          QStringLiteral("四分，分布图"),
          QStringLiteral("非平面"), 
-        // 如果你想把“椭圆3D”也放进来，把上面行数调成 2×5 或替换掉其中一个即可
     };
-
 
 
     QWidget* gridHolder_12 = nullptr;//这个指针的意思是 用来承载那个 2×4 的小方阵
     QGridLayout* grid_12 = nullptr;//这个指针是用来管理那个小方阵的布局
     int groupedCount_12 = 0;//记录已经放进小方阵的按钮数量
-
 
     for (const auto& action : actions12)
     {
@@ -315,7 +282,6 @@ QWidget* WindowPage::buildRibbon12(QWidget* parent)
                     });
             };
 
-           
             addCheck(QStringLiteral("显示/隐藏右侧工具停靠栏"), true, [=](bool on) {
                 // rightDock->setVisible(on);
                 // emit requestToggleDock(Qt::RightDockWidgetArea, on); // 如果你走信号
@@ -333,7 +299,6 @@ QWidget* WindowPage::buildRibbon12(QWidget* parent)
             button->setMenu(menu);
             button->setPopupMode(QToolButton::InstantPopup);
         }
-
     }
     layout12->addStretch();
     return ribbon12;

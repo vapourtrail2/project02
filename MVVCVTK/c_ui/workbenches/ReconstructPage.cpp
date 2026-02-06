@@ -1,13 +1,10 @@
 ﻿#include "ReconstructPage.h"
 #include <QGridLayout>
 #include <QWidget>
-#include "c_ui/macro/VtkMacros.h"
-
 
 #include <QVTKOpenGLNativeWidget.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
-
 
 ReconstructPage::ReconstructPage(QWidget* parent)
     : QWidget(parent)
@@ -53,6 +50,12 @@ void ReconstructPage::initWithData(
         m_dataMgr->GetVtkImage()->GetScalarRange(range);
         // 设置默认 ISO 阈值
         m_sharedState->SetIsoValue(range[0] + (range[1] - range[0]) * 0.3);
+    }
+
+    if (m_dataMgr->GetVtkImage()) {
+        int dims[3];
+        m_dataMgr->GetVtkImage()->GetDimensions(dims);
+        m_sharedState->SetCursorPosition(dims[0] / 2, dims[1] / 2, dims[2] / 2);
     }
 
     // 1. 初始化 Axial

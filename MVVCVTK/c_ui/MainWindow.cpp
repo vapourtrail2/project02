@@ -1,5 +1,4 @@
-﻿#include "c_ui/macro/VtkMacros.h"
-#include "c_ui/MainWindow.h"
+﻿#include "c_ui/MainWindow.h"
 #include "c_ui/workbenches/DocumentPage.h"
 #include "c_ui/workbenches/StartPage.h"
 #include "c_ui/workbenches/EditPage.h"
@@ -63,10 +62,10 @@ CTViewer::CTViewer(QWidget* parent)
         "QMainWindow{background-color:#121212;}"
         "QMenuBar, QStatusBar{background-color:#1a1a1a; color:#e0e0e0;}"));
 
-    //搭建结构 
-    buildTitleBar();
-    buildCentral();  
-    wireSignals();     
+    //结构 
+    buildTheTop();
+    buildTheMiddle();  
+    wireConnect();     
     setDefaults();      
 
     statusBar()->showMessage(QStringLiteral("就绪"));
@@ -78,15 +77,14 @@ CTViewer::~CTViewer() {
     }
 }
 
-//标题栏 
-void CTViewer::buildTitleBar()
+//第一行和第二行
+void CTViewer::buildTheTop()
 {
-    //topbar构造
-	//titlebar就是最上面的标题栏的容器
+	//第一行  包含 撤回 前进 标题 最小化 最大化 关闭
     auto* topBarContainer = new QWidget(this);
     auto* topBarLayout = new QVBoxLayout(topBarContainer);
     topBarLayout->setContentsMargins(0, 0, 0, 0);//这句话的作用是去掉边框
-    topBarLayout->setSpacing(0);//这句话的作用是去掉边框
+    topBarLayout->setSpacing(0);
 
     topBarContainer->setAttribute(Qt::WA_StyledBackground, true);
     topBarContainer->setStyleSheet(QStringLiteral("QWidget{background-color:#202020;}"));
@@ -187,23 +185,25 @@ void CTViewer::buildTitleBar()
         });
     connect(btnClose_, &QToolButton::clicked, this, &CTViewer::close);
 
-	//拖拽事件 使之可以拖动窗口
+	//拖拽事件
     titleBar_->installEventFilter(this);
     topBarLayout->addWidget(titleBar_);
 
+    updateMaximizeButtonIcon();
 
-    //------------------------------------ 标题栏 ------------------------------------------------
-    ribbontabBar_ = new QTabBar(topBarContainer);
-    ribbontabBar_->setObjectName(QStringLiteral("mainRibbonTabBar"));
-    ribbontabBar_->setDrawBase(false);
-    ribbontabBar_->setExpanding(false);
-    ribbontabBar_->setMovable(false);
-    ribbontabBar_->setAttribute(Qt::WA_StyledBackground, true); // 让标签栏自绘背景色
-    ribbontabBar_->setStyleSheet(QStringLiteral(
+	//第二行  选项卡栏
+    tabBar_ = new QTabBar(topBarContainer);
+    tabBar_->setObjectName(QStringLiteral("mainRibbonTabBar"));
+    tabBar_->setDrawBase(false);
+    tabBar_->setExpanding(false);
+    tabBar_->setMovable(false);
+    tabBar_->setAttribute(Qt::WA_StyledBackground, true); //
+    tabBar_->setStyleSheet(QStringLiteral(
         "QTabBar#mainRibbonTabBar{background-color:#202020; color:#f5f5f5;}"
         "QTabBar#mainRibbonTabBar::tab{padding:8px 16px; margin:0px; border:none; background-color:#202020;}"
         "QTabBar#mainRibbonTabBar::tab:selected{background-color:#333333;}"
         "QTabBar#mainRibbonTabBar::tab:hover{background-color:#2a2a2a;}"));
+
     //填充标签名称
     const QStringList tabNames = {
            QStringLiteral("文件"),
@@ -220,121 +220,219 @@ void CTViewer::buildTitleBar()
            QStringLiteral("动画"),
            QStringLiteral("窗口"),
            QStringLiteral("量具"),
-           QStringLiteral("可视化"),
     };
 
     for (auto name : tabNames) {
-        ribbontabBar_->addTab(name);
+        tabBar_->addTab(name);
     }
 
-    ribbontabBar_->setCurrentIndex(0);//把下标设置成0 默认选中第一个标签页
-    topBarLayout->addWidget(ribbontabBar_);
-    setMenuWidget(topBarContainer);  //把整个标题栏放到主窗口
+    tabBar_->setCurrentIndex(0);//把下标设置成0 默认选中第一个标签页
+    topBarLayout->addWidget(tabBar_);
 
-    //标签栏交互
-    connect(ribbontabBar_, &QTabBar::currentChanged, this, [this](int index) {
-        //仅在堆栈存在时切换页面 避免空指针
-        if (!stack_) {
-            return;
-        }
-        //通过索引切换页面
-        if (index == 0 && pageDocument_) {
-            stack_->setCurrentWidget(pageDocument_);//setcurrentwidget是切换当前显示的页面
-            statusBar()->showMessage(QStringLiteral("已切换到“文件”功能区"), 3000);
-            return;
-        }
-        else if (index == 1 && pageStart_) {
-            stack_->setCurrentWidget(pageStart_);
-            statusBar()->showMessage(QStringLiteral("已切换到“开始”功能区"), 3000);
-            return;
-        }
-        else if (index == 2 && pageEdit_) {
-            stack_->setCurrentWidget(pageEdit_);
-            statusBar()->showMessage(QStringLiteral("已切换到“编辑”功能区"), 3000);
-            return;
-        }
-        else if (index == 3 && pageVolume_) {
-            // 优先切换到三视图/3D 视图页，若未准备好则退回原体积页
-            stack_->setCurrentWidget(pageVolume_);
-            statusBar()->showMessage(QStringLiteral("已切换到“体积”功能区"), 3000);
-            return;
-        }
-        else if (index == 4 && pageSelect_) {
-            stack_->setCurrentWidget(pageSelect_);
-            statusBar()->showMessage(QStringLiteral("已切换到“选择”功能区"), 3000);
-            return;
-        }
-        else if (index == 5 && pageAlignment_) {
-            stack_->setCurrentWidget(pageAlignment_);
-            statusBar()->showMessage(QStringLiteral("已切换到“对齐”功能区"), 3000);
-            return;
-        }
-        else if (index == 6 && pageGeometry_) {
-            stack_->setCurrentWidget(pageGeometry_);
-            statusBar()->showMessage(QStringLiteral("已切换到“几何”功能区"), 3000);
-            return;
-        }
-        else if (index == 7 && pageMeasure_) {
-            stack_->setCurrentWidget(pageMeasure_);
-            statusBar()->showMessage(QStringLiteral("已切换到“测量”功能区"), 3000);
-            return;
-        }
-        else if (index == 8 && pageCAD_) {
-            stack_->setCurrentWidget(pageCAD_);
-            statusBar()->showMessage(QStringLiteral("已切换到“CAD/表面网格”功能区"));
-            return;
-        }
-        else if (index == 9 && pageAnalysis_) {
-            stack_->setCurrentWidget(pageAnalysis_);
-            statusBar()->showMessage(QStringLiteral("已切换到“分析”功能区"));
-        }
-        else if (index == 10 && pageReport_) {
-            stack_->setCurrentWidget(pageReport_);
-            statusBar()->showMessage(QStringLiteral("已切换到“报告”功能区"));
-        }
-        else if (index == 11 && pageAnimation_) {
-            stack_->setCurrentWidget(pageAnimation_);
-            statusBar()->showMessage(QStringLiteral("已切换到“动画”功能区"));
-        }
-        else if (index == 12 && pageWindow_) {
-            stack_->setCurrentWidget(pageWindow_);
-            statusBar()->showMessage(QStringLiteral("已切换到“窗口”功能区"));
-        }
-        //else if (index == 14 && pagePerformance_) {
-        //    stack_->setCurrentWidget(pagePerformance_);
-        //    statusBar()->showMessage(QStringLiteral("已切换到“可视化”功能区"));
-        //}
+    setMenuWidget(topBarContainer);//把容器设置成必须有的菜单栏  
+}
 
-        else if (index >= 0) {
-            statusBar()->showMessage(QStringLiteral("“%1”功能暂未实现").arg(ribbontabBar_->tabText(index)), 1500);
+void CTViewer::buildTheMiddle()
+{
+	auto totalContainer = new QWidget(this);//totalContainer是总体容器
+    auto v = new QVBoxLayout(totalContainer);
+    v->setContentsMargins(0, 0, 0, 0);
+    v->setSpacing(0);
+
+    //1.stack收纳  start...页面
+    stack_ = new QStackedWidget(totalContainer);
+    stack_->setFixedHeight(iconHeight_);
+    v->addWidget(stack_, 0);
+
+    whatEmpty_ = new QWidget(stack_);
+	stack_->addWidget(whatEmpty_);
+
+    //添加多个页面
+    pageStart_ = new StartPagePage(stack_);
+    stack_->addWidget(pageStart_);
+    pageEdit_ = new EditPage(stack_);
+    stack_->addWidget(pageEdit_);
+    pageVolume_ = new VolumePage(stack_);
+    stack_->addWidget(pageVolume_);
+    pageSelect_ = new SelectPage(stack_);
+    stack_->addWidget(pageSelect_);
+    pageAlignment_ = new AlignmentPage(stack_);
+    stack_->addWidget(pageAlignment_);
+    pageGeometry_ = new GeometryPage(stack_);
+    stack_->addWidget(pageGeometry_);
+    pageMeasure_ = new MeasurePage(stack_);
+    stack_->addWidget(pageMeasure_);
+    pageCAD_ = new CADAndThen(stack_);
+    stack_->addWidget(pageCAD_);
+    pageAnalysis_ = new AnalysisPage(stack_);
+    stack_->addWidget(pageAnalysis_);
+    pageWindow_ = new WindowPage(stack_);
+    stack_->addWidget(pageWindow_);
+    pageReport_ = new ReportPage(stack_);
+    stack_->addWidget(pageReport_);
+    pageAnimation_ = new AnimationPage(stack_);
+    stack_->addWidget(pageAnimation_);
+
+    // 2  Content stack（占满剩余高度：Backstage / Workspace / Empty）
+	secondstack_ = new QStackedWidget(totalContainer);
+    v->addWidget(secondstack_, 1);
+    
+    // 2.1 文件页
+	pageDocument_ = new DocumentPage(secondstack_);
+	secondstack_->addWidget(pageDocument_);
+
+	// 2.2 workspace页 容器把workspaceSplit_包起来
+	workspacePage_ = new QWidget(secondstack_);
+	auto workspaceContainerLayout = new QVBoxLayout(workspacePage_);
+	workspaceContainerLayout->setContentsMargins(0, 0, 0, 0);
+    workspaceContainerLayout->setSpacing(0);
+	
+    workspaceSplit_ = new QSplitter(Qt::Horizontal, workspacePage_);//第一个参数是水平分割
+    workspaceSplit_->setObjectName("workspaceSplit");
+    workspaceContainerLayout->addWidget(workspaceSplit_, 1);
+
+    //workshop左边
+    mprViews_ = new ReconstructPage(workspaceSplit_);
+   
+    //右侧
+    rightSplit_ = new QSplitter(Qt::Vertical, workspaceSplit_);
+    rightSplit_->setObjectName("rightsplit");
+
+    renderPanel_ = new RenderPanel(rightSplit_);
+    rightSplit_->addWidget(renderPanel_);
+        
+    scenePanel_ = new SceneTreePanel(rightSplit_);
+    rightSplit_->addWidget(scenePanel_);
+
+    //安装
+    workspaceSplit_->addWidget(mprViews_);
+    workspaceSplit_->addWidget(rightSplit_);
+    workspaceSplit_->setStretchFactor(0, 120); // 左侧视口占5份
+    workspaceSplit_->setStretchFactor(1, 2); // 右侧面板占2份
+
+    rightSplit_->setStretchFactor(0, 3); // 渲染区域占3份
+    rightSplit_->setStretchFactor(1, 2); // 场景树占2份
+
+	secondstack_->addWidget(workspacePage_);
+
+    // 2.3 Empty 页：无数据提示
+    emptyPage_ = new QWidget(secondstack_);
+    auto ev = new QVBoxLayout(emptyPage_);
+    ev->setContentsMargins(0, 0, 0, 0);
+    ev->setSpacing(0);
+
+    auto tip = new QLabel(QStringLiteral("请先在“文件”中加载数据"), emptyPage_);
+    tip->setAlignment(Qt::AlignCenter);
+    ev->addWidget(tip, 1);
+	secondstack_->addWidget(emptyPage_);
+
+    setCentralWidget(totalContainer);
+
+    appController_ = new AppController(this);
+
+    if (stack_) {
+        stack_->setCurrentWidget(whatEmpty_);
+    }
+    if (secondstack_ && pageDocument_) {
+        secondstack_->setCurrentWidget(pageDocument_);
+    }
+ }
+
+void CTViewer::wireConnect() {
+     connect(tabBar_, &QTabBar::currentChanged, this, [this](int index) {
+
+        if (!stack_ || !secondstack_) return;
+
+        auto session = appController_ ? appController_->session() : nullptr;
+		const bool hasData = session && session->dataMgr && session->sharedState;
+
+        if (index == 0) {
+            if (whatEmpty_) {
+				stack_->setCurrentWidget(whatEmpty_);
+            }
+            if (pageDocument_) {
+				secondstack_->setCurrentWidget(pageDocument_);
+            }
+            return;
         }
+
+        if (hasData) {
+            if (workspacePage_) {
+				secondstack_->setCurrentWidget(workspacePage_);
+            }
+            else{
+                secondstack_->setCurrentWidget(emptyPage_);
+            }
+        }
+        if (index == 1 && pageStart_) stack_->setCurrentWidget(pageStart_);
+        else if (index == 2 && pageEdit_) stack_->setCurrentWidget(pageEdit_);
+        else if (index == 3 && pageVolume_) stack_->setCurrentWidget(pageVolume_);
+        else if (index == 4 && pageSelect_) stack_->setCurrentWidget(pageSelect_);
+        else if (index == 5 && pageAlignment_) stack_->setCurrentWidget(pageAlignment_);
+        else if (index == 6 && pageGeometry_) stack_->setCurrentWidget(pageGeometry_);
+        else if (index == 7 && pageMeasure_) stack_->setCurrentWidget(pageMeasure_);
+        else if (index == 8 && pageCAD_) stack_->setCurrentWidget(pageCAD_);
+        else if (index == 9 && pageAnalysis_) stack_->setCurrentWidget(pageAnalysis_);
+        else if (index == 10 && pageReport_) stack_->setCurrentWidget(pageReport_);
+        else if (index == 11 && pageAnimation_) stack_->setCurrentWidget(pageAnimation_);
+        else if (index == 12 && pageWindow_) stack_->setCurrentWidget(pageWindow_);
         });
 
-    updateMaximizeButtonIcon();
+    connect(pageDocument_, &DocumentPage::moduleClicked, this, [this](const QString& msg) {
+        statusBar()->showMessage(msg, 1500);
+        });
+
+    connect(pageDocument_, &DocumentPage::recentOpenRequested, this, [this](const QString& name) {
+        statusBar()->showMessage(QStringLiteral("正在打开 %1 ...").arg(name), 1500);
+        });
+
+    //emit openRequested 
+    connect(pageDocument_, &DocumentPage::openRequested, this,
+        [this](const QString& path) {
+
+            QString err;
+            if (!appController_ || !appController_->openFile(path, &err)) {
+                statusBar()->showMessage(err.isEmpty() ? QStringLiteral("打开失败") : err, 3000);
+                if (pageDocument_) pageDocument_->notifyFail(err);
+                return;
+            }
+
+            auto sess = appController_->session();
+            if (!sess || !sess->dataMgr || !sess->sharedState) {
+                statusBar()->showMessage(QStringLiteral("Session 无效"), 3000);
+                if (pageDocument_) pageDocument_->notifyFail(QStringLiteral("Session 无效"));
+                return;
+            }
+
+            // 初始化四视图
+            if (mprViews_) {
+                mprViews_->initWithData(sess->dataMgr, sess->sharedState);
+            }
+
+            if (scenePanel_) {
+                scenePanel_->setSession(sess->dataMgr, sess->sourcePath);
+            }
+
+            if (renderPanel_) {
+                renderPanel_->setSession(sess);
+            }
+
+            if (pageDocument_) {
+                pageDocument_->notifySucc();
+            }
+
+            if (tabBar_) {
+                tabBar_->setCurrentIndex(1);
+            }
+        });
+
+    connect(pageStart_, &StartPagePage::ctReconRequested, this, [this]() {
+        openCtReconUi();
+        });
 }
 
-void CTViewer::updateMaximizeButtonIcon()
-{
-    if (!btnMaximize_) return;
 
-    // 确保字体里有符号
-    QFont f = btnMaximize_->font();
-    f.setFamily(QStringLiteral("Segoe UI Symbol"));
-    btnMaximize_->setFont(f);
-
-    if (isMaximized()) {
-        btnMaximize_->setText(QString(QChar(0x2750)));      
-        btnMaximize_->setToolTip(QStringLiteral("还原"));
-    }
-    else {
-        btnMaximize_->setText(QStringLiteral("□"));      
-        btnMaximize_->setToolTip(QStringLiteral("最大化"));
-    }
-    //btnMaximize_->setText(QStringLiteral("□"));
-}
-
-//实现标题栏拖动
-bool CTViewer::eventFilter(QObject* watched, QEvent* event)
+bool CTViewer::eventFilter(QObject* watched, QEvent* event)//实现标题栏拖动
 {
     if (!event) return false;
     bool titleArea = (watched == titleBar_.data()
@@ -375,183 +473,25 @@ bool CTViewer::eventFilter(QObject* watched, QEvent* event)
     return QMainWindow::eventFilter(watched, event);
 }
 
-void CTViewer::buildCentral()
+void CTViewer::updateMaximizeButtonIcon()
 {
-    auto central = new QWidget(this);
-    auto v = new QVBoxLayout(central);
-    v->setContentsMargins(0, 0, 0, 0);
-    v->setSpacing(0);
+    if (!btnMaximize_) return;
 
-    //顶部功能区 stack_  现在只在上方固定高度
-    stack_ = new QStackedWidget(central);
-    stack_->setFixedHeight(ribbonHeight_);
-    v->addWidget(stack_, 0);//第二个参数的意思是拉伸因子 设置为0表示不拉伸
+    // 确保字体里有符号
+    QFont f = btnMaximize_->font();
+    f.setFamily(QStringLiteral("Segoe UI Symbol"));
+    btnMaximize_->setFont(f);
 
-    //下方workspace ,左边四视图 右边面板
-    workspaceSplit_ = new QSplitter(Qt::Horizontal, central);//第一个参数是水平分割
-    workspaceSplit_->setObjectName("workspaceSplit");
-    v->addWidget(workspaceSplit_, 1);
-
-    //workshop左边
-    mprViews_ = new ReconstructPage(workspaceSplit_);
-   
-    //右侧
-    rightSplit_ = new QSplitter(Qt::Vertical, workspaceSplit_);
-    workspaceSplit_->setObjectName("rightsplit");
-
-    renderPanel_ = new RenderPanel(rightSplit_);
-    rightSplit_->addWidget(renderPanel_);
-
-    scenePanel_ = new SceneTreePanel(rightSplit_);
-    rightSplit_->addWidget(scenePanel_);
-
-    //安装
-    workspaceSplit_->addWidget(mprViews_);
-    workspaceSplit_->addWidget(rightSplit_);
-    workspaceSplit_->setStretchFactor(0, 120); // 左侧视口占5份
-    workspaceSplit_->setStretchFactor(1, 2); // 右侧面板占2份
-
-    rightSplit_->setStretchFactor(0, 3); // 渲染区域占3份
-    rightSplit_->setStretchFactor(1, 2); // 场景树占2份
-
-    setCentralWidget(central);
-
-    //添加多个页面
-    pageDocument_ = new DocumentPage(stack_);
-    stack_->addWidget(pageDocument_);
-    pageStart_ = new StartPagePage(stack_);
-    stack_->addWidget(pageStart_);
-    pageEdit_ = new EditPage(stack_);
-    stack_->addWidget(pageEdit_);
-    pageVolume_ = new VolumePage(stack_);
-    stack_->addWidget(pageVolume_);
-    pageSelect_ = new SelectPage(stack_);
-    stack_->addWidget(pageSelect_);
-    pageAlignment_ = new AlignmentPage(stack_);
-    stack_->addWidget(pageAlignment_);
-    pageGeometry_ = new GeometryPage(stack_);
-    stack_->addWidget(pageGeometry_);
-    pageMeasure_ = new MeasurePage(stack_);
-    stack_->addWidget(pageMeasure_);
-    pageCAD_ = new CADAndThen(stack_);
-    stack_->addWidget(pageCAD_);
-    pageAnalysis_ = new AnalysisPage(stack_);
-    stack_->addWidget(pageAnalysis_);
-    pageWindow_ = new WindowPage(stack_);//这句话的意思是创建一个WindowPage页面，并将其父组件设置为stack_（QStackedWidget的实例）
-    stack_->addWidget(pageWindow_);
-    pageReport_ = new ReportPage(stack_);
-    stack_->addWidget(pageReport_);
-    pageAnimation_ = new AnimationPage(stack_);
-    stack_->addWidget(pageAnimation_);
-    /*pagePerformance_ = new PerformancePage(stack_);
-    stack_->addWidget(pagePerformance_);*/
-
-    appController_ = new AppController(this);
-
-    connect(ribbontabBar_, &QTabBar::currentChanged, this, [this](int index) {
-
-        if (!stack_ || !workspaceSplit_) return;
-
-        if (index == 0 && pageDocument_) {
-            //隐藏 workspace，让 stack_ 占满
-            workspaceSplit_->hide();
-            stack_->setMaximumHeight(QWIDGETSIZE_MAX);
-            stack_->setMinimumHeight(0);
-            stack_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-            stack_->setCurrentWidget(pageDocument_);
-            return;
-        }
-
-        // Workbench 模式：显示 workspace，stack 固定高度
-        workspaceSplit_->show();
-        stack_->setFixedHeight(ribbonHeight_);
-        stack_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-
-        // 功能区切换
-        if (index == 0 && pageDocument_) stack_->setCurrentWidget(pageDocument_);
-        else if (index == 1 && pageStart_) stack_->setCurrentWidget(pageStart_);
-        else if (index == 2 && pageEdit_) stack_->setCurrentWidget(pageEdit_);
-        else if (index == 3 && pageVolume_) stack_->setCurrentWidget(pageVolume_);
-        else if (index == 4 && pageSelect_) stack_->setCurrentWidget(pageSelect_);
-        else if (index == 5 && pageAlignment_) stack_->setCurrentWidget(pageAlignment_);
-        else if (index == 6 && pageGeometry_) stack_->setCurrentWidget(pageGeometry_);
-        else if (index == 7 && pageMeasure_) stack_->setCurrentWidget(pageMeasure_);
-        else if (index == 8 && pageCAD_) stack_->setCurrentWidget(pageCAD_);
-        else if (index == 9 && pageAnalysis_) stack_->setCurrentWidget(pageAnalysis_);
-        else if (index == 10 && pageReport_) stack_->setCurrentWidget(pageReport_);
-        else if (index == 11 && pageAnimation_) stack_->setCurrentWidget(pageAnimation_);
-        else if (index == 12 && pageWindow_) stack_->setCurrentWidget(pageWindow_);
-        });
-
-    connect(pageDocument_, &DocumentPage::moduleClicked, this, [this](const QString& msg) {
-        statusBar()->showMessage(msg, 1500);
-        });
-
-    /* connect(pageDocument_, &DocumentPage::requestSwitchTo, this, [this](const QString& key) {
-         if (key == QStringLiteral("reconstruct")) {
-             if (ribbontabBar_) ribbontabBar_->setCurrentIndex(1);
-             workspaceSplit_->show();
-             stack_->setFixedHeight(ribbonHeight_);
-             if (pageStart_) stack_->setCurrentWidget(pageStart_);
-         }
-         });*/
-
-    connect(pageDocument_, &DocumentPage::recentOpenRequested, this, [this](const QString& name) {
-        statusBar()->showMessage(QStringLiteral("正在打开 %1 ...").arg(name), 1500);
-        });
-
-    //emit openRequested 
-    connect(pageDocument_, &DocumentPage::openRequested, this,
-        [this](const QString& path) {
-
-            QString err;
-            if (!appController_ || !appController_->openFile(path, &err)) {
-                statusBar()->showMessage(err.isEmpty() ? QStringLiteral("打开失败") : err, 3000);
-                if (pageDocument_) pageDocument_->notifyFail(err);
-                return;
-            }
-
-            auto sess = appController_->session();
-            if (!sess || !sess->dataMgr || !sess->sharedState) {
-                statusBar()->showMessage(QStringLiteral("Session 无效"), 3000);
-                if (pageDocument_) pageDocument_->notifyFail(QStringLiteral("Session 无效"));
-                return;
-            }
-
-            // 初始化四视图
-            if (mprViews_) {
-                mprViews_->initWithData(sess->dataMgr, sess->sharedState);
-            }
-
-            if (scenePanel_) {
-                scenePanel_->setSession(sess->dataMgr, sess->sourcePath);
-
-                if (renderPanel_) {
-                    renderPanel_->setSession(sess);
-                }
-
-                if (pageDocument_) {
-                    pageDocument_->notifySucc();
-                }
-
-                if (ribbontabBar_) {
-                    ribbontabBar_->setCurrentIndex(1);
-                    workspaceSplit_->show();
-                    stack_->setFixedHeight(ribbonHeight_);
-                    stack_->setCurrentWidget(pageStart_);
-                }
-                statusBar()->showMessage(QStringLiteral("数据加载完毕，视图已更新。"), 3000);
-            };
-
-              
-        });
-
-    connect(pageStart_, &StartPagePage::ctReconRequested, this, [this]() {
-        openCtReconUi();
-        });
- }
-
-void CTViewer::wireSignals() {}
+    if (isMaximized()) {
+        btnMaximize_->setText(QString(QChar(0x2750)));
+        btnMaximize_->setToolTip(QStringLiteral("还原"));
+    }
+    else {
+        btnMaximize_->setText(QStringLiteral("□"));
+        btnMaximize_->setToolTip(QStringLiteral("最大化"));
+    }
+    //btnMaximize_->setText(QStringLiteral("□"));
+}
 
 void CTViewer::setDefaults() {
     // 在默认显示时把窗口定位到主屏幕的可用区域左上角，避免每次运行都要手动拖动窗口

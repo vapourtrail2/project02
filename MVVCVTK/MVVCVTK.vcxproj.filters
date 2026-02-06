@@ -50,9 +50,6 @@
     <ClInclude Include="AppState.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="c_ui\macro\VtkMacros.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="c_ui\workbenches\PerformancePage.h">
       <Filter>c_ui\workbenches</Filter>
     </ClInclude>

@@ -32,7 +32,7 @@ protected:
 
 private:
     void syncFromState(UpdateFlags flags);
-    void refreshHistogram();    // 生成/加载直方图图片
+    /*void refreshHistogram(); */   // 生成/加载直方图图片
     void applyHistogramPixmap();// 把 histPixmap_ 按当前label尺寸缩放显示
 
 private:

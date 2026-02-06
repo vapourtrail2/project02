@@ -148,7 +148,7 @@ void RenderPanel::setSession(const std::shared_ptr<AppSession>& session)
 void RenderPanel::setAnalysisService(const std::shared_ptr<VolumeAnalysisService>& analysis)
 {
     analysis_ = analysis;
-    refreshHistogram();
+    /*refreshHistogram();*/
 }
 
 void RenderPanel::setSharedState(const std::shared_ptr<SharedInteractionState>& state)
@@ -189,7 +189,7 @@ void RenderPanel::setSharedState(const std::shared_ptr<SharedInteractionState>& 
 
     // 首次全量同步
     syncFromState(UpdateFlags::All);
-    refreshHistogram();
+    /*refreshHistogram();*/
 }
 
 void RenderPanel::syncFromState(UpdateFlags flags)
@@ -238,44 +238,44 @@ void RenderPanel::syncFromState(UpdateFlags flags)
     updatingUi_ = false;
 }
 
-void RenderPanel::refreshHistogram()
-{
-    if (!histLabel_) return;
-
-    if (!analysis_) {
-        histPixmap_ = QPixmap();
-        histLabel_->setPixmap(QPixmap());
-        histLabel_->setText(QStringLiteral("（未加载）"));
-        return;
-    }
-
-    // 缓存路径
-    const QString dir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
-    QDir().mkpath(dir);
-    histCachePath_ = dir + "/ctviewer_hist.png";
-
-    // 生成直方图图片（你的 VolumeAnalysisService::SaveHistogramImage 已实现）
-    analysis_->SaveHistogramImage(histCachePath_.toStdString(), 1024);
-
-    QFileInfo fi(histCachePath_);
-    if (!fi.exists() || fi.size() <= 0) {
-        histPixmap_ = QPixmap();
-        histLabel_->setPixmap(QPixmap());
-        histLabel_->setText(QStringLiteral("（直方图生成失败）"));
-        return;
-    }
-
-    QPixmap pm(histCachePath_);
-    if (pm.isNull()) {
-        histPixmap_ = QPixmap();
-        histLabel_->setPixmap(QPixmap());
-        histLabel_->setText(QStringLiteral("（直方图加载失败）"));
-        return;
-    }
-
-    histPixmap_ = pm;
-    applyHistogramPixmap();
-}
+//void RenderPanel::refreshHistogram()
+//{
+//    if (!histLabel_) return;
+//
+//    if (!analysis_) {
+//        histPixmap_ = QPixmap();
+//        histLabel_->setPixmap(QPixmap());
+//        histLabel_->setText(QStringLiteral("（未加载）"));
+//        return;
+//    }
+//
+//    // 缓存路径
+//    const QString dir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+//    QDir().mkpath(dir);
+//    histCachePath_ = dir + "/ctviewer_hist.png";
+//
+//    // 生成直方图图片（你的 VolumeAnalysisService::SaveHistogramImage 已实现）
+//    //analysis_->SaveHistogramImage(histCachePath_.toStdString(), 1024);
+//
+//    QFileInfo fi(histCachePath_);
+//    if (!fi.exists() || fi.size() <= 0) {
+//        histPixmap_ = QPixmap();
+//        histLabel_->setPixmap(QPixmap());
+//        histLabel_->setText(QStringLiteral("（直方图生成失败）"));
+//        return;
+//    }
+//
+//    QPixmap pm(histCachePath_);
+//    if (pm.isNull()) {
+//        histPixmap_ = QPixmap();
+//        histLabel_->setPixmap(QPixmap());
+//        histLabel_->setText(QStringLiteral("（直方图加载失败）"));
+//        return;
+//    }
+//
+//    histPixmap_ = pm;
+//    applyHistogramPixmap();
+//}
 
 void RenderPanel::applyHistogramPixmap()
 {

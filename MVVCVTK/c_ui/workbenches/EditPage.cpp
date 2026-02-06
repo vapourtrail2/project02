@@ -14,8 +14,6 @@
 #include <QDebug>
 #include <QFile>
 
-
-//git 
 //static是作用域限定符，表示该函数仅在当前文件内可见，防止命名冲突
 //辅助函数控制换行
 static QString wrapByWidth(const QString& s, const QFont& font, int maxWidthPx) {//第三个参数为一行允许的最大像素宽度
@@ -80,10 +78,9 @@ static QIcon loadIconFor(const QString& text) {
     for (const auto& m : map) {
         if (text == m.key) {
             const QString path = QString::fromUtf8(m.file);
-         /*   qDebug() << "use path =" << path << ", is exist? =" << QFile(path).exists();*/
             QIcon ico(path);//用给定的路径 创建一个Qicon对象
 			if (!ico.isNull()){
-				return ico;//
+				return ico;
             }
         }
     }
@@ -107,41 +104,6 @@ EditPage::EditPage(QWidget* parent)
 
     // 功能区调用
     layout->addWidget(buildRibbon(this));
-
-    // 预留的内容区占位，用于后续填充具体的编辑工具界面
-    auto* placeholder = new QFrame(this);
-    placeholder->setObjectName(QStringLiteral("editContentPlaceholder"));
-    placeholder->setStyleSheet(QStringLiteral(
-        "QFrame#editContentPlaceholder{background-color:#1d1d1d; border-radius:8px; border:1px solid #313131;}"
-        "QFrame#editContentPlaceholder QLabel{color:#cccccc;}"));
-
-    auto* placeholderLayout = new QVBoxLayout(placeholder);
-    placeholderLayout->setContentsMargins(0, 0, 0, 0);
-    placeholderLayout->setSpacing(1);
-
-    /*auto* title = new QLabel(QStringLiteral("编辑功能区内容区域"), placeholder);
-    title->setStyleSheet(QStringLiteral("font-size:16px; font-weight:600;"));
-    placeholderLayout->addWidget(title);
-
-    auto* desc = new QLabel(QStringLiteral("这里可以继续扩展体积编辑、几何调整等操作界面。"), placeholder);
-    desc->setWordWrap(true);
-    desc->setStyleSheet(QStringLiteral("font-size:13px;"));
-    placeholderLayout->addWidget(desc);
-    placeholderLayout->addStretch();*/
-
-    /*auto* viewerHost = new QFrame(placeholder);
-    viewerHost->setObjectName(QStringLiteral("viewerHost"));
-    viewerHost->setStyleSheet(QStringLiteral(
-        "QFrame#viewerHost{background:#111; border:1px solid #222; border-radius:6px;}"
-    ));
-
-    auto* hostLayout = new QVBoxLayout(viewerHost);
-    hostLayout->setContentsMargins(0, 0, 0, 0);
-    hostLayout->setSpacing(0);
-
-    placeholderLayout->addWidget(viewerHost, 1);*/
-
-    layout->addWidget(placeholder, 1);
 }
 
 QWidget* EditPage::buildRibbon(QWidget* parent)
@@ -157,9 +119,6 @@ QWidget* EditPage::buildRibbon(QWidget* parent)
     layout->setContentsMargins(4, 4, 4, 4);
     layout->setSpacing(1);
 
-    /*const QIcon placeholderIcon = buildIcon(); */// 预生成占位图标，供所有按钮复用
-
-    
     struct RibbonAction
     {
         QString text;
@@ -187,7 +146,6 @@ QWidget* EditPage::buildRibbon(QWidget* parent)
         { QStringLiteral("动态重命名"), false }
     };
 
-
 	for (const auto& action : actions) {
         // 每个功能都使用图标,文字的形式展示
         auto* button = new QToolButton(ribbon); 
@@ -198,7 +156,6 @@ QWidget* EditPage::buildRibbon(QWidget* parent)
         button->setIconSize(QSize(40, 40));
         button->setMinimumSize(QSize(70, 90));
 
-       
         if (action.hasMenu) {
             // 转换为功能 需要后期拓展
             auto* menu = new QMenu(button);
@@ -218,27 +175,6 @@ QWidget* EditPage::buildRibbon(QWidget* parent)
         }
         layout->addWidget(button);
     }
-
     layout->addStretch();
     return ribbon;
 }
-
-//QIcon EditPage::buildIcon() const
-//{
-//    // 创建一个灰色的方形占位图标，后续替换为真实资源
-//    QPixmap pixmap(48, 48);
-//    pixmap.fill(Qt::transparent);
-//
-//    QPainter painter(&pixmap);
-//    painter.setRenderHint(QPainter::Antialiasing);
-//    painter.setBrush(QColor(QStringLiteral("#4a4a4a")));
-//    painter.setPen(QPen(QColor(QStringLiteral("#6c6c6c")), 2));
-//    painter.drawRoundedRect(pixmap.rect().adjusted(3, 3, -3, -3), 8, 8);
-//
-//    painter.setPen(QPen(QColor(QStringLiteral("#bdbdbd"))));
-//    painter.setFont(QFont(QStringLiteral("Microsoft YaHei"), 8, QFont::Bold));
-//    painter.drawText(pixmap.rect(), Qt::AlignCenter, QStringLiteral("ICON"));
-//
-//    painter.end();
-//    return QIcon(pixmap);
-//}

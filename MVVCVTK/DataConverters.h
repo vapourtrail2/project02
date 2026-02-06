@@ -20,5 +20,5 @@ public:
     vtkSmartPointer<vtkTable> Process(vtkSmartPointer<vtkImageData> input) override;
 
     // 直方图转图片
-    void SaveHistogramImage(vtkSmartPointer<vtkImageData> input, const std::string& filePath);
+    /*void SaveHistogramImage(vtkSmartPointer<vtkImageData> input, const std::string& filePath);*/
 };

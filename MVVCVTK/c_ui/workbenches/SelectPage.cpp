@@ -107,7 +107,6 @@ static QIcon loadIconFor(const QString& text) {
     return QIcon(":/icons/icons/move.png");
 }
 
-
 SelectPage::SelectPage(QWidget* parent)
     : QWidget(parent)
 {
@@ -125,33 +124,11 @@ SelectPage::SelectPage(QWidget* parent)
 
     // 功能区调用
     layout03->addWidget(buildRibbon03(this));
-
-    // 预留的内容区占位，用于后续填充具体的编辑工具界面
-    auto* placeholder = new QFrame(this);
-    placeholder->setObjectName(QStringLiteral("editContentPlaceholder"));
-    placeholder->setStyleSheet(QStringLiteral(
-        "QFrame#editContentPlaceholder{background-color:#1d1d1d; border-radius:8px; border:1px solid #313131;}"
-        "QFrame#editContentPlaceholder QLabel{color:#cccccc;}"));
-
-    auto* placeholderLayout = new QVBoxLayout(placeholder);
-    placeholderLayout->setContentsMargins(0, 0, 0, 0);
-    placeholderLayout->setSpacing(1);
-
-    auto* title = new QLabel(QStringLiteral("选择功能区内容区域"), placeholder);
-    title->setStyleSheet(QStringLiteral("font-size:16px; font-weight:600;"));
-    placeholderLayout->addWidget(title);
-
-    auto* desc = new QLabel(QStringLiteral("这里可以继续扩展体积编辑、几何调整等操作界面。"), placeholder);
-    desc->setWordWrap(true);
-    desc->setStyleSheet(QStringLiteral("font-size:13px;"));
-    placeholderLayout->addWidget(desc);
-    placeholderLayout->addStretch();
-    layout03->addWidget(placeholder, 1);
 }
 
 QWidget* SelectPage::buildRibbon03(QWidget* parent)
 {
-    auto* ribbon03 = new QFrame(parent);//ribbon03是--功能区的容器
+    auto* ribbon03 = new QFrame(parent);//ribbon03是功能区的容器
     ribbon03->setObjectName(QStringLiteral("selectRibbon"));
     ribbon03->setStyleSheet(QStringLiteral(
         "QFrame#selectRibbon{background-color:#322F30; border-radius:8px; border:1px solid #2b2b2b;}"
@@ -170,7 +147,7 @@ QWidget* SelectPage::buildRibbon03(QWidget* parent)
         { QStringLiteral("导航光标"), 0 },
         { QStringLiteral("裁剪"), 1 },
         { QStringLiteral("选择对象(3D)"), 2 },
-        // 下面这段要放成两行*四列（图标左、文字右）
+        // 下面这段要放成两行*四列
         { QStringLiteral("绘制"), 0 },
         { QStringLiteral("矩形"), 0 },
         { QStringLiteral("圆角矩形"), 0 },
@@ -222,9 +199,7 @@ QWidget* SelectPage::buildRibbon03(QWidget* parent)
         QStringLiteral("折线3D"),
         QStringLiteral("矩形3D"),
         QStringLiteral("椭圆3D")
-        // 如果你想把“椭圆3D”也放进来，把上面行数调成 2×5 或替换掉其中一个即可
     };
-
 
     const QStringList twoRowGroup02 = {
         QStringLiteral("添加ROI到ROI"),
@@ -240,7 +215,6 @@ QWidget* SelectPage::buildRibbon03(QWidget* parent)
         QStringLiteral("ROI渲染"),
         QStringLiteral("粘贴带选项的ROI"),
     };
-
 
     const QStringList twoRowGroup03 =
     {

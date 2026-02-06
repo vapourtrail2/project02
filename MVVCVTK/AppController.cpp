@@ -34,6 +34,14 @@ bool AppController::openFile(const QString& path, QString* errorOut)
         double range[2];
         img->GetScalarRange(range);
         newSession->sharedState->SetScalarRange(range[0], range[1]);
+
+        // 设置初始光标位置到图像中心 (修复画面为空的问题)
+        int dims[3];
+        img->GetDimensions(dims);
+        newSession->sharedState->SetCursorPosition(dims[0] / 2, dims[1] / 2, dims[2] / 2);
+
+        // 设置一个默认的 ISO 阈值 (防止3D视图为空)
+        newSession->sharedState->SetIsoValue(range[0] + (range[1] - range[0]) * 0.2);
     }
 
     // 分析服务 跟dataMgr同生命周期

@@ -14,10 +14,6 @@
 #include <QDebug>
 #include <QFile>
 
-
-
-//static是作用域限定符，表示该函数仅在当前文件内可见，防止命名冲突
-//辅助函数控制换行
 static QString wrapByWidth(const QString& s, const QFont& font, int maxWidthPx) {//第三个参数为一行允许的最大像素宽度
     QFontMetrics fm(font); //给出这个字体下每个字符或者字符串的像素宽度。
     QString out;
@@ -102,7 +98,6 @@ static QIcon loadIconFor(const QString& text) {
     return QIcon(":/icons/icons/move.png");
 }
 
-
 GeometryPage::GeometryPage(QWidget* parent)
     : QWidget(parent)
 {
@@ -120,28 +115,6 @@ GeometryPage::GeometryPage(QWidget* parent)
 
     // 功能区调用
     layout05->addWidget(buildRibbon05(this));
-
-    // 预留的内容区占位，用于后续填充具体的编辑工具界面
-    auto* placeholder = new QFrame(this);
-    placeholder->setObjectName(QStringLiteral("editContentPlaceholder"));
-    placeholder->setStyleSheet(QStringLiteral(
-        "QFrame#editContentPlaceholder{background-color:#1d1d1d; border-radius:8px; border:1px solid #313131;}"
-        "QFrame#editContentPlaceholder QLabel{color:#cccccc;}"));
-
-    auto* placeholderLayout = new QVBoxLayout(placeholder);
-    placeholderLayout->setContentsMargins(0, 0, 0, 0);
-    placeholderLayout->setSpacing(1);
-
-    auto* title = new QLabel(QStringLiteral("几何功能区内容区域"), placeholder);
-    title->setStyleSheet(QStringLiteral("font-size:16px; font-weight:600;"));
-    placeholderLayout->addWidget(title);
-
-    auto* desc = new QLabel(QStringLiteral("这里可以继续扩展体积编辑、几何调整等操作界面。"), placeholder);
-    desc->setWordWrap(true);
-    desc->setStyleSheet(QStringLiteral("font-size:13px;"));
-    placeholderLayout->addWidget(desc);
-    placeholderLayout->addStretch();
-    layout05->addWidget(placeholder, 1);
 }
 
 QWidget* GeometryPage::buildRibbon05(QWidget* parent)
@@ -214,7 +187,6 @@ QWidget* GeometryPage::buildRibbon05(QWidget* parent)
          QStringLiteral("环面"), 
          QStringLiteral("自由造型线"), 
          QStringLiteral("自由造型表面"),
-        // 如果你想把“椭圆3D”也放进来，把上面行数调成 2×5 或替换掉其中一个即可
     };
 
 

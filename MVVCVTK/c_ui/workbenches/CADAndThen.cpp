@@ -14,10 +14,6 @@
 #include <QDebug>
 #include <QFile>
 
-
-
-//static是作用域限定符，表示该函数仅在当前文件内可见，防止命名冲突
-//辅助函数控制换行
 static QString wrapByWidth(const QString& s, const QFont& font, int maxWidthPx) {//第三个参数为一行允许的最大像素宽度
     QFontMetrics fm(font); //给出这个字体下每个字符或者字符串的像素宽度。
     QString out;
@@ -69,8 +65,6 @@ static QIcon loadIconFor(const QString& text) {
         { QStringLiteral("变形场"),      ":/cad_icons/icons_other/CAD_surfacemesh_icons/deformation_field.PNG" },
     };
 
-
-
     for (const auto& m : map) {
         if (text == m.key) {
             const QString path = QString::fromUtf8(m.file);
@@ -103,28 +97,6 @@ CADAndThen::CADAndThen(QWidget* parent)
 
     // 功能区调用
     layout07->addWidget(buildRibbon07(this));
-
-    // 预留的内容区占位，用于后续填充具体的编辑工具界面
-    auto* placeholder = new QFrame(this);
-    placeholder->setObjectName(QStringLiteral("editContentPlaceholder"));
-    placeholder->setStyleSheet(QStringLiteral(
-        "QFrame#editContentPlaceholder{background-color:#1d1d1d; border-radius:8px; border:1px solid #313131;}"
-        "QFrame#editContentPlaceholder QLabel{color:#cccccc;}"));
-
-    auto* placeholderLayout = new QVBoxLayout(placeholder);
-    placeholderLayout->setContentsMargins(0, 0, 0, 0);
-    placeholderLayout->setSpacing(1);
-
-    auto* title = new QLabel(QStringLiteral("CAD/表面网格功能区内容区域"), placeholder);
-    title->setStyleSheet(QStringLiteral("font-size:16px; font-weight:600;"));
-    placeholderLayout->addWidget(title);
-
-    auto* desc = new QLabel(QStringLiteral("这里可以继续扩展体积编辑、几何调整等操作界面。"), placeholder);
-    desc->setWordWrap(true);
-    desc->setStyleSheet(QStringLiteral("font-size:13px;"));
-    placeholderLayout->addWidget(desc);
-    placeholderLayout->addStretch();
-    layout07->addWidget(placeholder, 1);
 }
 
 QWidget* CADAndThen::buildRibbon07(QWidget* parent)
@@ -139,9 +111,6 @@ QWidget* CADAndThen::buildRibbon07(QWidget* parent)
     auto* layout07 = new QHBoxLayout(ribbon07);
     layout07->setContentsMargins(4, 4, 4, 4);
     layout07->setSpacing(1);
-
-    /*const QIcon placeholderIcon = buildIcon(); */// 预生成占位图标，供所有按钮复用
-
 
     struct RibbonAction07
     {
@@ -162,9 +131,7 @@ QWidget* CADAndThen::buildRibbon07(QWidget* parent)
         { QStringLiteral("变形场"), 0 }
     };
 
-
     for (const auto& action : actions07) {
-        // 每个功能都使用图标,文字的形式展示
         auto* button = new QToolButton(ribbon07);
         QString wrappedText = wrapByWidth(action.text, button->font(), 51);
         button->setText(wrappedText);

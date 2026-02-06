@@ -30,7 +30,6 @@ private:
     void buildLeftDock();
     QWidget* buildRightContent(QWidget* parent);
     void wireLeftDockSignals();
-   /* void wireRightContentSignals();*/
 	void showOpenDialog();
     void updateStatusLabel(const QString& text, bool isError);
     void loadFilePath(const QString& path);

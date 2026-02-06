@@ -107,25 +107,6 @@ StartPagePage::StartPagePage(QWidget* parent)
 
     //布局调用
     layout01->addWidget(buildRibbon01(this));
-
-    // 预留的内容区占位，用于后续填充具体的编辑工具界面
-	//auto* placeholder = new QFrame(this);//这句话的意思是在当前页面上创建一个QFrame对象，作为内容区的占位符
- //   placeholder->setObjectName(QStringLiteral("editContentPlaceholder"));
- //   placeholder->setStyleSheet(QStringLiteral(
- //       "QFrame#editContentPlaceholder{background-color:#1d1d1d; border-radius:8px; border:1px solid #313131;}"
- //       "QFrame#editContentPlaceholder QLabel{color:#cccccc;}"));
-
- //   auto* placeholderLayout = new QVBoxLayout(placeholder);
- //   placeholderLayout->setContentsMargins(0, 0, 0, 0);
- //   placeholderLayout->setSpacing(1);
-
- //   auto* hint = new QLabel(QStringLiteral("test"), placeholder);
- //   hint->setAlignment(Qt::AlignCenter);
- //   hint->setStyleSheet("color:#aaaaaa; font-size:16px;");
- //   placeholderLayout->addWidget(hint, 1);
-
-	////布局调用
- //   layout01->addWidget(placeholder, 1);
 }
 
 QWidget* StartPagePage::buildRibbon01(QWidget* parent)

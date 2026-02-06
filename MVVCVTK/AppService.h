@@ -20,22 +20,22 @@ public:
     }
 
     // 计算直方图数据
-    vtkSmartPointer<vtkTable> GetHistogramData(int binCount = 2048) {
-        if (!m_dataManager || !m_dataManager->GetVtkImage()) return nullptr;
+    //vtkSmartPointer<vtkTable> GetHistogramData(int binCount = 2048) {
+    //    if (!m_dataManager || !m_dataManager->GetVtkImage()) return nullptr;
 
-        auto converter = std::make_shared<HistogramConverter>();
-        converter->SetParameter("BinCount", (double)binCount);
-        return converter->Process(m_dataManager->GetVtkImage());
-    }
+    //    auto converter = std::make_shared<HistogramConverter>();
+    //    converter->SetParameter("BinCount", (double)binCount);
+    //    return converter->Process(m_dataManager->GetVtkImage());
+    //}
 
-    // 保存直方图图片
-    void SaveHistogramImage(const std::string& filePath, int binCount = 2048) {
-        if (!m_dataManager || !m_dataManager->GetVtkImage()) return;
+    //// 保存直方图图片
+    //void SaveHistogramImage(const std::string& filePath, int binCount = 2048) {
+    //    if (!m_dataManager || !m_dataManager->GetVtkImage()) return;
 
-        auto converter = std::make_shared<HistogramConverter>();
-        converter->SetParameter("BinCount", (double)binCount);
-        converter->SaveHistogramImage(m_dataManager->GetVtkImage(), filePath);
-    }
+    //    auto converter = std::make_shared<HistogramConverter>();
+    //    converter->SetParameter("BinCount", (double)binCount);
+    //    converter->SaveHistogramImage(m_dataManager->GetVtkImage(), filePath);
+    //}
 };
 
 class MedicalVizService : public AbstractInteractiveService,

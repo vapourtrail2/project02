@@ -20,9 +20,7 @@ DocumentPage::DocumentPage(QWidget* parent)
 {
     buildUi();
     wireLeftDockSignals();
-    /*wireRightContentSignals();*/
 }
-
 
 //构建整页：左右分栏（左：导航，右：主内容）
 void DocumentPage::buildUi()
@@ -45,9 +43,7 @@ void DocumentPage::buildUi()
     hl->addWidget(right, 1);
 }
 
-/*
- *  构建左侧导航列表
- */
+ //构建左侧导航列表
 void DocumentPage::buildLeftDock()
 {
 	listNav_ = new QListWidget(this);//listNav_代表的是左侧的导航列表
@@ -107,9 +103,8 @@ void DocumentPage::buildLeftDock()
     addItem(QStringLiteral("退出"));
 }
 
-/*
- *  构建右侧主内容
- */
+
+//  构建右侧主内容
 QWidget* DocumentPage::buildRightContent(QWidget* parent)
 {
     auto right = new QWidget(parent);
@@ -240,16 +235,10 @@ QWidget* DocumentPage::buildRightContent(QWidget* parent)
     return right;
 }
 
-/*
- * 连接左侧栏点击
- */
-void DocumentPage::wireLeftDockSignals()
-{
+ // 连接左侧栏点击
+void DocumentPage::wireLeftDockSignals(){
     if (!listNav_)
-    {
         return;
-    }
-
     connect(listNav_, &QListWidget::itemClicked, this,
         [this](QListWidgetItem* it) {
             const QString t = it ? it->text() : QString();
@@ -261,76 +250,16 @@ void DocumentPage::wireLeftDockSignals()
                   || t == QStringLiteral("快速导入")
                   || t == QStringLiteral("导入")
                   || t == QStringLiteral("导出")) {
- /*                emit requestSwitchTo(QStringLiteral("reconstruct"));*/
                 emit moduleClicked(QStringLiteral("正在进入：%1").arg(t));
             }
             else if (t == QStringLiteral("退出")) {
-                // 这里只能发个意图
                 emit moduleClicked(QStringLiteral("准备退出"));
             }
             else {
-                // 其他项
                 emit moduleClicked(QStringLiteral("选择：%1").arg(t));
             }
         });
 }
-
-/*
- *  连接右侧按钮/表格逻辑（这里只发信号）
- */
-//void DocumentPage::wireRightContentSignals()
-//{
-//    auto goReconstruct = [this]() { emit requestSwitchTo(QStringLiteral("reconstruct")); };
-//
-//    // 这些按钮在 buildRightContent 中是正常创建的，可以直接连接
-//    if (btnVisCheck_) {
-//        connect(btnVisCheck_, &QPushButton::clicked, this, [this, goReconstruct] {
-//            emit moduleClicked(QStringLiteral("进入视觉检查模块"));
-//            goReconstruct();
-//            });
-//    }
-//    if (btnPorosity_) {
-//        connect(btnPorosity_, &QPushButton::clicked, this, [this, goReconstruct] {
-//            emit moduleClicked(QStringLiteral("进入孔隙度分析模块"));
-//            goReconstruct();
-//            });
-//    }
-//    if (btnMetrology_) {
-//        connect(btnMetrology_, &QPushButton::clicked, this, [this, goReconstruct] {
-//            emit moduleClicked(QStringLiteral("进入计量模块"));
-//            goReconstruct();
-//            });
-//    }
-//    if (btnMaterial_) {
-//        connect(btnMaterial_, &QPushButton::clicked, this, [this, goReconstruct] {
-//            emit moduleClicked(QStringLiteral("进入材料分析模块"));
-//            goReconstruct();
-//            });
-//    }
-//    if (btnDicomEntry_) {
-//        connect(btnDicomEntry_, &QPushButton::clicked, this, [this] {
-//            showOpenDialog();
-//            });
-//    }
-//    if (tableRecent_) {
-//        connect(tableRecent_, &QTableWidget::itemDoubleClicked, this,
-//            [this, goReconstruct](auto* item) {
-//                const QString txt = item ? item->text() : QStringLiteral("项目");
-//                emit recentOpenRequested(txt);
-//                goReconstruct();
-//            });
-//    }
-//    if (btnUndo_) {
-//        connect(btnUndo_, &QPushButton::clicked, this, [this] {
-//            emit moduleClicked(QStringLiteral("已执行撤回操作"));
-//            });
-//    }
-//    if (btnKeep_) {
-//        connect(btnKeep_, &QPushButton::clicked, this, [this] {
-//            emit moduleClicked(QStringLiteral("保持当前更改"));
-//            });
-//    }
-//}
 
 void DocumentPage::showOpenDialog()
 {
@@ -400,27 +329,6 @@ void DocumentPage::showOpenDialog()
     docDialog_->activateWindow();
 }
 
-// 统一更新 DICOM 状态提示，带上错误标记
-void DocumentPage::updateStatusLabel(const QString& text, bool isError)
-{
-    if (!dicomStatusLabel_) {
-        return;
-    }
-
-    dicomStatusLabel_->setText(text);
-
-    // 根据状态选择颜色：错误为红色，成功为绿色，其余保持中性灰色
-    if (isError) {
-        dicomStatusLabel_->setStyleSheet(QStringLiteral("color:#ff6464;"));
-    }
-    else if (text.contains(QStringLiteral("成功"))) {
-        dicomStatusLabel_->setStyleSheet(QStringLiteral("color:#8ae66a;"));
-    }
-    else {
-        dicomStatusLabel_->setStyleSheet(QStringLiteral("color:#d0d0d0;"));
-    }
-}
-
 // 考虑：更改架构 数据生命周期属于某个页面 而不是属于会话(session) 应属于会话
 void DocumentPage::loadFilePath(const QString& path)
 {
@@ -449,3 +357,23 @@ void DocumentPage::notifyFail(const QString& reason)
 	updateStatusLabel(msg, true);
 }
 
+// 统一更新状态提示，带上错误标记
+void DocumentPage::updateStatusLabel(const QString& text, bool isError)
+{
+    if (!dicomStatusLabel_) {
+        return;
+    }
+
+    dicomStatusLabel_->setText(text);
+
+    // 根据状态选择颜色：错误为红色，成功为绿色，其余保持中性灰色
+    if (isError) {
+        dicomStatusLabel_->setStyleSheet(QStringLiteral("color:#ff6464;"));
+    }
+    else if (text.contains(QStringLiteral("成功"))) {
+        dicomStatusLabel_->setStyleSheet(QStringLiteral("color:#8ae66a;"));
+    }
+    else {
+        dicomStatusLabel_->setStyleSheet(QStringLiteral("color:#d0d0d0;"));
+    }
+}

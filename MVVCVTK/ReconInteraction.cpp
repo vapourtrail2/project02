@@ -11,9 +11,7 @@ void CTViewer::openCtReconUi()
 {
     if (!uiRecon3d_) {
         uiRecon3d_ = new UIReconstruct3D(this);
-
         QObject::connect(uiRecon3d_, &UIReconstruct3D::reconFinished, this, [this]() {
-
             float* data = nullptr;
             std::array<float, 3> spacing{}, origin{};
             std::array<int, 3> outSize{};
@@ -46,7 +44,7 @@ void CTViewer::openCtReconUi()
             if (mprViews_) {
                 mprViews_->initWithData(this->m_currentDataMgr, this->m_currentState);
                 stack_->setCurrentWidget(mprViews_);
-                ribbontabBar_->setCurrentIndex(1);
+                tabBar_->setCurrentIndex(1);
                 statusBar()->showMessage(QStringLiteral("重建完成，视图已更新。"), 3000);
             }
 
