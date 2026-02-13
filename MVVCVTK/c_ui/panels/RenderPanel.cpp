@@ -176,7 +176,7 @@ void RenderPanel::setSharedState(const std::shared_ptr<SharedInteractionState>& 
     }
 
     // ´Ó state ¶Á scalar range£¨ÓÃÓÚ slider Ó³Éä£©
-    const double* r = state_->GetDataRange();
+    const auto r = state_->GetDataRange();
     rangeMin_ = r[0];
     rangeMax_ = r[1];
 
@@ -212,7 +212,7 @@ void RenderPanel::syncFromState(UpdateFlags flags)
 
     // 2) Material
     if (HasFlag(flags, UpdateFlags::Material) || flags == UpdateFlags::All) {
-        const auto& mat = state_->GetMaterial();
+        const auto mat = state_->GetMaterial();
 
         auto to01_100 = [](double v01) {
             int v = static_cast<int>(std::round(clamp01(v01) * 100.0));

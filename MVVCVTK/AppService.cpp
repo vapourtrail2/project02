@@ -218,12 +218,11 @@ void MedicalVizService::ProcessPendingUpdates()
     RenderParams params;
 
     // 获取位置
-    int* pos = m_sharedState->GetCursorPosition();
-    params.cursor = { pos[0], pos[1], pos[2] }; // std::array 赋值
+    params.cursor = m_sharedState->GetCursorPosition();
 
     // 获取 TF
     params.tfNodes = m_sharedState->GetTFNodes();
-    auto* range = m_sharedState->GetDataRange();
+    auto range = m_sharedState->GetDataRange();
     params.scalarRange[0] = range[0];
     params.scalarRange[1] = range[1];
     params.material = m_sharedState->GetMaterial();
@@ -237,8 +236,7 @@ void MedicalVizService::ProcessPendingUpdates()
 }
 
 std::array<int, 3> MedicalVizService::GetCursorPosition() {
-    int* pos = m_sharedState->GetCursorPosition();
-    return { pos[0], pos[1], pos[2] };
+    return m_sharedState->GetCursorPosition();
 }
 
 void MedicalVizService::SetLuxParams(double ambient, double diffuse, double specular, double power, bool shadeOn) {
