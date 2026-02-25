@@ -11,6 +11,7 @@
 #include "AppInterfaces.h"
 #include "AppState.h"
 #include "c_ui/workbenches/ReconstructPage.h"
+using namespace std;
 
 class DocumentPage;
 class StartPagePage;
@@ -87,8 +88,8 @@ private:
 	QPointer<QStackedWidget> stack_;//放开始 编辑 体积 这些工具页 固定高度iconHeight_
     QPointer<QStackedWidget> secondstack_;//占满剩余高度，放 Backstage(DocumentPage)、Workspace(四视图+右侧面板)、Empty(无数据提示)
   
-    std::shared_ptr<AbstractDataManager> m_currentDataMgr;
-    std::shared_ptr<SharedInteractionState> m_currentState;
+    shared_ptr<AbstractDataManager> m_currentDataMgr;
+    shared_ptr<SharedInteractionState> m_currentState;
 
 	UIReconstruct3D* uiRecon3d_ = nullptr;
 	QPointer<AppController> appController_;

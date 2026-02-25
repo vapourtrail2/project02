@@ -68,7 +68,6 @@ CTViewer::CTViewer(QWidget* parent)
     wireConnect();     
     setDefaults();      
 
-    statusBar()->showMessage(QStringLiteral("就绪"));
 }
 
 CTViewer::~CTViewer() {
@@ -244,7 +243,7 @@ void CTViewer::buildTheMiddle()
     stack_->setFixedHeight(iconHeight_);
     v->addWidget(stack_, 0);
 
-    whatEmpty_ = new QWidget(stack_);
+	whatEmpty_ = new QWidget(stack_);//这句话的详细意思是：创建一个新的 QWidget 对象，并将其父对象设置为 stack_。这意味着 whatEmpty_ 将成为 stack_ 的子组件。当你将 whatEmpty_ 添加到 stack_ 中时，它会被管理在 stack_ 的堆叠布局中，stack_ 会负责显示哪个子组件（页面）是当前可见的。
 	stack_->addWidget(whatEmpty_);
 
     //添加多个页面
@@ -273,7 +272,7 @@ void CTViewer::buildTheMiddle()
     pageAnimation_ = new AnimationPage(stack_);
     stack_->addWidget(pageAnimation_);
 
-    // 2  Content stack（占满剩余高度：Backstage / Workspace / Empty）
+    // 2 Content stack 占满剩余高度
 	secondstack_ = new QStackedWidget(totalContainer);
     v->addWidget(secondstack_, 1);
     
@@ -317,21 +316,26 @@ void CTViewer::buildTheMiddle()
 
     // 2.3 Empty 页：无数据提示
     emptyPage_ = new QWidget(secondstack_);
+    emptyPage_->setStyleSheet(QStringLiteral("background-color:#000000;"));
     auto ev = new QVBoxLayout(emptyPage_);
     ev->setContentsMargins(0, 0, 0, 0);
     ev->setSpacing(0);
 
     auto tip = new QLabel(QStringLiteral("请先在“文件”中加载数据"), emptyPage_);
     tip->setAlignment(Qt::AlignCenter);
+    tip->setStyleSheet(QStringLiteral("color:#808080;"));
     ev->addWidget(tip, 1);
 	secondstack_->addWidget(emptyPage_);
 
     setCentralWidget(totalContainer);
 
-    appController_ = new AppController(this);
+    appController_ = new AppController(this);//这行的作用是
 
     if (stack_) {
         stack_->setCurrentWidget(whatEmpty_);
+        // 文件页启动时隐藏顶部图标栏，并清零高度避免首帧占位
+        stack_->setFixedHeight(0);
+        stack_->setVisible(false);
     }
     if (secondstack_ && pageDocument_) {
         secondstack_->setCurrentWidget(pageDocument_);
@@ -347,6 +351,10 @@ void CTViewer::wireConnect() {
 		const bool hasData = session && session->dataMgr && session->sharedState;
 
         if (index == 0) {
+            if (stack_) {
+                stack_->setFixedHeight(0);
+                stack_->setVisible(false);
+            }
             if (whatEmpty_) {
 				stack_->setCurrentWidget(whatEmpty_);
             }
@@ -356,14 +364,18 @@ void CTViewer::wireConnect() {
             return;
         }
 
-        if (hasData) {
-            if (workspacePage_) {
-				secondstack_->setCurrentWidget(workspacePage_);
-            }
-            else{
-                secondstack_->setCurrentWidget(emptyPage_);
-            }
+        if (stack_) {
+            stack_->setFixedHeight(iconHeight_);
+            stack_->setVisible(true);
         }
+
+        if (hasData) {
+            secondstack_->setCurrentWidget(workspacePage_);
+        }
+        else {
+            secondstack_->setCurrentWidget(emptyPage_);
+        }
+       
         if (index == 1 && pageStart_) stack_->setCurrentWidget(pageStart_);
         else if (index == 2 && pageEdit_) stack_->setCurrentWidget(pageEdit_);
         else if (index == 3 && pageVolume_) stack_->setCurrentWidget(pageVolume_);

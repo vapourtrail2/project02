@@ -196,7 +196,6 @@ private:
                 }
             }
         }
-
         for (const auto& cb : callbacks) {
             cb(flags);
         }
