@@ -213,6 +213,22 @@ void MedicalVizService::ProcessPendingUpdates()
         }
     }
 
+	//修改 2/28 不更新2D切片视图的无关更新
+    const int flagsBits = static_cast<int>(flags);
+    const bool isSliceView = (m_currentStrategy->GetNavigationAxis() != -1);
+
+    //2D切片视图真正关心的更新类型
+    const int sliceRelevantBits =
+        static_cast<int>(UpdateFlags::Cursor) |
+        static_cast<int>(UpdateFlags::TF) |
+        static_cast<int>(UpdateFlags::Material);
+
+    // 2D 视图遇到仅IsoValue/ Interaction 等无关更新时，直接跳过
+    if (isSliceView && (flagsBits & sliceRelevantBits) == 0) {
+        m_needsSync = false;
+        return;
+    }
+
     // 将 SharedState业务对象转换为 RenderParams纯数据对象
     // 避免持有复杂的业务逻辑引用
     RenderParams params;

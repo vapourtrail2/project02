@@ -38,7 +38,7 @@ private:
 private:
     // UI
     QLabel* histLabel_ = nullptr;
-
+        
     QLabel* isoValueLabel_ = nullptr;
     QSlider* isoSlider_ = nullptr;
 

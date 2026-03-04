@@ -1,9 +1,10 @@
 #include "c_ui/qt/QtRenderContext.h"
-#include "AppService.h"
+#include "c_ui/qt/interaction/handlers/2DViewerHandler.h"
+#include "c_ui/qt/interaction/handlers/3DViewerHandler.h"
+#include "c_ui/qt/interaction/handlers/TimeUpdateHandler.h"
+#include <memory>
+#include <vtkCommand.h>
 #include <vtkRenderWindow.h>
-#include <vtkInteractorStyleImage.h>
-#include <vtkInteractorStyleTrackballCamera.h>
-#include <vtkCamera.h>
 
 QtRenderContext::QtRenderContext()
 {
@@ -13,34 +14,43 @@ QtRenderContext::QtRenderContext()
     m_picker = vtkSmartPointer<vtkPropPicker>::New();
 }
 
+QtRenderContext::~QtRenderContext()
+{
+    TeardownObservers();
+}
+
 void QtRenderContext::SetQtWidget(QVTKOpenGLNativeWidget* widget)
 {
-    if (!widget) return;
+    if (!widget) {
+        return;
+    }
 
-    //确保存在
+    vtkRenderWindowInteractor* incomingInteractor = widget->interactor();
+    if (m_interactor && incomingInteractor && m_interactor.GetPointer() != incomingInteractor) {
+        TeardownObservers();
+    }
+
     if (!widget->renderWindow()) {
-		auto rw = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
+        auto rw = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
         widget->setRenderWindow(rw);
     }
-    m_renderWindow = widget->renderWindow();    
+    m_renderWindow = widget->renderWindow();
 
-    //renderer
     m_renderer = vtkSmartPointer<vtkRenderer>::New();
     m_renderWindow->AddRenderer(m_renderer);
 
-	//用自己的 interactor
     m_interactor = widget->interactor();
-
-	//把interactor和 renderwindow 关联起来
     if (m_interactor && m_renderWindow->GetInteractor() != m_interactor) {
-		m_renderWindow->SetInteractor(m_interactor);
-		m_interactor->SetRenderWindow(m_renderWindow);
+        m_renderWindow->SetInteractor(m_interactor);
+        m_interactor->SetRenderWindow(m_renderWindow);
     }
 
-    if (m_interactor && !m_interactor->GetInitialized())
-    {
-		m_interactor->Initialize();
+    if (m_interactor && !m_interactor->GetInitialized()) {
+        m_interactor->Initialize();
     }
+
+    SetupObservers();
+    BuildInteractionRouter();
 
     if (m_renderWindow) {
         m_renderWindow->Render();
@@ -49,17 +59,18 @@ void QtRenderContext::SetQtWidget(QVTKOpenGLNativeWidget* widget)
 
 void QtRenderContext::BindService(std::shared_ptr<AbstractAppService> service)
 {
-    // 调用基类绑定
     AbstractRenderContext::BindService(service);
-    // 转换为 InteractiveService 以便访问交互接口
     m_interactiveService = std::dynamic_pointer_cast<AbstractInteractiveService>(service);
 
+    BuildInteractionRouter();
     SetupObservers();
 }
 
 void QtRenderContext::SetupObservers()
 {
-    if (!m_interactor || m_observerInstalled) return;
+    if (!m_interactor || m_observerInstalled) {
+        return;
+    }
 
     m_interactor->RemoveObserver(m_eventCallback);
 
@@ -70,19 +81,52 @@ void QtRenderContext::SetupObservers()
     m_interactor->AddObserver(vtkCommand::MouseWheelBackwardEvent, m_eventCallback, 1.0);
     m_interactor->AddObserver(vtkCommand::TimerEvent, m_eventCallback, 1.0);
 
-    if (m_timerId != -1) m_interactor->DestroyTimer(m_timerId);
+    if (m_timerId != -1) {
+        m_interactor->DestroyTimer(m_timerId);
+    }
     m_timerId = m_interactor->CreateRepeatingTimer(33);
-
     if (m_timerId == -1) {
         return;
     }
+
     m_observerInstalled = true;
 }
 
+void QtRenderContext::TeardownObservers()
+{
+    if (!m_interactor) {
+        return;
+    }
+
+    if (m_timerId != -1) {
+        m_interactor->DestroyTimer(m_timerId);
+        m_timerId = -1;
+    }
+
+    if (m_eventCallback) {
+        m_interactor->RemoveObserver(m_eventCallback);
+    }
+
+    m_observerInstalled = false;
+}
+
+void QtRenderContext::BuildInteractionRouter()
+{
+    m_interactionRouter.Clear();
+    if (!m_interactiveService) {
+        return;
+    }
+
+    m_interactionRouter.Add(std::make_unique<TimeUpdateHandler>(m_interactiveService.get(), m_renderWindow.GetPointer()));
+    m_interactionRouter.Add(std::make_unique<Viewer2DHandler>(m_interactiveService.get(), m_picker.GetPointer(), m_renderer.GetPointer()));
+    m_interactionRouter.Add(std::make_unique<Viewer3DHandler>(m_interactiveService.get(), m_picker.GetPointer(), m_renderer.GetPointer()));
+}
 
 void QtRenderContext::Start()
 {
-    if (m_renderWindow) m_renderWindow->Render();
+    if (m_renderWindow) {
+        m_renderWindow->Render();
+    }
     if (m_interactor && !m_interactor->GetInitialized()) {
         m_interactor->Initialize();
     }
@@ -91,7 +135,9 @@ void QtRenderContext::Start()
 void QtRenderContext::SetInteractionMode(VizMode mode)
 {
     m_currentMode = mode;
-    if (!m_interactor) return;
+    if (!m_interactor) {
+        return;
+    }
 
     if (mode == VizMode::SliceAxial || mode == VizMode::SliceCoronal || mode == VizMode::SliceSagittal) {
         auto style = vtkSmartPointer<vtkInteractorStyleImage>::New();
@@ -104,112 +150,42 @@ void QtRenderContext::SetInteractionMode(VizMode mode)
     }
 }
 
+void QtRenderContext::SetToolMode(ToolMode mode)
+{
+    m_toolMode = mode;
+}
+
 void QtRenderContext::HandleVTKEvent(vtkObject* caller, long unsigned int eventId, void* callData)
 {
-    if (!m_interactiveService) return; 
+    (void)callData;
 
-    vtkRenderWindowInteractor* iren = static_cast<vtkRenderWindowInteractor*>(caller);
-    int* eventPos = iren->GetEventPosition();
-
-    // 1. 心跳逻辑：处理后端的懒更新 
-    if (eventId == vtkCommand::TimerEvent) {
-        // 让 Service 处理挂起的数据变更 如tf改变
-        m_interactiveService->ProcessPendingUpdates();
-
-        // 如果 Service 标记数据脏了，触发 Qt 窗口重绘
-        if (m_interactiveService->IsDirty()) {
-           if (m_renderWindow /*&& m_renderWindow->GetMapped()*/) {
-                m_renderWindow->Render();
-           }
-            m_interactiveService->SetDirty(false);
-        }
+    if (!m_interactiveService) {
         return;
     }
 
-    // 2. 2D 切片交互逻辑
-    if (m_currentMode == VizMode::SliceAxial ||
-        m_currentMode == VizMode::SliceCoronal ||
-        m_currentMode == VizMode::SliceSagittal)
-    {
-        // 滚轮切片
-        if (eventId == vtkCommand::MouseWheelForwardEvent || eventId == vtkCommand::MouseWheelBackwardEvent)
-        {
-            int delta = (eventId == vtkCommand::MouseWheelForwardEvent) ? 1 : -1;
-            m_interactiveService->UpdateInteraction(delta);
-            m_interactiveService->SetDirty(true); // 标记脏，下一帧Timer会渲染
-            m_eventCallback->SetAbortFlag(1);
-            return;
-        }
-
-        // Shift + 左键拖动十字线
-        if (eventId == vtkCommand::LeftButtonPressEvent)
-        {
-            if (iren->GetShiftKey()) {
-                m_enableDragCrosshair = true;
-                m_interactiveService->SetInteracting(true); // 告诉后端正在交互（可能降采样）
-                m_eventCallback->SetAbortFlag(1);
-            }
-        }
-        else if (eventId == vtkCommand::LeftButtonReleaseEvent)
-        {
-            if (m_enableDragCrosshair) {
-                m_enableDragCrosshair = false;
-                m_interactiveService->SetInteracting(false);
-            }
-        }
-        else if (eventId == vtkCommand::MouseMoveEvent)
-        {
-            if (m_enableDragCrosshair)
-            {
-                // 直接将拾取的世界坐标传给 Service，不再自己在 Context 算索引
-                m_picker->Pick(eventPos[0], eventPos[1], 0, m_renderer);
-                double* worldPos = m_picker->GetPickPosition();
-
-                m_interactiveService->SyncCursorToWorldPosition(worldPos);
-                m_eventCallback->SetAbortFlag(1);
-            }
-        }
+    auto* iren = vtkRenderWindowInteractor::SafeDownCast(caller);
+    if (!iren) {
+        return;
     }
- 
-    // 3. 3D 视图交互逻辑 (拖动切片平面)
-    else if (m_currentMode == VizMode::CompositeVolume || m_currentMode == VizMode::CompositeIsoSurface)
-    {
-        if (eventId == vtkCommand::LeftButtonPressEvent)
-        {
-            // 尝试拾取
-            if (m_picker->Pick(eventPos[0], eventPos[1], 0, m_renderer)) {
-                vtkActor* actor = m_picker->GetActor();
-                int axis = m_interactiveService->GetPlaneAxis(actor);
 
-                if (axis != -1) {
-                    m_isDragging = true;
-                    m_dragAxis = axis;
-                    m_interactiveService->SetInteracting(true);
-                    m_eventCallback->SetAbortFlag(1); // 阻止转动相机
-                }
-            }
-        }
-        else if (eventId == vtkCommand::LeftButtonReleaseEvent)
-        {
-            if (m_isDragging) {
-                m_interactiveService->SetInteracting(false);
-                // 强制刷新一次高质量渲染
-                m_interactiveService->MarkDirty();
-            }
-            m_isDragging = false;
-            m_dragAxis = -1;
-        }
-        else if (eventId == vtkCommand::MouseMoveEvent)
-        {
-            if (m_isDragging && m_dragAxis != -1)
-            {
-                m_picker->Pick(eventPos[0], eventPos[1], 0, m_renderer);
-                double* worldPos = m_picker->GetPickPosition();
+    InteractionEvent event;
+    event.vtkEventId = eventId;
+    event.iren = iren;
 
-                // 调用新的同步接口
-                m_interactiveService->SyncCursorToWorldPosition(worldPos);
-                m_eventCallback->SetAbortFlag(1);
-            }
-        }
+    int* eventPos = iren->GetEventPosition();
+    if (eventPos) {
+        event.x = eventPos[0];
+        event.y = eventPos[1];
+    }
+
+    event.shift = iren->GetShiftKey() != 0;
+    event.ctrl = iren->GetControlKey() != 0;
+    event.alt = false;
+    event.vizMode = m_currentMode;
+    event.toolMode = m_toolMode;
+
+    const InteractionResult result = m_interactionRouter.Dispatch(event);
+    if (result.abortVtk && m_eventCallback) {
+        m_eventCallback->SetAbortFlag(1);
     }
 }

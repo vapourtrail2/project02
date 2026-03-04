@@ -7,6 +7,7 @@ class InteractionRouter
 {
 public:
     void Add(std::unique_ptr<IInteractionHandler> handler);
+    void Clear();
     InteractionResult Dispatch(const InteractionEvent& eve);
 
 private:

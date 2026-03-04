@@ -9,6 +9,7 @@
 #include <vtkPlaneSource.h>
 #include <vtkColorTransferFunction.h>
 #include <vtkPiecewiseFunction.h>
+#include <vtkPolyDataMapper.h>
 #include <vtkCubeAxesActor.h>
 #include <vtkFlyingEdges3D.h>
 
@@ -28,6 +29,12 @@ private:
     vtkSmartPointer<vtkActor> m_actor;
     vtkSmartPointer<vtkCubeAxesActor> m_cubeAxes; // 坐标轴
     vtkSmartPointer<vtkImageData> m_sourceImage;  // 原始数据引用
+    vtkSmartPointer<vtkFlyingEdges3D> m_isoExtractor;
+    vtkSmartPointer<vtkPolyDataMapper> m_isoMapper;
+
+    double m_lastIsoValue = 0.0;
+    bool m_hasLastIsoValue = false;
+    
 };
 
 // --- 策略 B: 体渲染 ---

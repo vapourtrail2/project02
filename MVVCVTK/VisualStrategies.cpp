@@ -7,12 +7,23 @@
 #include <vtkPiecewiseFunction.h>
 #include <vtkCamera.h>
 #include <vtkImageProperty.h>
+#include <cmath>
 
 
 // ================= IsoSurfaceStrategy =================
+//修改 2/28 等值面阈值  3/2 修改
 IsoSurfaceStrategy::IsoSurfaceStrategy() {
     m_actor = vtkSmartPointer<vtkActor>::New();
     m_cubeAxes = vtkSmartPointer<vtkCubeAxesActor>::New();
+
+    m_isoExtractor = vtkSmartPointer<vtkFlyingEdges3D>::New();
+    // 法线计算会显著增加等值面重建成本，默认关闭，
+    // 当用户开启光照时在材质更新里按需打开
+	m_isoExtractor->ComputeNormalsOff();//这个函数的意思是关闭法线计算，等值面提取时不计算法线，这样可以提高性能，但会导致渲染效果较差，特别是在有光照的情况下。用户可以在材质更新时根据需要开启或关闭法线计算，以平衡性能和视觉效果
+
+    m_isoMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+	m_isoMapper->ScalarVisibilityOff();//这个函数的意思是关闭标量可见性，等值面提取后生成的多边形数据将不会根据标量值进行着色，而是使用单一颜色。这通常用于等值面渲染，因为等值面本身已经代表了一个特定的标量值，关闭标量可见性可以简化渲染过程，提高性能，同时也避免了不必要的颜色映射。用户可以根据需要选择是否开启标量可见性，以实现不同的视觉效果。
+    m_actor->SetMapper(m_isoMapper);
 }
 
 void IsoSurfaceStrategy::SetInputData(vtkSmartPointer<vtkDataObject> data) {
@@ -37,14 +48,19 @@ void IsoSurfaceStrategy::SetInputData(vtkSmartPointer<vtkDataObject> data) {
 
     // 作为 ImageData (需要实时计算)
     auto img = vtkImageData::SafeDownCast(data);
+    //修改 2/28
     if (img) {
-        m_sourceImage = img; // 保存引用
+        m_sourceImage = img;
         m_cubeAxes->SetBounds(img->GetBounds());
 
-        // 触发一次初始计算
+        m_isoExtractor->SetInputData(m_sourceImage);
+        m_isoMapper->SetInputConnection(m_isoExtractor->GetOutputPort());
+
+        m_hasLastIsoValue = false;
+
         RenderParams dummy;
         double range[2]; img->GetScalarRange(range);
-        dummy.isoValue = range[0] + (range[1] - range[0]) * 0.2; // 默认阈值
+        dummy.isoValue = range[0] + (range[1] - range[0]) * 0.2;
         UpdateVisuals(dummy, UpdateFlags::IsoValue);
     }
 }
@@ -69,37 +85,52 @@ void IsoSurfaceStrategy::SetupCamera(vtkSmartPointer<vtkRenderer> ren) {
 void IsoSurfaceStrategy::UpdateVisuals(const RenderParams& params, UpdateFlags flags)
 {
     if (!m_actor) return;
-    auto prop = m_actor->GetProperty();
+	auto prop = m_actor->GetProperty();//获取当前 actor 的属性对象，这个对象包含了控制渲染外观的各种参数，如颜色、光照、透明度等。通过这个属性对象，策略可以根据传入的 RenderParams 来更新等值面的视觉效果。
 
     // 响应 UpdateFlags::Material
     if ((int)flags & (int)UpdateFlags::Material) {
+		const bool wasShadeOn = (prop->GetInterpolation() == VTK_PHONG);//这句话的具体意思是检查当前材质的插值方式是否为 Phong 插值，如果是，则认为之前的光照状态是开启的（shadeOn = true），否则认为是关闭的（shadeOn = false）。这个状态会在后续判断中用来决定是否需要重新计算法线，以优化性能。
 
         // 设置光照参数
         prop->SetAmbient(params.material.ambient);
         prop->SetDiffuse(params.material.diffuse);
         prop->SetSpecular(params.material.specular);
         prop->SetSpecularPower(params.material.specularPower);
-
         // 设置几何体透明度
         prop->SetOpacity(params.material.opacity);
         // 设置着色方式,开启光照
-        if (params.material.shadeOn) prop->SetInterpolationToPhong();
-        else prop->SetInterpolationToFlat();
+        if (params.material.shadeOn) { 
+            prop->SetInterpolationToPhong();
+        }
+        else {
+            prop->SetInterpolationToFlat();
+        }
+
+        // 仅在需要时计算法线，减少阈值变更时的提取开销
+        if (m_sourceImage && m_isoExtractor && (params.material.shadeOn != wasShadeOn)) {
+            if (params.material.shadeOn) {
+                m_isoExtractor->ComputeNormalsOn();
+            }
+            else {
+                m_isoExtractor->ComputeNormalsOff();
+            }
+            m_isoExtractor->Modified();
+        }
     }
 
     // 响应 UpdateFlags::IsoValue
     if (((int)flags & (int)UpdateFlags::IsoValue) && m_sourceImage) {
-        // 使用 FlyingEdges3D 快速提取
-        auto iso = vtkSmartPointer<vtkFlyingEdges3D>::New();
-        iso->SetInputData(m_sourceImage);
-        iso->SetValue(0, params.isoValue);
-        iso->ComputeNormalsOn();
-        iso->Update();
+        if (m_hasLastIsoValue && std::abs(params.isoValue - m_lastIsoValue) < 1e-3) {
+            return;
+        }
 
-        auto mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-        mapper->SetInputData(iso->GetOutput());
-        mapper->ScalarVisibilityOff();
-        m_actor->SetMapper(mapper);
+        m_isoExtractor->SetValue(0, params.isoValue);
+        // 不在这里强制同步 Update，交由后续 Render 懒更新，
+        // 避免在事件处理线程中长时间阻塞。
+        m_isoExtractor->Modified();
+
+        m_lastIsoValue = params.isoValue;
+        m_hasLastIsoValue = true;
     }
 }
 

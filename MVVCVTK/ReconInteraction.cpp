@@ -43,7 +43,9 @@ void CTViewer::openCtReconUi()
             // 初始化四视图+mount到StartPage的viewerHost
             if (mprViews_) {
                 mprViews_->initWithData(this->m_currentDataMgr, this->m_currentState);
-                stack_->setCurrentWidget(mprViews_);
+                if (secondstack_ && workspacePage_) {
+                    secondstack_->setCurrentWidget(workspacePage_);
+                }
                 tabBar_->setCurrentIndex(1);
                 statusBar()->showMessage(QStringLiteral("重建完成，视图已更新。"), 3000);
             }

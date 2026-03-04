@@ -11,8 +11,8 @@
 #include "AppInterfaces.h"
 #include "AppState.h"
 #include "c_ui/workbenches/ReconstructPage.h"
-using namespace std;
 
+class QVBoxLayout;
 class DocumentPage;
 class StartPagePage;
 class EditPage;
@@ -49,6 +49,29 @@ private:
     void setDefaults();
     void updateMaximizeButtonIcon();
     void openCtReconUi();
+
+    //top area
+	void buildTitleBar(QWidget* topBarContainer,QVBoxLayout* topBarLayout);
+	void buildRibbonTitleBar(QWidget* topBarContainer,QVBoxLayout* topBarLayout);
+	void connectWindowButtonSignals();
+
+    //middle area
+    void buildRibbonStack(QWidget* totalContainer, QVBoxLayout* rootLayout);
+    void buildContentStack(QWidget* totalContainer, QVBoxLayout* rootLayout);
+	void buildWorkspacePage();
+	void buildEmptyPage();
+	void applyInitialUiState();
+    
+    //signal
+    void connectTabSignals();
+    void connectDocumentSignals();
+    void connectReconSignals();
+    
+    //handers
+	void onTabChanged(int index);
+	void onOpenRequested(const QString& path);
+    bool initWorkspaceFromCurrentSession(QString* errorOut = nullptr);
+
 
 private:
     //关于标题栏拖动的变量
@@ -88,8 +111,8 @@ private:
 	QPointer<QStackedWidget> stack_;//放开始 编辑 体积 这些工具页 固定高度iconHeight_
     QPointer<QStackedWidget> secondstack_;//占满剩余高度，放 Backstage(DocumentPage)、Workspace(四视图+右侧面板)、Empty(无数据提示)
   
-    shared_ptr<AbstractDataManager> m_currentDataMgr;
-    shared_ptr<SharedInteractionState> m_currentState;
+    std::shared_ptr<AbstractDataManager> m_currentDataMgr;
+    std::shared_ptr<SharedInteractionState> m_currentState;
 
 	UIReconstruct3D* uiRecon3d_ = nullptr;
 	QPointer<AppController> appController_;
@@ -101,6 +124,4 @@ private:
     QPointer<RenderPanel> renderPanel_;
 
     int iconHeight_ = 100;// 图标区高度
-    
-    
 };

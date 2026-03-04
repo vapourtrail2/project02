@@ -94,18 +94,29 @@ RenderPanel::RenderPanel(QWidget* parent)
     v->addWidget(matGroup);
     v->addStretch();
 
-    // -------------------------
-    // UI -> State
-    // -------------------------
-    connect(isoSlider_, &QSlider::valueChanged, this, [this](int v) {
-        if (!state_ || updatingUi_) return;
-
+    //修改 避免每一帧都触发3D重算
+    auto sliderToIso= [this](int v) {
         const double t = static_cast<double>(v) / 1000.0;
-        const double iso = rangeMin_ + (rangeMax_ - rangeMin_) * t;
+		return rangeMin_ + (rangeMax_ - rangeMin_) * t;
+		};
 
-        state_->SetIsoValue(iso);
+    //3/3 两个信号有点问题
+    connect(isoSlider_, &QSlider::valueChanged, this, [this,sliderToIso](int v) {
+        if (!state_ || updatingUi_) { 
+            return;
+        }
+
+		const double iso = sliderToIso(v);
         isoValueLabel_->setText(QString("ISO: %1").arg(iso, 0, 'f', 2));
         });
+
+    //拖动松手后再提交一次
+    connect(isoSlider_, &QSlider::sliderReleased, this, [this, sliderToIso]() {
+        if (!state_ || updatingUi_) return;
+        const double iso = sliderToIso(isoSlider_->value());
+        state_->SetIsoValue(iso);
+        });
+
 
     auto onMatChanged = [this]() {
         if (!state_ || updatingUi_) return;
