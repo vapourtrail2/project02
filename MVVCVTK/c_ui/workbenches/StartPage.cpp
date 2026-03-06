@@ -1,4 +1,6 @@
 ﻿#include "StartPage.h"
+#include "c_ui/workbenches/common/RibbonCommon.h"
+#include "c_ui/workbenches/common/IconMaps/StartIconMap.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QFrame>
@@ -14,79 +16,9 @@
 #include <QDebug>
 #include <QFile>
 
-//static是作用域限定符，表示该函数仅在当前文件内可见，防止命名冲突
-//辅助函数控制换行
-static QString wrapByWidth(const QString& s, const QFont& font, int maxWidthPx) {//第三个参数为一行允许的最大像素宽度
-    QFontMetrics fm(font); //给出这个字体下每个字符或者字符串的像素宽度
-    QString out;
-    int lineWidth = 0;//当前行的已占用的像素宽度累计
-
-    auto flushLineBreak = [&]() { out += QChar('\n');
-    lineWidth = 0; };
-
-    for (int i = 0; i < s.size(); ++i) {
-        const QChar ch = s.at(i);//获得指定位置的字符
-        int w = fm.horizontalAdvance(ch);//该字符在当前字体下的像素宽度
-
-        // 优先在自然断点处换行
-        bool isBreakable = (ch.isSpace() || ch == '/' || ch == '·' || ch == '、');
-        if (lineWidth + w > maxWidthPx) {
-            if (!out.isEmpty())
-            {
-                flushLineBreak();
-            }
-        }
-        out += ch;
-        lineWidth += w;
-        if (isBreakable) {
-            if (lineWidth > maxWidthPx * 0.85)
-            {
-                flushLineBreak();
-            }
-        }
-    }
-    return out;
-}
-
-// 辅助函数  根据按钮文本加载对应图标
+// 保留本页“文案->图标路径”数据，具体匹配逻辑复用 RibbonCommon，避免重复代码。
 static QIcon loadIconFor(const QString& text) {
-    struct Map {
-        QString key; //避免编码转换 直接用QString
-        const char* file;
-    };
-    static const Map map[] = {
-        { QStringLiteral("快速导入"),  ":/start_icons01/icons_other/start_icons/quick_input.png" },
-        { QStringLiteral("体积导入"),  ":/start_icons01/icons_other/start_icons/reload_volume_data.png" },
-        { QStringLiteral("显示模式"), ":/start_icons01/icons_other/start_icons/display_pattern.png" },
-        { QStringLiteral("水平/窗口模式"),  ":/start_icons01/icons_other/start_icons/shuipingchuangkou.png" },
-        { QStringLiteral("厚板"),  ":/start_icons01/icons_other/start_icons/thick_board.PNG" },
-        { QStringLiteral("裁剪当前切片图"),  ":/start_icons01/icons_other/start_icons/clip_plane.png" },
-        { QStringLiteral("对齐"),  ":/start_icons01/icons_other/start_icons/simple_align.png" },
-        { QStringLiteral("指示器"),  ":/start_icons01/icons_other/start_icons/indicator.PNG" },
-        { QStringLiteral("距离"),  ":/start_icons01/icons_other/start_icons/distance.PNG" },
-        { QStringLiteral("角度(4个点)"),      ":/start_icons01/icons_other/start_icons/angle_4points.PNG" },
-        { QStringLiteral("角度(3个点)"),        ":/start_icons01/icons_other/start_icons/angle_3points.PNG" },
-        { QStringLiteral("折线长度"),        ":/start_icons01/icons_other/start_icons/fold_line_length.PNG" },
-        { QStringLiteral("最小/最大距离"),        ":/start_icons01/icons_other/start_icons/max_min_distance.PNG" },
-        { QStringLiteral("卡尺"),":/start_icons01/icons_other/start_icons/caliper.PNG" },
-        { QStringLiteral("捕捉模式"),":/start_icons01/icons_other/start_icons/capture_pattern.PNG" },
-        { QStringLiteral("重新捕捉量具控点"),  ":/start_icons01/icons_other/start_icons/re_capture_measure_tool_control_point.PNG" },
-        { QStringLiteral("创建报告"),  ":/start_icons01/icons_other/start_icons/create_report.PNG" },
-        { QStringLiteral("创建书签"),  ":/start_icons01/icons_other/start_icons/create_bookmark.PNG" },
-        { QStringLiteral("书签编辑器"),  ":/start_icons01/icons_other/start_icons/bookmark_editor.PNG" },
-        { QStringLiteral("保存图像/影片"),  ":/start_icons01/icons_other/start_icons/save_image.png" },
-    };
-
-    for (const auto& m : map) {
-        if (text == m.key) {
-            const QString path = QString::fromUtf8(m.file);
-            QIcon ico(path);//用给定的路径 创建一个Qicon对象
-            if (!ico.isNull()) {
-                return ico;//
-            }
-        }
-    }
-    return QIcon(":/icons/icons/move.png");
+    return RibbonCommon::loadIconByText(text, IconMaps::kStartIconMap);
 }
 
 
@@ -154,8 +86,9 @@ QWidget* StartPagePage::buildRibbon01(QWidget* parent)
     for (const auto& action : actions01) {
         // 每个功能都使用图标,文字的形式展示
         auto* button = new QToolButton(ribbon01_);
-        QString wrappedText = wrapByWidth(action.text, button->font(), 51);
-        button->setText(wrappedText);
+        // 换行规则统一到公共函数，后续调规则只改一处。
+        QString afterShiftText = RibbonCommon::shiftNewLine(action.text, button->font(), 51);
+        button->setText(afterShiftText);
         button->setIcon(loadIconFor(action.text));
         button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
         button->setIconSize(QSize(40, 40));

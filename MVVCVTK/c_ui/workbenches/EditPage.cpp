@@ -1,4 +1,5 @@
 ﻿#include "EditPage.h"
+#include "c_ui/workbenches/common/RibbonCommon.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QFrame>
@@ -14,77 +15,27 @@
 #include <QDebug>
 #include <QFile>
 
-//static是作用域限定符，表示该函数仅在当前文件内可见，防止命名冲突
-//辅助函数控制换行
-static QString wrapByWidth(const QString& s, const QFont& font, int maxWidthPx) {//第三个参数为一行允许的最大像素宽度
-    QFontMetrics fm(font); //给出这个字体下每个字符或者字符串的像素宽度
-    QString out; 
-    int lineWidth = 0;//当前行的已占用的像素宽度累计
-
-    auto flushLineBreak = [&]() { out += QChar('\n');
-                                  lineWidth = 0; };
-
-    for (int i = 0; i < s.size(); ++i) {
-        const QChar ch = s.at(i);//获得指定位置的字符
-        int w = fm.horizontalAdvance(ch);//该字符在当前字体下的像素宽度
-
-        // 优先在自然断点处换行
-        bool isBreakable = (ch.isSpace() || ch == '/' || ch == '·' || ch == '、');
-        if (lineWidth + (w*1.2) > maxWidthPx) {
-            if (!out.isEmpty())
-            {
-                flushLineBreak();
-            }
-        }
-        out += ch;
-        lineWidth += w;
-        if (isBreakable) {
-            if (lineWidth > maxWidthPx * 0.85) 
-            {
-                flushLineBreak();
-            }
-        }
-    }
-    return out;
-}
-
-// 辅助函数  根据按钮文本加载对应图标
-static QIcon loadIconFor(const QString& text) {
-    struct Map {
-		QString key; //避免编码转换 直接用QString
-        const char* file;
-    };
-    static const Map map[] = {
-        { QStringLiteral("撤销"),  ":/icons/icons/undo.png" },
-        { QStringLiteral("重做"),  ":/icons/icons/redo.png" },
+namespace {
+    const RibbonCommon::IconMapItem kEditIconMap[] = {
+        { QStringLiteral("撤销"), ":/icons/icons/undo.png" },
+        { QStringLiteral("重做"), ":/icons/icons/redo.png" },
         { QStringLiteral("释放内存/清除撤销队列"), ":/icons/icons/free_memory.png" },
-        { QStringLiteral("剪切"),  ":/icons/icons/cut.png" },
-        { QStringLiteral("复制"),  ":/icons/icons/copy.png" },
-        { QStringLiteral("粘贴"),  ":/icons/icons/paste.png" },
-        { QStringLiteral("删除"),  ":/icons/icons/delete.png" },
-        { QStringLiteral("创建对象组"),  ":/icons/icons/create_obj_group.png" },
-        { QStringLiteral("取消对象组"),  ":/icons/icons/cancel_obj_group.png" },
-        { QStringLiteral("转换为"),      ":/icons/icons/trans_pull_down_menu/trans.png" },
-        { QStringLiteral("属性"),        ":/icons/icons/property.png" },
-        { QStringLiteral("旋转"),        ":/icons/icons/spin.png" },
-        { QStringLiteral("移动"),        ":/icons/icons/move.png" },
-        { QStringLiteral("复制可视状态"),":/icons/icons/copy_visible_status.png" },
-        { QStringLiteral("粘贴可视状态"),":/icons/icons/paste_visible_status.png" },
-        { QStringLiteral("复制元信息"),  ":/icons/icons/copy_meta.png" },
-        { QStringLiteral("粘贴元信息"),  ":/icons/icons/paste_meta.png" },
-        { QStringLiteral("动态重命名"),  ":/icons/icons/dynamic_rename.png" },
+        { QStringLiteral("剪切"), ":/icons/icons/cut.png" },
+        { QStringLiteral("复制"), ":/icons/icons/copy.png" },
+        { QStringLiteral("粘贴"), ":/icons/icons/paste.png" },
+        { QStringLiteral("删除"), ":/icons/icons/delete.png" },
+        { QStringLiteral("创建对象组"), ":/icons/icons/create_obj_group.png" },
+        { QStringLiteral("取消对象组"), ":/icons/icons/cancel_obj_group.png" },
+        { QStringLiteral("转换为"), ":/icons/icons/trans_pull_down_menu/trans.png" },
+        { QStringLiteral("属性"), ":/icons/icons/property.png" },
+        { QStringLiteral("旋转"), ":/icons/icons/spin.png" },
+        { QStringLiteral("移动"), ":/icons/icons/move.png" },
+        { QStringLiteral("复制可视状态"), ":/icons/icons/copy_visible_status.png" },
+        { QStringLiteral("粘贴可视状态"), ":/icons/icons/paste_visible_status.png" },
+        { QStringLiteral("复制元信息"), ":/icons/icons/copy_meta.png" },
+        { QStringLiteral("粘贴元信息"), ":/icons/icons/paste_meta.png" },
+        { QStringLiteral("动态重命名"), ":/icons/icons/dynamic_rename.png" },
     };
-
-    for (const auto& m : map) {
-        if (text == m.key) {
-            const QString path = QString::fromUtf8(m.file);
-            QIcon ico(path);//用给定的路径 创建一个Qicon对象
-			if (!ico.isNull()){
-				return ico;
-            }
-        }
-    }
-    return QIcon(":/icons/icons/move.png");
 }
 
 EditPage::EditPage(QWidget* parent)
@@ -149,9 +100,9 @@ QWidget* EditPage::buildRibbon(QWidget* parent)
 	for (const auto& action : actions) {
         // 每个功能都使用图标,文字的形式展示
         auto* button = new QToolButton(ribbon); 
-        QString wrappedText = wrapByWidth(action.text, button->font(), 70);
-        button->setText(wrappedText);
-        button->setIcon(loadIconFor(action.text));
+        QString afterShiftText = RibbonCommon::shiftNewLine(action.text, button->font(), 70,1.2);
+        button->setText(afterShiftText);
+        button->setIcon(RibbonCommon::loadIconByText(action.text,kEditIconMap));
         button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
         button->setIconSize(QSize(40, 40));
         button->setMinimumSize(QSize(70, 90));

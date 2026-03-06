@@ -17,6 +17,8 @@
 #include "AppController.h"
 #include "c_ui/panels/RenderPanel.h"
 #include "c_ui/panels/SceneTreePanel.h"
+#include "c_ui/nav/TabMap.h"
+#include "c_ui/nav/WorkspaceFlow.h"
 
 #include <QApplication>
 #include <QSize>
@@ -62,6 +64,9 @@ CTViewer::CTViewer(QWidget* parent)
         "QMainWindow{background-color:#121212;}"
         "QMenuBar, QStatusBar{background-color:#1a1a1a; color:#e0e0e0;}"));
 
+
+    tabMap_ = std::make_unique<TabMap>();//这行的作用是创建一个TabMap对象，并将其指针存储在tabMap_成员变量中。TabMap可能是一个用于管理应用程序中不同标签页或视图的类，负责协调标签页之间的切换和状态管理。通过使用std::make_unique，可以确保tabMap_拥有TabMap对象的所有权，并且在CTViewer对象销毁时会自动释放内存，避免内存泄漏。
+
     //结构 
     buildTheTop();
     buildTheMiddle();  
@@ -104,9 +109,10 @@ void CTViewer::buildTheMiddle()
 
     setCentralWidget(totalContainer);
     appController_ = new AppController(this);//这行的作用存疑
-
+	workspaceFlow_ = std::make_unique<WorkspaceFlow>(appController_);//这句话的意思是创建一个WorkspaceFlow对象，并将appController_的指针传递给它，以便WorkspaceFlow能够与AppController进行交互和通信。这种设计通常用于实现应用程序中不同组件之间的协调和数据共享。
+	//make_unique的作用是？
     applyInitialUiState();
-}
+}   
 
 void CTViewer::wireConnect() {
     connectTabSignals();
@@ -222,28 +228,13 @@ void CTViewer::buildRibbonTitleBar(QWidget* topBarContainer, QVBoxLayout* topBar
         "QTabBar#mainRibbonTabBar::tab:hover{background-color:#2a2a2a;}"));
 
     //填充标签名称
-    const QStringList tabNames = {
-           QStringLiteral("文件"),
-           QStringLiteral("开始"),
-           QStringLiteral("编辑"),
-           QStringLiteral("体积"),
-           QStringLiteral("选择"),
-           QStringLiteral("对齐"),
-           QStringLiteral("几何"),
-           QStringLiteral("测量"),
-           QStringLiteral("CAD/表面测量"),
-           QStringLiteral("分析"),
-           QStringLiteral("报告"),
-           QStringLiteral("动画"),
-           QStringLiteral("窗口"),
-           QStringLiteral("量具"),
-    };
-
+	const QStringList tabNames = tabMap_->tabNames();
+          
     for (auto name : tabNames) {
         tabBar_->addTab(name);
     }
 
-    tabBar_->setCurrentIndex(0);//把下标设置成0 默认选中第一个标签页
+    tabBar_->setCurrentIndex(TabIndex::File);
     topBarLayout->addWidget(tabBar_);
 }
 
@@ -262,42 +253,71 @@ void CTViewer::connectWindowButtonSignals() {
     connect(btnClose_, &QToolButton::clicked, this, &CTViewer::close);
 }
 
-
-
 //start edit volune ...
 void CTViewer::buildRibbonStack(QWidget* totalContainer, QVBoxLayout* rootLayout) {
     stack_ = new QStackedWidget(totalContainer);
     stack_->setFixedHeight(iconHeight_);
     rootLayout->addWidget(stack_, 0);
 
-    whatEmpty_ = new QWidget(stack_);//这句话的详细意思是：创建一个新的 QWidget 对象，并将其父对象设置为 stack_。这意味着 whatEmpty_ 将成为 stack_ 的子组件。当你将 whatEmpty_ 添加到 stack_ 中时，它会被管理在 stack_ 的堆叠布局中，stack_ 会负责显示哪个子组件（页面）是当前可见的。
-    stack_->addWidget(whatEmpty_);
+    //修改 加的lambda
+    auto bindPage = [this](int index, QWidget* page) {
+        if (tabMap_)
+        {
+			tabMap_->bindTabPage(index, page);
+        }
+    };
 
-    //添加多个页面
+	whatEmpty_ = new QWidget(stack_);
+	stack_->addWidget(whatEmpty_);
+
+    //添加多个页面  使用枚举
     pageStart_ = new StartPagePage(stack_);
     stack_->addWidget(pageStart_);
+    bindPage(TabIndex::Start, pageStart_);
+
     pageEdit_ = new EditPage(stack_);
     stack_->addWidget(pageEdit_);
+    bindPage(TabIndex::Edit, pageEdit_);
+
     pageVolume_ = new VolumePage(stack_);
     stack_->addWidget(pageVolume_);
+    bindPage(TabIndex::Volume, pageVolume_);
+
     pageSelect_ = new SelectPage(stack_);
     stack_->addWidget(pageSelect_);
+    bindPage(TabIndex::Select, pageSelect_);
+
     pageAlignment_ = new AlignmentPage(stack_);
     stack_->addWidget(pageAlignment_);
+    bindPage(TabIndex::Align, pageAlignment_);
+
     pageGeometry_ = new GeometryPage(stack_);
     stack_->addWidget(pageGeometry_);
+    bindPage(TabIndex::Geometry, pageGeometry_);
+
     pageMeasure_ = new MeasurePage(stack_);
     stack_->addWidget(pageMeasure_);
+    bindPage(TabIndex::Measure, pageMeasure_);
+
     pageCAD_ = new CADAndThen(stack_);
     stack_->addWidget(pageCAD_);
+    bindPage(TabIndex::Cad, pageCAD_);
+
     pageAnalysis_ = new AnalysisPage(stack_);
     stack_->addWidget(pageAnalysis_);
-    pageWindow_ = new WindowPage(stack_);
-    stack_->addWidget(pageWindow_);
+    bindPage(TabIndex::Analysis, pageAnalysis_);
+
     pageReport_ = new ReportPage(stack_);
     stack_->addWidget(pageReport_);
+    bindPage(TabIndex::Report, pageReport_);
+
     pageAnimation_ = new AnimationPage(stack_);
     stack_->addWidget(pageAnimation_);
+    bindPage(TabIndex::Animation, pageAnimation_);
+
+    pageWindow_ = new WindowPage(stack_);
+    stack_->addWidget(pageWindow_);
+    bindPage(TabIndex::Window, pageWindow_);
 }
 
 void CTViewer::buildContentStack(QWidget* totalContainer, QVBoxLayout* rootLayout) {
@@ -374,8 +394,6 @@ void CTViewer::applyInitialUiState() {
     }
 }
 
-
-
 void CTViewer::connectTabSignals() {
     connect(tabBar_, &QTabBar::currentChanged, this, &CTViewer::onTabChanged);
 }
@@ -398,90 +416,93 @@ void CTViewer::connectReconSignals() {
         });
 }
 
-void CTViewer::onTabChanged(int index) {
-    if (!stack_ || !secondstack_) return;
+//架构优化 buildxxx 和 applyxxx分离，build只负责算，apply只负责改界面 
+UiState CTViewer::buildUiState(int index) const{
+    UiState state;
+    state.tabIndex = index;
 
-    auto session = appController_ ? appController_->session() : nullptr;
-    const bool hasData = (session && session->dataMgr && session->sharedState)
-        || (m_currentDataMgr && m_currentState);
+    //业务集中在一个地方
+    const bool hasData = (workspaceFlow_ && workspaceFlow_->hasData())||(m_currentDataMgr && m_currentState);
+    //文件页
+    if (tabMap_ && tabMap_->isFileTab(index)) {
+		state.showRibbon = false;
+        state.ribbonHeight = 0;
+		state.contentTarget = ContentTarget::Document;
+        state.ribbonPage = whatEmpty_;
+        return state;
+    }
 
-    if (index == 0) {
-        if (stack_) {
-            stack_->setFixedHeight(0);
-            stack_->setVisible(false);
-        }
+	//其他页
+    state.showRibbon = true;
+	state.ribbonHeight = iconHeight_;
+    state.contentTarget = hasData ? ContentTarget::Workspace : ContentTarget::Empty;
+    //tab对应哪个ribbon，统一从Tabmap取
+    state.ribbonPage = tabMap_ ? tabMap_->tabPage(index) : nullptr;
+	return state;
+}
+
+void CTViewer::applyUiState(const UiState& state) {
+    //界面赋值动作 UI问题只看这一个函数
+    if (!stack_ || !secondstack_) {
+        return;
+    }
+    stack_->setFixedHeight(state.ribbonHeight);
+    stack_->setVisible(state.showRibbon);
+
+    if (!state.showRibbon) {
         if (whatEmpty_) {
             stack_->setCurrentWidget(whatEmpty_);
         }
+    }
+    else if (state.ribbonPage) {
+		stack_->setCurrentWidget(state.ribbonPage);
+    }
+
+    switch (state.contentTarget) {
+    case ContentTarget::Document:
         if (pageDocument_) {
             secondstack_->setCurrentWidget(pageDocument_);
         }
-        return;
+        break;
+    case ContentTarget::Workspace:
+        if (workspacePage_) {
+            secondstack_->setCurrentWidget(workspacePage_);
+        }
+        break;
+    case ContentTarget::Empty:
+        if (emptyPage_) {
+            secondstack_->setCurrentWidget(emptyPage_);
+        }
+        break;
     }
+}
 
-    if (stack_) {
-        stack_->setFixedHeight(iconHeight_);
-        stack_->setVisible(true);
-    }
-
-    if (hasData) {
-        secondstack_->setCurrentWidget(workspacePage_);
-    }
-    else {
-        secondstack_->setCurrentWidget(emptyPage_);
-    }
-
-    if (index == 1 && pageStart_) stack_->setCurrentWidget(pageStart_);
-    else if (index == 2 && pageEdit_) stack_->setCurrentWidget(pageEdit_);
-    else if (index == 3 && pageVolume_) stack_->setCurrentWidget(pageVolume_);
-    else if (index == 4 && pageSelect_) stack_->setCurrentWidget(pageSelect_);
-    else if (index == 5 && pageAlignment_) stack_->setCurrentWidget(pageAlignment_);
-    else if (index == 6 && pageGeometry_) stack_->setCurrentWidget(pageGeometry_);
-    else if (index == 7 && pageMeasure_) stack_->setCurrentWidget(pageMeasure_);
-    else if (index == 8 && pageCAD_) stack_->setCurrentWidget(pageCAD_);
-    else if (index == 9 && pageAnalysis_) stack_->setCurrentWidget(pageAnalysis_);
-    else if (index == 10 && pageReport_) stack_->setCurrentWidget(pageReport_);
-    else if (index == 11 && pageAnimation_) stack_->setCurrentWidget(pageAnimation_);
-    else if (index == 12 && pageWindow_) stack_->setCurrentWidget(pageWindow_);
+void CTViewer::onTabChanged(int index) {
+    const UiState state = buildUiState(index);
+    applyUiState(state);
 }
 
 void CTViewer::onOpenRequested(const QString& path) {
     QString err;
-    if (!appController_ || !appController_->openFile(path, &err)) {
-        statusBar()->showMessage(err.isEmpty() ? QStringLiteral("打开失败") : err, 3000);
-        if (pageDocument_) pageDocument_->notifyFail(err);
-        return;
-    }
+    
+	const bool ok = workspaceFlow_ && workspaceFlow_->openAndBind(path,mprViews_ ,
+        scenePanel_,
+        renderPanel_,
+        &err);
 
-    if (!initWorkspaceFromCurrentSession(&err)) {
-        statusBar()->showMessage(err.isEmpty()?  QStringLiteral("Session 无效"):err, 3000);
+    if (!ok) {
+		const QString msg = err.isEmpty() ? QStringLiteral("打开失败"):err;
+		statusBar()->showMessage(msg, 3000);
+		//失败分支先判空 再调用 避免空指针调用崩溃
         if (pageDocument_) {
-            pageDocument_->notifyFail(err);
+			pageDocument_->notifyFail(msg); 
         }
         return;
     }
+    
     if (pageDocument_) {
         pageDocument_->notifySucc();
     }
-}
-
-bool CTViewer::initWorkspaceFromCurrentSession(QString* errorOut) {
-    auto sess = appController_ ? appController_->session() : nullptr;
-    if (!sess || !sess->dataMgr || !sess->sharedState) {
-        if (errorOut) *errorOut = QStringLiteral("Session 无效");
-        return false;
-    }
-    // 初始化四视图
-    if (mprViews_) {
-        mprViews_->initWithData(sess->dataMgr, sess->sharedState);
-    }
-    if (scenePanel_) {
-        scenePanel_->setSession(sess->dataMgr, sess->sourcePath);
-    }
-    if (renderPanel_) {
-        renderPanel_->setSession(sess);
-    }
-    return true;
 }
 
 bool CTViewer::eventFilter(QObject* watched, QEvent* event)//实现标题栏拖动

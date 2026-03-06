@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\Microsoft.Windows.CppWinRT.2.0.220531.1\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('..\packages\Microsoft.Windows.CppWinRT.2.0.220531.1\build\native\Microsoft.Windows.CppWinRT.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -175,6 +176,9 @@
     <QtMoc Include="c_ui\MainWindow.h" />
     <QtMoc Include="c_ui\panels\SceneTreePanel.h" />
     <QtMoc Include="c_ui\panels\RenderPanel.h" />
+    <ClInclude Include="c_ui\nav\TabMap.h" />
+    <ClInclude Include="c_ui\nav\UIState.h" />
+    <ClInclude Include="c_ui\nav\WorkspaceFlow.h" />
     <ClInclude Include="c_ui\qt\interaction\handlers\2DViewerHandler.h" />
     <ClInclude Include="c_ui\qt\interaction\handlers\3DViewerHandler.h" />
     <ClInclude Include="c_ui\qt\interaction\handlers\TimeUpdateHandler.h" />
@@ -192,6 +196,8 @@
     <QtMoc Include="c_ui\workbenches\GeometryPage.h" />
     <QtMoc Include="c_ui\workbenches\HelpPage.h" />
     <QtMoc Include="c_ui\workbenches\MeasurePage.h" />
+    <ClInclude Include="c_ui\workbenches\common\IconMaps\StartIconMap.h" />
+    <ClInclude Include="c_ui\workbenches\common\RibbonCommon.h" />
     <ClInclude Include="c_ui\workbenches\PerformancePage.h" />
     <QtMoc Include="c_ui\workbenches\ReconstructPage.h" />
     <QtMoc Include="c_ui\workbenches\ReportPage.h" />
@@ -210,6 +216,8 @@
     <ClCompile Include="c_ui\app\app.cpp" />
     <ClCompile Include="c_ui\main.cpp" />
     <ClCompile Include="c_ui\MainWindow.cpp" />
+    <ClCompile Include="c_ui\nav\TabMap.cpp" />
+    <ClCompile Include="c_ui\nav\WorkspaceFlow.cpp" />
     <ClCompile Include="c_ui\panels\RenderPanel.cpp" />
     <ClCompile Include="c_ui\panels\SceneTreePanel.cpp" />
     <ClCompile Include="c_ui\qt\interaction\handlers\2DViewerHandler.cpp" />
@@ -238,8 +246,19 @@
     <ClCompile Include="ReconInteraction.cpp" />
     <ClCompile Include="VisualStrategies.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(QtMsBuild)\qt.targets" Condition="Exists('$(QtMsBuild)\qt.targets')" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\packages\Microsoft.Windows.CppWinRT.2.0.220531.1\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\packages\Microsoft.Windows.CppWinRT.2.0.220531.1\build\native\Microsoft.Windows.CppWinRT.targets')" />
   </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>这台计算机上缺少此项目引用的 NuGet 程序包。使用“NuGet 程序包还原”可下载这些程序包。有关更多信息，请参见 http://go.microsoft.com/fwlink/?LinkID=322105。缺少的文件是 {0}。</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\Microsoft.Windows.CppWinRT.2.0.220531.1\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Windows.CppWinRT.2.0.220531.1\build\native\Microsoft.Windows.CppWinRT.props'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.Windows.CppWinRT.2.0.220531.1\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Windows.CppWinRT.2.0.220531.1\build\native\Microsoft.Windows.CppWinRT.targets'))" />
+  </Target>
 </Project>

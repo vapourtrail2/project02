@@ -11,6 +11,7 @@
 #include "AppInterfaces.h"
 #include "AppState.h"
 #include "c_ui/workbenches/ReconstructPage.h"
+#include "c_ui/nav/UIState.h"
 
 class QVBoxLayout;
 class DocumentPage;
@@ -31,6 +32,11 @@ class UIReconstruct3D;
 class AppController;
 class RenderPanel;
 class SceneTreePanel;
+
+//修改架构
+class TabMap;
+class WorkspaceFlow;
+
 
 class CTViewer : public QMainWindow
 {
@@ -70,8 +76,6 @@ private:
     //handers
 	void onTabChanged(int index);
 	void onOpenRequested(const QString& path);
-    bool initWorkspaceFromCurrentSession(QString* errorOut = nullptr);
-
 
 private:
     //关于标题栏拖动的变量
@@ -113,6 +117,14 @@ private:
   
     std::shared_ptr<AbstractDataManager> m_currentDataMgr;
     std::shared_ptr<SharedInteractionState> m_currentState;
+
+    //修改
+	std::unique_ptr<TabMap> tabMap_;
+	std::unique_ptr<WorkspaceFlow> workspaceFlow_;
+
+    //UI
+    UiState buildUiState(int index) const;
+	void applyUiState(const UiState& state);
 
 	UIReconstruct3D* uiRecon3d_ = nullptr;
 	QPointer<AppController> appController_;

@@ -1,4 +1,5 @@
 #include "GeometryPage.h"
+#include "c_ui/workbenches/common/RibbonCommon.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QFrame>
@@ -14,45 +15,9 @@
 #include <QDebug>
 #include <QFile>
 
-static QString wrapByWidth(const QString& s, const QFont& font, int maxWidthPx) {//第三个参数为一行允许的最大像素宽度
-    QFontMetrics fm(font); //给出这个字体下每个字符或者字符串的像素宽度。
-    QString out;
-    int lineWidth = 0;//当前行的已占用的像素宽度累计
-
-    auto flushLineBreak = [&]() { out += QChar('\n');
-    lineWidth = 0; };
-
-    for (int i = 0; i < s.size(); ++i) {
-        const QChar ch = s.at(i);//获得指定位置的字符
-        int w = fm.horizontalAdvance(ch);//该字符在当前字体下的像素宽度
-
-        // 优先在自然断点处换行
-        bool isBreakable = (ch.isSpace() || ch == '/' || ch == '·' || ch == '、');
-        if (lineWidth + w > maxWidthPx) {
-            if (!out.isEmpty())
-            {
-                flushLineBreak();
-            }
-        }
-        out += ch;
-        lineWidth += w;
-        if (isBreakable) {
-            if (lineWidth > maxWidthPx * 0.85)
-            {
-                flushLineBreak();
-            }
-        }
-    }
-    return out;
-}
-
 // 辅助函数  根据按钮文本加载对应图标
 static QIcon loadIconFor(const QString& text) {
-    struct Map {
-        QString key; //避免编码转换 直接用QString
-        const char* file;
-    };
-    static const Map map[] = {
+    static const RibbonCommon::IconMapItem map[] = {
         { QStringLiteral("自动"),  ":/geometry_icons/icons_other/geometry_icons/auto.PNG" },
         { QStringLiteral("点"),  ":/geometry_icons/icons_other/geometry_icons/point.PNG" },
         { QStringLiteral("线"), ":/geometry_icons/icons_other/geometry_icons/line.PNG" },
@@ -85,17 +50,8 @@ static QIcon loadIconFor(const QString& text) {
     };
     
 
-    for (const auto& m : map) {
-        if (text == m.key) {
-            const QString path = QString::fromUtf8(m.file);
-            QIcon ico(path);//用给定的路径 创建一个Qicon对象
-            if (!ico.isNull()) {
-                return ico;//
-            }
-        }
-    }
-    
-    return QIcon(":/icons/icons/move.png");
+    // Reuse shared icon lookup: this page keeps only local icon data.
+    return RibbonCommon::loadIconByText(text, map);
 }
 
 GeometryPage::GeometryPage(QWidget* parent)
@@ -226,7 +182,8 @@ QWidget* GeometryPage::buildRibbon05(QWidget* parent)
         button->setIconSize(QSize(32, 32));
         button->setMinimumSize(QSize(59, 90));
         button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-        button->setText(wrapByWidth(action.text, button->font(), 43));
+        // Shared wrap rule avoids duplicate text-layout code in each page.
+        button->setText(RibbonCommon::shiftNewLine(action.text, button->font(), 43));
 
         if (inGroup_05)
         {

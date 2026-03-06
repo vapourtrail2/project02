@@ -27,6 +27,12 @@
     <Filter Include="c_ui\panels">
       <UniqueIdentifier>{56c8e114-0866-44e4-af47-f52ec539bea1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="c_ui\nav">
+      <UniqueIdentifier>{43d09024-e490-4c8f-8d6c-5ff37d7e1319}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="c_ui\workbenches\common">
+      <UniqueIdentifier>{fe6b4d8b-1e53-4c8a-af87-5a8bb6ffb279}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AppInterfaces.h">
@@ -76,6 +82,21 @@
     </ClInclude>
     <ClInclude Include="c_ui\qt\interaction\handlers\3DViewerHandler.h">
       <Filter>c_ui\qt\handler</Filter>
+    </ClInclude>
+    <ClInclude Include="c_ui\nav\UIState.h">
+      <Filter>c_ui\nav</Filter>
+    </ClInclude>
+    <ClInclude Include="c_ui\nav\TabMap.h">
+      <Filter>c_ui\nav</Filter>
+    </ClInclude>
+    <ClInclude Include="c_ui\nav\WorkspaceFlow.h">
+      <Filter>c_ui\nav</Filter>
+    </ClInclude>
+    <ClInclude Include="c_ui\workbenches\common\RibbonCommon.h">
+      <Filter>c_ui\workbenches\common</Filter>
+    </ClInclude>
+    <ClInclude Include="c_ui\workbenches\common\IconMaps\StartIconMap.h">
+      <Filter>c_ui\workbenches\common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -175,6 +196,12 @@
     <ClCompile Include="c_ui\panels\RenderPanel.cpp">
       <Filter>c_ui\panels</Filter>
     </ClCompile>
+    <ClCompile Include="c_ui\nav\TabMap.cpp">
+      <Filter>c_ui\nav</Filter>
+    </ClCompile>
+    <ClCompile Include="c_ui\nav\WorkspaceFlow.cpp">
+      <Filter>c_ui\nav</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="c_ui\MainWindow.h">
@@ -237,5 +264,8 @@
     <QtMoc Include="c_ui\panels\RenderPanel.h">
       <Filter>c_ui\panels</Filter>
     </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
