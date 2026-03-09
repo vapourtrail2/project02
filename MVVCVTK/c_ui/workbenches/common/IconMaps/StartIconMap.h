@@ -2,11 +2,10 @@
 #include "c_ui/workbenches/common/RibbonCommon.h"
 
 namespace IconMaps {
-    // 只放数据，不放逻辑
     static const RibbonCommon::IconMapItem kStartIconMap[] = {
         { QStringLiteral("快速导入"),  ":/start_icons01/icons_other/start_icons/quick_input.png" },
         { QStringLiteral("体积导入"),  ":/start_icons01/icons_other/start_icons/reload_volume_data.png" },
-        { QStringLiteral("显示模式"), ":/start_icons01/icons_other/start_icons/display_pattern.png" },
+        { QStringLiteral("显示模式"),  ":/start_icons01/icons_other/start_icons/display_pattern.png" },
         { QStringLiteral("水平/窗口模式"),  ":/start_icons01/icons_other/start_icons/shuipingchuangkou.png" },
         { QStringLiteral("厚板"),  ":/start_icons01/icons_other/start_icons/thick_board.PNG" },
         { QStringLiteral("裁剪当前切片图"),  ":/start_icons01/icons_other/start_icons/clip_plane.png" },

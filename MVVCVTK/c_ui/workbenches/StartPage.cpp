@@ -16,11 +16,9 @@
 #include <QDebug>
 #include <QFile>
 
-// 保留本页“文案->图标路径”数据，具体匹配逻辑复用 RibbonCommon，避免重复代码。
 static QIcon loadIconFor(const QString& text) {
     return RibbonCommon::loadIconByText(text, IconMaps::kStartIconMap);
 }
-
 
 StartPagePage::StartPagePage(QWidget* parent)
     : QWidget(parent)

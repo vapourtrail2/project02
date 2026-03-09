@@ -9,7 +9,6 @@
 #include <vtkImageProperty.h>
 #include <cmath>
 
-
 // ================= IsoSurfaceStrategy =================
 //修改 2/28 等值面阈值  3/2 修改
 IsoSurfaceStrategy::IsoSurfaceStrategy() {

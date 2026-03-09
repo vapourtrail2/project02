@@ -64,7 +64,6 @@ CTViewer::CTViewer(QWidget* parent)
         "QMainWindow{background-color:#121212;}"
         "QMenuBar, QStatusBar{background-color:#1a1a1a; color:#e0e0e0;}"));
 
-
     tabMap_ = std::make_unique<TabMap>();//这行的作用是创建一个TabMap对象，并将其指针存储在tabMap_成员变量中。TabMap可能是一个用于管理应用程序中不同标签页或视图的类，负责协调标签页之间的切换和状态管理。通过使用std::make_unique，可以确保tabMap_拥有TabMap对象的所有权，并且在CTViewer对象销毁时会自动释放内存，避免内存泄漏。
 
     //结构 

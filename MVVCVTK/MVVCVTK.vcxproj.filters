@@ -98,6 +98,39 @@
     <ClInclude Include="c_ui\workbenches\common\IconMaps\StartIconMap.h">
       <Filter>c_ui\workbenches\common</Filter>
     </ClInclude>
+    <ClInclude Include="c_ui\workbenches\common\IconMaps\EditIconMap.h">
+      <Filter>c_ui\workbenches\common</Filter>
+    </ClInclude>
+    <ClInclude Include="c_ui\workbenches\common\IconMaps\VolumeIconMap.h">
+      <Filter>c_ui\workbenches\common</Filter>
+    </ClInclude>
+    <ClInclude Include="c_ui\workbenches\common\IconMaps\SelectIconMap.h">
+      <Filter>c_ui\workbenches\common</Filter>
+    </ClInclude>
+    <ClInclude Include="c_ui\workbenches\common\IconMaps\AlignIconMap.h">
+      <Filter>c_ui\workbenches\common</Filter>
+    </ClInclude>
+    <ClInclude Include="c_ui\workbenches\common\IconMaps\GeoIconMap.h">
+      <Filter>c_ui\workbenches\common</Filter>
+    </ClInclude>
+    <ClInclude Include="c_ui\workbenches\common\IconMaps\MeasureIconMap.h">
+      <Filter>c_ui\workbenches\common</Filter>
+    </ClInclude>
+    <ClInclude Include="c_ui\workbenches\common\IconMaps\CadIconMap.h">
+      <Filter>c_ui\workbenches\common</Filter>
+    </ClInclude>
+    <ClInclude Include="c_ui\workbenches\common\IconMaps\AnaIconMap.h">
+      <Filter>c_ui\workbenches\common</Filter>
+    </ClInclude>
+    <ClInclude Include="c_ui\workbenches\common\IconMaps\ReportIconMap.h">
+      <Filter>c_ui\workbenches\common</Filter>
+    </ClInclude>
+    <ClInclude Include="c_ui\workbenches\common\IconMaps\AniIconMap.h">
+      <Filter>c_ui\workbenches\common</Filter>
+    </ClInclude>
+    <ClInclude Include="c_ui\workbenches\common\IconMaps\WindowIconMap.h">
+      <Filter>c_ui\workbenches\common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DataManager.cpp">
@@ -264,8 +297,5 @@
     <QtMoc Include="c_ui\panels\RenderPanel.h">
       <Filter>c_ui\panels</Filter>
     </QtMoc>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
 </Project>
