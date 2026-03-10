@@ -1,8 +1,10 @@
-#pragma once
+﻿#pragma once
 #include <QWidget>
 #include <QTreeWidget>
 #include <memory>
+
 #include "AppInterfaces.h"
+#include "AppState.h"
 
 class SceneTreePanel : public QWidget
 {
@@ -10,10 +12,24 @@ class SceneTreePanel : public QWidget
 public:
     explicit SceneTreePanel(QWidget* parent = nullptr);
 
-    void setSession(const std::shared_ptr<AbstractDataManager>& dataMgr,
+    void setSession(
+        const std::shared_ptr<AbstractDataManager>& dataMgr,
+        const std::shared_ptr<SharedInteractionState>& state,
         const QString& sourcePath);
 
 private:
+    void rebuildTree(const std::shared_ptr<AbstractDataManager>& dataMgr, const QString& sourcePath);
+    void syncVisibility();
+    void clearTree();
+    void onItemChanged(QTreeWidgetItem* item, int column);
+
     QTreeWidget* tree_ = nullptr;
     QTreeWidgetItem* root_ = nullptr;
+    QTreeWidgetItem* volumeItem_ = nullptr;
+    QTreeWidgetItem* helpersItem_ = nullptr;
+    QTreeWidgetItem* clipPlanesItem_ = nullptr;
+    QTreeWidgetItem* crosshairItem_ = nullptr;
+    QTreeWidgetItem* axesItem_ = nullptr;
+    std::shared_ptr<SharedInteractionState> state_;
+    std::shared_ptr<void> lifeToken_;
 };

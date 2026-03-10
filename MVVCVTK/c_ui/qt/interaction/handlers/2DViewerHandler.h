@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "c_ui/qt/interaction/IInteractionHandler.h"
 
@@ -18,4 +18,7 @@ private:
     vtkPropPicker* m_picker = nullptr;
     vtkRenderer* m_renderer = nullptr;
     bool m_enableDragCrosshair = false;
+    bool m_enableDragWindowLevel = false;
+    int m_lastDragX = 0;
+    int m_lastDragY = 0;
 };

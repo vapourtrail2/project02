@@ -1,4 +1,4 @@
-#include "c_ui/qt/interaction/handlers/2DViewerHandler.h"
+﻿#include "c_ui/qt/interaction/handlers/2DViewerHandler.h"
 #include "AppInterfaces.h"
 #include <vtkCommand.h>
 #include <vtkPropPicker.h>
@@ -12,6 +12,9 @@ bool IsSliceMode(VizMode mode)
         || mode == VizMode::SliceCoronal
         || mode == VizMode::SliceSagittal;
 }
+
+constexpr double kWWSensitivity = 2.0;
+constexpr double kWCSensitivity = 2.0;
 }
 
 Viewer2DHandler::Viewer2DHandler(AbstractInteractiveService* service, vtkPropPicker* picker, vtkRenderer* renderer)
@@ -29,9 +32,9 @@ InteractionResult Viewer2DHandler::Handle(const InteractionEvent& eve)
 
     if (eve.vtkEventId == vtkCommand::MouseWheelForwardEvent
         || eve.vtkEventId == vtkCommand::MouseWheelBackwardEvent) {
-        const int delta = (eve.vtkEventId == vtkCommand::MouseWheelForwardEvent) ? 1 : -1;
+        const int step = eve.ctrl ? 5 : 1;
+        const int delta = (eve.vtkEventId == vtkCommand::MouseWheelForwardEvent) ? step : -step;
         m_service->UpdateInteraction(delta);
-        m_service->MarkDirty();
         return { true, true };
     }
 
@@ -53,17 +56,48 @@ InteractionResult Viewer2DHandler::Handle(const InteractionEvent& eve)
         return {};
     }
 
+    if (eve.vtkEventId == vtkCommand::RightButtonPressEvent) {
+        m_enableDragWindowLevel = true;
+        m_lastDragX = eve.x;
+        m_lastDragY = eve.y;
+        m_service->SetInteracting(true);
+        return { true, true };
+    }
+
+    if (eve.vtkEventId == vtkCommand::RightButtonReleaseEvent) {
+        if (m_enableDragWindowLevel) {
+            m_enableDragWindowLevel = false;
+            m_service->SetInteracting(false);
+            return { true, false };
+        }
+        return {};
+    }
+
     if (eve.vtkEventId == vtkCommand::MouseMoveEvent) {
-        if (!m_enableDragCrosshair || !m_picker || !m_renderer) {
-            return {};
+        if (m_enableDragCrosshair) {
+            if (!m_picker || !m_renderer) {
+                return {};
+            }
+            m_picker->Pick(eve.x, eve.y, 0, m_renderer);
+            double* worldPos = m_picker->GetPickPosition();
+            if (worldPos) {
+                m_service->SyncCursorToWorldPosition(worldPos);
+                m_service->MarkDirty();
+            }
+            return { true, true };
         }
 
-        m_picker->Pick(eve.x, eve.y, 0, m_renderer);
-        double* worldPos = m_picker->GetPickPosition();
-        if (worldPos) {
-            m_service->SyncCursorToWorldPosition(worldPos);
+        if (m_enableDragWindowLevel) {
+            const int dx = eve.x - m_lastDragX;
+            const int dy = eve.y - m_lastDragY;
+            m_lastDragX = eve.x;
+            m_lastDragY = eve.y;
+
+            m_service->AdjustWindowLevel(dx * kWWSensitivity, dy * kWCSensitivity);
+            return { true, true };
         }
-        return { true, true };
+
+        return {};
     }
 
     return {};

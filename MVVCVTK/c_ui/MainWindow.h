@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <QMainWindow>
 #include <QPointer>
 #include <QPoint>
@@ -30,6 +30,7 @@ class AnimationPage;
 class ReconstructPage;
 class UIReconstruct3D;
 class AppController;
+struct AppSession;
 class RenderPanel;
 class SceneTreePanel;
 
@@ -67,6 +68,8 @@ private:
     void connectTabSignals();
     void connectDocumentSignals();
     void connectReconSignals();
+    void connectAppSignals();
+    void handleSessionChanged(const std::shared_ptr<AppSession>& session);
 
     void onTabChanged(int index);
     void onOpenRequested(const QString& path);

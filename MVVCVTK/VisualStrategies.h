@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "AppInterfaces.h"
 #include <vtkActor.h>
 #include <vtkVolume.h>
@@ -13,64 +13,56 @@
 #include <vtkCubeAxesActor.h>
 #include <vtkFlyingEdges3D.h>
 
-// --- ²ßÂÔ A: µÈÖµÃæäÖÈ¾ ---
 class IsoSurfaceStrategy : public AbstractVisualStrategy {
 public:
     IsoSurfaceStrategy();
 
-    // [Public] ³éÏó½Ó¿ÚÊµÏÖ
     void SetInputData(vtkSmartPointer<vtkDataObject> data) override;
     void Attach(vtkSmartPointer<vtkRenderer> renderer) override;
     void Detach(vtkSmartPointer<vtkRenderer> renderer) override;
     void SetupCamera(vtkSmartPointer<vtkRenderer> renderer) override;
     void UpdateVisuals(const RenderParams& params, UpdateFlags flags) override;
+    vtkProp3D* GetMainProp() override;
 
 private:
     vtkSmartPointer<vtkActor> m_actor;
-    vtkSmartPointer<vtkCubeAxesActor> m_cubeAxes; // ×ø±êÖá
-    vtkSmartPointer<vtkImageData> m_sourceImage;  // Ô­Ê¼Êı¾İÒıÓÃ
+    vtkSmartPointer<vtkCubeAxesActor> m_cubeAxes;
+    vtkSmartPointer<vtkImageData> m_sourceImage;
     vtkSmartPointer<vtkFlyingEdges3D> m_isoExtractor;
     vtkSmartPointer<vtkPolyDataMapper> m_isoMapper;
 
     double m_lastIsoValue = 0.0;
     bool m_hasLastIsoValue = false;
-    
 };
 
-// --- ²ßÂÔ B: ÌåäÖÈ¾ ---
 class VolumeStrategy : public AbstractVisualStrategy {
 public:
     VolumeStrategy();
 
-    // [Public] ³éÏó½Ó¿ÚÊµÏÖ
     void SetInputData(vtkSmartPointer<vtkDataObject> data) override;
     void Attach(vtkSmartPointer<vtkRenderer> renderer) override;
     void Detach(vtkSmartPointer<vtkRenderer> renderer) override;
     void SetupCamera(vtkSmartPointer<vtkRenderer> renderer) override;
     void UpdateVisuals(const RenderParams& params, UpdateFlags flags) override;
+    vtkProp3D* GetMainProp() override;
 
 private:
-    vtkSmartPointer<vtkCubeAxesActor> m_cubeAxes; // ×ø±êÖá
+    vtkSmartPointer<vtkCubeAxesActor> m_cubeAxes;
     vtkSmartPointer<vtkVolume> m_volume;
 };
 
-// --- ²ßÂÔ C: 2D ÇĞÆ¬ (MPR) ---
-// index = z*dx*dy + y*dx + x
 class SliceStrategy : public AbstractVisualStrategy {
 public:
     SliceStrategy(Orientation orient);
 
-    // [Public] ³éÏó½Ó¿ÚÊµÏÖ
     void SetInputData(vtkSmartPointer<vtkDataObject> data) override;
     void Attach(vtkSmartPointer<vtkRenderer> renderer) override;
     void Detach(vtkSmartPointer<vtkRenderer> renderer) override;
     void SetupCamera(vtkSmartPointer<vtkRenderer> renderer) override;
     void UpdateVisuals(const RenderParams& params, UpdateFlags flags) override;
     int GetNavigationAxis() const override { return (int)GetOrientation(); }
-    // [Public] ÒµÎñ±ØĞè½Ó¿Ú£º¹© Service ²éÑ¯½»»¥ÖáÏò
 
 private:
-    // [Private] ÄÚ²¿ÊµÏÖ£ºÕâĞ©·½·¨½öÓÉ UpdateVisuals ÄÚ²¿Çı¶¯
     void SetSliceIndex(int delta);
     void SetOrientation(Orientation orient);
     void UpdateCrosshair(int x, int y, int z);
@@ -82,33 +74,27 @@ private:
     vtkSmartPointer<vtkImageResliceMapper> m_mapper;
     Orientation m_orientation;
 
-    // ×´Ì¬¼ÇÂ¼
     int m_currentIndex = 0;
     int m_maxIndex = 0;
 
-    // --- Ê®×ÖÏßÏà¹Ø ---
-    vtkSmartPointer<vtkActor> m_vLineActor; // ´¹Ö±Ïß
-    vtkSmartPointer<vtkActor> m_hLineActor; // Ë®Æ½Ïß
+    vtkSmartPointer<vtkActor> m_vLineActor;
+    vtkSmartPointer<vtkActor> m_hLineActor;
     vtkSmartPointer<vtkLineSource> m_vLineSource;
     vtkSmartPointer<vtkLineSource> m_hLineSource;
 
-    // ÑÕÉ«Ó³Éä»º´æLUT
     vtkSmartPointer<vtkColorTransferFunction> m_lut;
 };
 
-// --- ²ßÂÔ D: ÈıÃæÇĞÆ¬ (MPR) ---
 class MultiSliceStrategy : public AbstractVisualStrategy {
 public:
     MultiSliceStrategy();
 
-    // [Public] ³éÏó½Ó¿ÚÊµÏÖ
     void SetInputData(vtkSmartPointer<vtkDataObject> data) override;
     void Attach(vtkSmartPointer<vtkRenderer> renderer) override;
     void Detach(vtkSmartPointer<vtkRenderer> renderer) override;
     void UpdateVisuals(const RenderParams& params, UpdateFlags flags) override;
 
 private:
-    // [Private] ÄÚ²¿ÊµÏÖ£ºÓÉ UpdateVisuals Í³Ò»µ÷ÓÃ
     void UpdateAllPositions(int x, int y, int z);
 
     vtkSmartPointer<vtkImageSlice> m_slices[3];
@@ -116,12 +102,10 @@ private:
     int m_indices[3] = { 0, 0, 0 };
 };
 
-// --- ²ßÂÔ E: ²ÊÉ«ÇĞÆ¬Æ½Ãæ (ºìÂÌÀ¶) ---
 class ColoredPlanesStrategy : public AbstractVisualStrategy {
 public:
     ColoredPlanesStrategy();
 
-    // [Public] ³éÏó½Ó¿ÚÊµÏÖ
     void SetInputData(vtkSmartPointer<vtkDataObject> data) override;
     void Attach(vtkSmartPointer<vtkRenderer> renderer) override;
     void Detach(vtkSmartPointer<vtkRenderer> renderer) override;
@@ -129,7 +113,6 @@ public:
     int GetPlaneAxis(vtkActor* actor) override;
 
 private:
-    // [Private] ÄÚ²¿ÊµÏÖ
     void UpdateAllPositions(int x, int y, int z);
 
     vtkSmartPointer<vtkActor> m_planeActors[3];
@@ -137,18 +120,17 @@ private:
     vtkSmartPointer<vtkImageData> m_imageData;
 };
 
-// --- ×éºÏ²ßÂÔ: ÌåäÖÈ¾/µÈÖµÃæ + ÇĞÆ¬Æ½Ãæ ---
 class CompositeStrategy : public AbstractVisualStrategy {
 public:
     CompositeStrategy(VizMode mode);
 
-    // [Public] ³éÏó½Ó¿ÚÊµÏÖ
     void SetInputData(vtkSmartPointer<vtkDataObject> data) override;
     void Attach(vtkSmartPointer<vtkRenderer> renderer) override;
     void Detach(vtkSmartPointer<vtkRenderer> renderer) override;
     void SetupCamera(vtkSmartPointer<vtkRenderer> renderer) override;
     void UpdateVisuals(const RenderParams& params, UpdateFlags flags) override;
     int GetPlaneAxis(vtkActor* actor) override;
+    vtkProp3D* GetMainProp() override;
 
 private:
     std::shared_ptr<AbstractVisualStrategy> GetMainStrategy() { return m_mainStrategy; }

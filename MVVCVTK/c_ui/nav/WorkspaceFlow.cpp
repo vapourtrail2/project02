@@ -1,4 +1,4 @@
-#include "c_ui/nav/WorkspaceFlow.h"
+﻿#include "c_ui/nav/WorkspaceFlow.h"
 
 #include "AppController.h"
 #include "c_ui/workbenches/ReconstructPage.h"
@@ -70,7 +70,7 @@ bool WorkspaceFlow::bindSession(
         reconstructPage->initWithData(s->dataMgr, s->sharedState);
     }
     if (scenePanel) {
-        scenePanel->setSession(s->dataMgr, s->sourcePath);
+        scenePanel->setSession(s->dataMgr, s->sharedState, s->sourcePath);
     }
     if (renderPanel) {
         renderPanel->setSession(s);
@@ -117,3 +117,4 @@ bool WorkspaceFlow::openReconstructedAndBind(
 
     return true;
 }
+

@@ -21,8 +21,10 @@ IsoSurfaceStrategy::IsoSurfaceStrategy() {
 	m_isoExtractor->ComputeNormalsOff();//这个函数的意思是关闭法线计算，等值面提取时不计算法线，这样可以提高性能，但会导致渲染效果较差，特别是在有光照的情况下。用户可以在材质更新时根据需要开启或关闭法线计算，以平衡性能和视觉效果
 
     m_isoMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-	m_isoMapper->ScalarVisibilityOff();//这个函数的意思是关闭标量可见性，等值面提取后生成的多边形数据将不会根据标量值进行着色，而是使用单一颜色。这通常用于等值面渲染，因为等值面本身已经代表了一个特定的标量值，关闭标量可见性可以简化渲染过程，提高性能，同时也避免了不必要的颜色映射。用户可以根据需要选择是否开启标量可见性，以实现不同的视觉效果。
+	m_isoMapper->ScalarVisibilityOff(); // Iso-surface uses a solid material color.
     m_actor->SetMapper(m_isoMapper);
+    m_actor->SetPickable(false);
+    m_cubeAxes->SetPickable(false);
 }
 
 void IsoSurfaceStrategy::SetInputData(vtkSmartPointer<vtkDataObject> data) {
@@ -138,6 +140,7 @@ VolumeStrategy::VolumeStrategy() {
     m_volume = vtkSmartPointer<vtkVolume>::New();
     m_cubeAxes = vtkSmartPointer<vtkCubeAxesActor>::New();
     m_volume->SetPickable(false); // 体渲染不可拾取
+    m_cubeAxes->SetPickable(false);
 }
 
 void VolumeStrategy::SetInputData(vtkSmartPointer<vtkDataObject> data) {
@@ -841,3 +844,19 @@ void ColoredPlanesStrategy::UpdateVisuals(const RenderParams& params, UpdateFlag
     if (!((int)flags & (int)UpdateFlags::Cursor)) return;
     UpdateAllPositions(params.cursor[0], params.cursor[1], params.cursor[2]);
 }
+
+
+vtkProp3D* IsoSurfaceStrategy::GetMainProp() {
+    return m_actor;
+}
+
+vtkProp3D* VolumeStrategy::GetMainProp() {
+    return m_volume;
+}
+
+vtkProp3D* CompositeStrategy::GetMainProp() {
+    return m_mainStrategy ? m_mainStrategy->GetMainProp() : nullptr;
+}
+
+
+

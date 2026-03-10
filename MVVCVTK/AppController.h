@@ -38,7 +38,9 @@ signals:
     void sessionChanged(std::shared_ptr<AppSession> session);
 
 private:
+    std::shared_ptr<AbstractDataManager> createDataManagerForPath(const QString& path) const;
     bool finalizeSession(const std::shared_ptr<AppSession>& newSession, QString* errorOut);
 
     std::shared_ptr<AppSession> m_session;
 };
+

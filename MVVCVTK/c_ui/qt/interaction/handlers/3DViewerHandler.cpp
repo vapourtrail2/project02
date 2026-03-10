@@ -1,4 +1,4 @@
-#include "c_ui/qt/interaction/handlers/3DViewerHandler.h"
+﻿#include "c_ui/qt/interaction/handlers/3DViewerHandler.h"
 
 #include "AppInterfaces.h"
 
@@ -6,6 +6,7 @@
 #include <vtkCommand.h>
 #include <vtkPropPicker.h>
 #include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
 
 namespace {
 
@@ -42,6 +43,9 @@ InteractionResult Viewer3DHandler::Handle(const InteractionEvent& eve)
                 m_isDragging = true;
                 m_dragAxis = axis;
                 m_service->SetInteracting(true);
+                if (vtkRenderWindow* rw = m_renderer->GetRenderWindow()) {
+                    rw->SetDesiredUpdateRate(15.0);
+                }
                 return { true, true };
             }
         }
@@ -50,6 +54,9 @@ InteractionResult Viewer3DHandler::Handle(const InteractionEvent& eve)
 
     if (eve.vtkEventId == vtkCommand::LeftButtonReleaseEvent) {
         if (m_isDragging) {
+            if (vtkRenderWindow* rw = m_renderer->GetRenderWindow()) {
+                rw->SetDesiredUpdateRate(0.001);
+            }
             m_service->SetInteracting(false);
             m_service->MarkDirty();
             m_isDragging = false;
@@ -67,7 +74,7 @@ InteractionResult Viewer3DHandler::Handle(const InteractionEvent& eve)
         m_picker->Pick(eve.x, eve.y, 0, m_renderer);
         double* worldPos = m_picker->GetPickPosition();
         if (worldPos) {
-            m_service->SyncCursorToWorldPosition(worldPos);
+            m_service->SyncCursorToWorldPosition(worldPos, m_dragAxis);
         }
         return { true, true };
     }

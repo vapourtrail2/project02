@@ -1,4 +1,4 @@
-#include "c_ui/qt/interaction/handlers/TimeUpdateHandler.h"
+﻿#include "c_ui/qt/interaction/handlers/TimeUpdateHandler.h"
 
 #include "AppInterfaces.h"
 
@@ -24,7 +24,7 @@ InteractionResult TimeUpdateHandler::Handle(const InteractionEvent& eve)
     m_service->ProcessPendingUpdates();
 
     if (m_service->IsDirty()) {
-        if (m_renderWindow) {
+        if (m_renderWindow && m_renderWindow->GetMapped() && m_renderWindow->GetGenericWindowId()) {
             m_renderWindow->Render();
         }
         m_service->SetDirty(false);

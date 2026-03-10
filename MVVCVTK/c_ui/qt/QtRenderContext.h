@@ -1,11 +1,14 @@
-#pragma once
+﻿#pragma once
 
 #include "AppInterfaces.h"
 #include "c_ui/qt/interaction/InteractionRouter.h"
 #include <QVTKOpenGLNativeWidget.h>
+#include <vtkAngleWidget.h>
 #include <vtkCallbackCommand.h>
+#include <vtkDistanceWidget.h>
 #include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkInteractorStyleImage.h>
+#include <vtkInteractorStyleTrackballActor.h>
 #include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkPropPicker.h>
 #include <vtkRenderWindowInteractor.h>
@@ -37,6 +40,8 @@ private:
     vtkSmartPointer<vtkCallbackCommand> m_eventCallback;
     vtkSmartPointer<vtkRenderWindowInteractor> m_interactor;
     vtkSmartPointer<vtkPropPicker> m_picker;
+    vtkSmartPointer<vtkDistanceWidget> m_distanceWidget;
+    vtkSmartPointer<vtkAngleWidget> m_angleWidget;
 
     VizMode m_currentMode = VizMode::Volume;
     ToolMode m_toolMode = ToolMode::Navigation;

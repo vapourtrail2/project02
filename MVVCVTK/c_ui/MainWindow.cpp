@@ -117,6 +117,7 @@ void CTViewer::wireConnect() {
     connectTabSignals();
     connectDocumentSignals();
     connectReconSignals();
+    connectAppSignals();
     connectWindowButtonSignals();
 }
 
@@ -427,6 +428,17 @@ void CTViewer::connectReconSignals() {
         });
 }
 
+void CTViewer::connectAppSignals() {
+    if (!appController_) {
+        return;
+    }
+
+    connect(appController_, &AppController::sessionChanged, this,
+        [this](const std::shared_ptr<AppSession>& session) {
+            handleSessionChanged(session);
+        });
+}
+
 //架构优化 buildxxx 和 applyxxx分离，build只负责算，apply只负责改界面 
 UiState CTViewer::buildUiState(int index) const{
     UiState state;
@@ -495,25 +507,56 @@ void CTViewer::onTabChanged(int index) {
 
 void CTViewer::onOpenRequested(const QString& path) {
     QString err;
-    
-	const bool ok = workspaceFlow_ && workspaceFlow_->openAndBind(path,mprViews_ ,
-        scenePanel_,
-        renderPanel_,
-        &err);
 
+    const bool ok = workspaceFlow_ && workspaceFlow_->openFile(path, &err);
     if (!ok) {
-		const QString msg = err.isEmpty() ? QStringLiteral("打开失败"):err;
-		statusBar()->showMessage(msg, 3000);
-		//失败分支先判空 再调用 避免空指针调用崩溃
+        const QString msg = err.isEmpty() ? QStringLiteral("打开失败") : err;
+        statusBar()->showMessage(msg, 3000);
         if (pageDocument_) {
-			pageDocument_->notifyFail(msg); 
+            pageDocument_->notifyFail(msg);
         }
         return;
     }
-    
+
     if (pageDocument_) {
         pageDocument_->notifySucc();
     }
+}
+
+void CTViewer::handleSessionChanged(const std::shared_ptr<AppSession>& session)
+{
+    if (!workspaceFlow_) {
+        return;
+    }
+
+    if (!session) {
+        if (tabBar_) {
+            applyUiState(buildUiState(tabBar_->currentIndex()));
+        }
+        return;
+    }
+
+    QString err;
+    const bool ok = workspaceFlow_->bindSession(mprViews_, scenePanel_, renderPanel_, &err);
+    if (!ok) {
+        if (auto* bar = statusBar()) {
+            bar->showMessage(
+                err.isEmpty() ? QStringLiteral("Failed to bind workspace session.") : err,
+                3000);
+        }
+        return;
+    }
+
+    if (!tabBar_) {
+        return;
+    }
+
+    if (tabBar_->currentIndex() == TabIndex::File) {
+        tabBar_->setCurrentIndex(TabIndex::Start);
+        return;
+    }
+
+    applyUiState(buildUiState(tabBar_->currentIndex()));
 }
 
 bool CTViewer::eventFilter(QObject* watched, QEvent* event)//实现标题栏拖动
@@ -584,4 +627,5 @@ void CTViewer::setDefaults() {
         move(availableGeometry.topLeft());
     }
 }
+
 

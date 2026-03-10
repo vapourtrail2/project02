@@ -1,4 +1,5 @@
 ﻿#include "ReconstructPage.h"
+
 #include <QGridLayout>
 #include <QWidget>
 
@@ -14,7 +15,7 @@ ReconstructPage::ReconstructPage(QWidget* parent)
 
 void ReconstructPage::buildUi()
 {
-    auto grid = new QGridLayout(this);
+    auto* grid = new QGridLayout(this);
     grid->setContentsMargins(6, 6, 6, 6);
     grid->setHorizontalSpacing(6);
     grid->setVerticalSpacing(6);
@@ -34,62 +35,42 @@ void ReconstructPage::initWithData(
     std::shared_ptr<AbstractDataManager> data,
     std::shared_ptr<SharedInteractionState> state)
 {
-    m_dataMgr = std::dynamic_pointer_cast<RawVolumeDataManager>(data);
-    m_sharedState = state;
+    m_dataMgr = std::move(data);
+    m_sharedState = std::move(state);
 
-    if (!m_dataMgr || !m_sharedState) return;
-
-    // 辅助函数
-    auto getVtkW = [](QPointer<QWidget> w) -> QVTKOpenGLNativeWidget* {
-        return qobject_cast<QVTKOpenGLNativeWidget*>(w.data());
-        };
-
-    // 设置一些全局初始参数 
-    if (m_dataMgr->GetVtkImage()) {
-        double range[2];
-        m_dataMgr->GetVtkImage()->GetScalarRange(range);
-        // 设置默认 ISO 阈值
-        m_sharedState->SetIsoValue(range[0] + (range[1] - range[0]) * 0.3);
+    if (!m_dataMgr || !m_sharedState || !m_dataMgr->GetVtkImage()) {
+        return;
     }
 
-    if (m_dataMgr->GetVtkImage()) {
-        int dims[3];
-        m_dataMgr->GetVtkImage()->GetDimensions(dims);
-        m_sharedState->SetCursorPosition(dims[0] / 2, dims[1] / 2, dims[2] / 2);
-    }
+    auto getVtkWidget = [](const QPointer<QWidget>& widget) -> QVTKOpenGLNativeWidget* {
+        return qobject_cast<QVTKOpenGLNativeWidget*>(widget.data());
+    };
 
-    // 1. 初始化 Axial
     m_svcAxial = std::make_shared<MedicalVizService>(m_dataMgr, m_sharedState);
     m_ctxAxial = std::make_shared<QtRenderContext>();
-    m_ctxAxial->SetQtWidget(getVtkW(viewAxial_));
+    m_ctxAxial->SetQtWidget(getVtkWidget(viewAxial_));
     m_ctxAxial->BindService(m_svcAxial);
     m_svcAxial->ShowSlice(VizMode::SliceAxial);
     m_ctxAxial->SetInteractionMode(VizMode::SliceAxial);
 
-    // 2. 初始化 Coronal
     m_svcCoronal = std::make_shared<MedicalVizService>(m_dataMgr, m_sharedState);
     m_ctxCoronal = std::make_shared<QtRenderContext>();
-    m_ctxCoronal->SetQtWidget(getVtkW(viewCoronal_));
+    m_ctxCoronal->SetQtWidget(getVtkWidget(viewCoronal_));
     m_ctxCoronal->BindService(m_svcCoronal);
     m_svcCoronal->ShowSlice(VizMode::SliceCoronal);
     m_ctxCoronal->SetInteractionMode(VizMode::SliceCoronal);
 
-    // 3. 初始化 Sagittal
     m_svcSagittal = std::make_shared<MedicalVizService>(m_dataMgr, m_sharedState);
     m_ctxSagittal = std::make_shared<QtRenderContext>();
-    m_ctxSagittal->SetQtWidget(getVtkW(viewSagittal_));
+    m_ctxSagittal->SetQtWidget(getVtkWidget(viewSagittal_));
     m_ctxSagittal->BindService(m_svcSagittal);
     m_svcSagittal->ShowSlice(VizMode::SliceSagittal);
     m_ctxSagittal->SetInteractionMode(VizMode::SliceSagittal);
 
-    // 4. 初始化 3D
     m_svc3D = std::make_shared<MedicalVizService>(m_dataMgr, m_sharedState);
     m_ctx3D = std::make_shared<QtRenderContext>();
-    m_ctx3D->SetQtWidget(getVtkW(viewReserved_));
+    m_ctx3D->SetQtWidget(getVtkWidget(viewReserved_));
     m_ctx3D->BindService(m_svc3D);
-
-    // 设置初始材质参数
-    m_svc3D->SetLuxParams(0.3, 0.6, 0.2, 15.0);
     m_svc3D->Show3DPlanes(VizMode::CompositeIsoSurface);
     m_ctx3D->SetInteractionMode(VizMode::CompositeIsoSurface);
 
@@ -98,20 +79,18 @@ void ReconstructPage::initWithData(
     if (m_svcSagittal) m_svcSagittal->OnStateChanged();
     if (m_svc3D) m_svc3D->OnStateChanged();
 
-    // 强制先处理一次挂起的更新
     if (m_svcAxial) m_svcAxial->ProcessPendingUpdates();
     if (m_svcCoronal) m_svcCoronal->ProcessPendingUpdates();
     if (m_svcSagittal) m_svcSagittal->ProcessPendingUpdates();
     if (m_svc3D) m_svc3D->ProcessPendingUpdates();
 
-    // 触发各个窗口的首次渲染
     if (m_ctxAxial) m_ctxAxial->Render();
     if (m_ctxCoronal) m_ctxCoronal->Render();
     if (m_ctxSagittal) m_ctxSagittal->Render();
     if (m_ctx3D) m_ctx3D->Render();
 
-    m_ctxAxial->Start();
-    m_ctxCoronal->Start();
-    m_ctxSagittal->Start();
-    m_ctx3D->Start();
+    if (m_ctxAxial) m_ctxAxial->Start();
+    if (m_ctxCoronal) m_ctxCoronal->Start();
+    if (m_ctxSagittal) m_ctxSagittal->Start();
+    if (m_ctx3D) m_ctx3D->Start();
 }
