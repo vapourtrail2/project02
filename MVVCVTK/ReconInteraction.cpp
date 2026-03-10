@@ -1,9 +1,10 @@
 #include "uireconstruct3d.h"
 #include <array>
 #include "c_ui/MainWindow.h"
-#include "DataManager.h"
-#include "AppState.h"
-#include <memory>
+#include "c_ui/nav/TabMap.h"
+#include "c_ui/nav/WorkspaceFlow.h"
+#include "c_ui/panels/RenderPanel.h"
+#include "c_ui/panels/SceneTreePanel.h"
 #include <qstatusbar.h>
 #include "c_ui/workbenches/StartPage.h"
 
@@ -20,39 +21,47 @@ void CTViewer::openCtReconUi()
 
             if (!data) {
                 if (auto bar = statusBar()) {
-                    bar->showMessage(QStringLiteral("重建返回数据为空"), 3000);
+                    bar->showMessage(QStringLiteral("Empty reconstruction result."), 3000);
                 }
                 return;
             }
 
-            //  float* 到 数据管理器 会 memcpy 拷贝进 vtkImageData
-            auto rawDataManager = std::make_shared<RawVolumeDataManager>();
-            rawDataManager->SetFromBuffer(data, outSize, spacing, origin);
+            QString err;
+            const bool ok = workspaceFlow_ && workspaceFlow_->openReconstructedAndBind(
+                data,
+                outSize,
+                spacing,
+                origin,
+                QStringLiteral("CT reconstruction"),
+                mprViews_,
+                scenePanel_,
+                renderPanel_,
+                &err);
 
-            //  创建共享状态
-            auto state = std::make_shared<SharedInteractionState>();
-            if (auto img = rawDataManager->GetVtkImage()) {
-                double range[2];
-                img->GetScalarRange(range);
-                state->SetScalarRange(range[0], range[1]);
-            }
-            
-            this->m_currentDataMgr = rawDataManager;
-            this->m_currentState = state;
-
-            // 初始化四视图+mount到StartPage的viewerHost
-            if (mprViews_) {
-                mprViews_->initWithData(this->m_currentDataMgr, this->m_currentState);
-                if (secondstack_ && workspacePage_) {
-                    secondstack_->setCurrentWidget(workspacePage_);
+            if (!ok) {
+                if (auto bar = statusBar()) {
+                    bar->showMessage(
+                        err.isEmpty() ? QStringLiteral("Failed to bind reconstruction session.") : err,
+                        3000);
                 }
-                tabBar_->setCurrentIndex(1);
-                statusBar()->showMessage(QStringLiteral("重建完成，视图已更新。"), 3000);
+                return;
+            }
+
+            if (tabBar_) {
+                if (tabBar_->currentIndex() != TabIndex::Start) {
+                    tabBar_->setCurrentIndex(TabIndex::Start);
+                }
+                else {
+                    applyUiState(buildUiState(TabIndex::Start));
+                }
+            }
+
+            if (auto bar = statusBar()) {
+                bar->showMessage(QStringLiteral("Reconstruction completed."), 3000);
             }
 
             uiRecon3d_->close();
-            }, Qt::QueuedConnection);
-
+        }, Qt::QueuedConnection);
     }
 
     uiRecon3d_->show();

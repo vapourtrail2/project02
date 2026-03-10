@@ -1,284 +1,674 @@
 ﻿#include "AppService.h"
+
 #include "DataManager.h"
-#include "DataConverters.h"
 #include "StrategyFactory.h"
+#include <algorithm>
+#include <iostream>
+#include <thread>
 
-// --- 基类方法实现 ---
-void AbstractAppService::SwitchStrategy(std::shared_ptr<AbstractVisualStrategy> newStrategy) {
-    if (!m_renderer || !m_renderWindow) return;
+void AbstractAppService::SwitchStrategy(std::shared_ptr<AbstractVisualStrategy> newStrategy)
+{
+    if (!m_renderer || !m_renderWindow) {
+        return;
+    }
 
-    // 旧策略下台
     if (m_currentStrategy) {
         m_currentStrategy->Detach(m_renderer);
     }
 
-    // 新策略上台
-    m_currentStrategy = newStrategy;
+    m_currentStrategy = std::move(newStrategy);
+
     if (m_currentStrategy) {
         m_currentStrategy->Attach(m_renderer);
-        // 让策略自己决定相机的行为 (2D平行 vs 3D透视)
         m_currentStrategy->SetupCamera(m_renderer);
     }
 
     m_renderer->ResetCamera();
-    // m_renderWindow->Render();
     m_isDirty = true;
 }
 
-// --- 具体服务实现 ---
-MedicalVizService::MedicalVizService(std::shared_ptr<AbstractDataManager> dataMgr,
-    std::shared_ptr<SharedInteractionState> state) {
-    // 实例化具体的 DataManager
-    m_dataManager = dataMgr;
-    m_sharedState = state; // 保存引用
+MedicalVizService::MedicalVizService(
+    std::shared_ptr<AbstractDataManager> dataMgr,
+    std::shared_ptr<SharedInteractionState> state)
+    : m_sharedState(std::move(state))
+    , m_transformService(std::make_unique<VolumeTransformService>(m_sharedState))
+    , m_cancelFlag(std::make_shared<std::atomic<bool>>(false))
+{
+    m_dataManager = std::move(dataMgr);
 }
 
-void MedicalVizService::Initialize(vtkSmartPointer<vtkRenderWindow> win, vtkSmartPointer<vtkRenderer> ren) {
-    // 初始化
-    AbstractAppService::Initialize(win, ren);
+MedicalVizService::~MedicalVizService()
+{
+    if (m_cancelFlag) {
+        m_cancelFlag->store(true);
+    }
 
-    // 注册到 SharedState shared_from_this() 作为存活凭证 Lambda 回调
-    if (m_sharedState) {
-        // 获取 weak_ptr 供 Lambda 内部安全使用
-        std::weak_ptr<MedicalVizService> weakSelf = std::static_pointer_cast<MedicalVizService>(shared_from_this());
-
-        m_sharedState->AddObserver(shared_from_this(), [weakSelf](UpdateFlags flags) {
-            // Lambda 内部标准写法：先 lock 再用
-            if (auto self = weakSelf.lock()) {
-                int oldVal = self->m_pendingFlags.load();
-                while (!self->m_pendingFlags.compare_exchange_weak(oldVal, oldVal | static_cast<int>(flags))); // 位或更新待处理标记
-                self->OnStateChanged();
-            }
-            });
+    std::lock_guard<std::mutex> lock(m_loadMutex);
+    if (m_loadFuture.valid()) {
+        m_loadFuture.wait();
     }
 }
 
-void MedicalVizService::LoadFile(const std::string& path) {
-    if (m_dataManager->LoadData(path)) {
-        ClearCache(); // 数据变更，清空缓存
-        ResetCursorCenter(); // 加载新数据时，重置坐标到中心
+void MedicalVizService::Initialize(vtkSmartPointer<vtkRenderWindow> win, vtkSmartPointer<vtkRenderer> ren)
+{
+    AbstractAppService::Initialize(win, ren);
+    if (!m_sharedState) {
+        return;
+    }
 
-        if (m_dataManager->GetVtkImage()) {
-            double range[2];
-            m_dataManager->GetVtkImage()->GetScalarRange(range);
-            m_sharedState->SetScalarRange(range[0], range[1]);
+    std::weak_ptr<MedicalVizService> weakSelf =
+        std::static_pointer_cast<MedicalVizService>(shared_from_this());
+
+    m_sharedState->AddObserver(shared_from_this(), [weakSelf](UpdateFlags flags) {
+        auto self = weakSelf.lock();
+        if (!self) {
+            return;
         }
 
-        ShowIsoSurface(); // 默认显示
+        if (HasFlag(flags, UpdateFlags::DataReady)) {
+            self->RequestClearStrategyCache();
+            self->ResetCursorToCenter();
+            self->m_pendingFlags.fetch_or(static_cast<int>(UpdateFlags::All));
+            self->m_needsDataRefresh = true;
+            return;
+        }
+
+        if (HasFlag(flags, UpdateFlags::LoadFailed)) {
+            self->m_needsLoadFailed = true;
+            self->m_isDirty = true;
+            return;
+        }
+
+        if (HasFlag(flags, UpdateFlags::Background)) {
+            self->m_pendingFlags.fetch_or(static_cast<int>(UpdateFlags::Background));
+            self->MarkNeedsSync();
+            return;
+        }
+
+        int oldValue = self->m_pendingFlags.load();
+        while (!self->m_pendingFlags.compare_exchange_weak(
+            oldValue,
+            oldValue | static_cast<int>(flags))) {
+        }
+        self->MarkNeedsSync();
+    });
+}
+
+void MedicalVizService::PreInit_SetVizMode(VizMode mode)
+{
+    m_pendingVizModeInt.store(static_cast<int>(mode));
+}
+
+void MedicalVizService::PreInit_SetMaterial(const MaterialParams& mat)
+{
+    if (m_sharedState) {
+        m_sharedState->SetMaterial(mat);
     }
 }
 
-void MedicalVizService::ShowVolume() {
-    if (!m_dataManager->GetVtkImage()) return;
-    auto strategy = GetStrategy(VizMode::Volume);
-    SwitchStrategy(strategy);
-    OnStateChanged();
-}
-
-void MedicalVizService::ShowIsoSurface() {
-    if (!m_dataManager->GetVtkImage()) return;
-
-    // 使用 Converter 进行数据处理 (Model -> Logic -> New Model)
-    auto strategy = GetStrategy(VizMode::IsoSurface);
-    SwitchStrategy(strategy);
-    OnStateChanged();
-}
-
-void MedicalVizService::ShowSlice(VizMode sliceMode) {
-    if (!m_dataManager->GetVtkImage()) return;
-    auto strategy = GetStrategy(sliceMode);
-    SwitchStrategy(strategy);
-    OnStateChanged();
-}
-
-void MedicalVizService::Show3DPlanes(VizMode renderMode)
+void MedicalVizService::PreInit_SetOpacity(double opacity)
 {
-    if (!m_dataManager->GetVtkImage()) return;
-
-    // 使用 Converter 进行数据处理 (Model -> Logic -> New Model)
-    auto strategy = GetStrategy(renderMode);
-    SwitchStrategy(strategy);
-    OnStateChanged();
-}
-
-void MedicalVizService::UpdateInteraction(int value)
-{
-    if (!m_currentStrategy) return;
-
-    // 获取当前图像维度用于边界检查
-    int dims[3];
-    m_dataManager->GetVtkImage()->GetDimensions(dims);
-
-    int axisIndex = m_currentStrategy->GetNavigationAxis();//painter当前负责哪个轴 Axial的painter 会返回2
-    if (axisIndex != -1)
-        m_sharedState->UpdateAxis(axisIndex, value, dims[axisIndex]);
-
-}
-
-void MedicalVizService::ResetCursorCenter()
-{
-    auto img = m_dataManager->GetVtkImage();
-    if (!img) return;
-    int dims[3];
-    img->GetDimensions(dims);
-    m_sharedState->SetCursorPosition(dims[0] / 2, dims[1] / 2, dims[2] / 2);
-}
-
-std::shared_ptr<AbstractVisualStrategy> MedicalVizService::GetStrategy(VizMode mode)
-{
-    // 检查cache
-    auto it = m_strategyCache.find(mode);
-    if (it != m_strategyCache.end())
-        return it->second;
-
-    auto strategy = StrategyFactory::CreateStrategy(mode);
-    // 原始数据接口
-    vtkSmartPointer<vtkImageData> rawImage = m_dataManager->GetVtkImage();
-
-    // 数据处理移到策略内部
-    if (rawImage) {
-        strategy->SetInputData(rawImage);
+    if (!m_sharedState) {
+        return;
     }
 
-    // 存入缓存
-    m_strategyCache[mode] = strategy;
-    return strategy;
+    auto mat = m_sharedState->GetMaterial();
+    mat.opacity = opacity;
+    m_sharedState->SetMaterial(mat);
 }
 
-void MedicalVizService::ClearCache()
+void MedicalVizService::PreInit_SetTransferFunction(const std::vector<TFNode>& nodes)
 {
-    m_strategyCache.clear();
-    m_currentStrategy = nullptr;
+    if (m_sharedState) {
+        m_sharedState->SetTFNodes(nodes);
+    }
+}
+
+void MedicalVizService::PreInit_SetIsoThreshold(double val)
+{
+    if (m_sharedState) {
+        m_sharedState->SetIsoValue(val);
+    }
+}
+
+void MedicalVizService::PreInit_SetBackground(const BackgroundColor& bg)
+{
+    if (!m_sharedState) {
+        return;
+    }
+
+    m_sharedState->SetBackground(bg);
     if (m_renderer) {
-        m_renderer->RemoveAllViewProps();
+        m_renderer->SetBackground(bg.r, bg.g, bg.b);
     }
 }
 
-void MedicalVizService::OnStateChanged() {
-    m_needsSync = true;
-}
-
-int MedicalVizService::GetPlaneAxis(vtkActor* actor) {
-    if (m_currentStrategy) {
-        return m_currentStrategy->GetPlaneAxis(actor);
+void MedicalVizService::PreInit_SetWindowLevel(double ww, double wc)
+{
+    if (m_sharedState) {
+        m_sharedState->SetWindowLevel(ww, wc);
     }
-    return -1;
 }
 
-void MedicalVizService::SyncCursorToWorldPosition(double worldPos[3]) {
-    // 获取数据元信息
-    auto img = m_dataManager->GetVtkImage();
-    if (!img) return;
+void MedicalVizService::PreInit_CommitConfig(const PreInitConfig& cfg)
+{
+    m_pendingVizModeInt.store(static_cast<int>(cfg.vizMode));
+    if (m_sharedState) {
+        m_sharedState->CommitPreInitConfig(cfg);
+    }
+    if (cfg.hasBgColor && m_renderer) {
+        m_renderer->SetBackground(cfg.bgColor.r, cfg.bgColor.g, cfg.bgColor.b);
+    }
+}
 
-    double origin[3], spacing[3];
-    img->GetOrigin(origin);
-    img->GetSpacing(spacing);
-    int dims[3];
-    img->GetDimensions(dims);
+void MedicalVizService::LoadFileAsync(
+    const std::string& path,
+    std::function<void(bool success)> onComplete)
+{
+    if (!m_sharedState || !m_dataManager) {
+        if (onComplete) {
+            onComplete(false);
+        }
+        return;
+    }
 
-    // 执行坐标转换逻辑 (原本在 Context 里的代码挪到这里)
-    int i = std::round((worldPos[0] - origin[0]) / spacing[0]);
-    int j = std::round((worldPos[1] - origin[1]) / spacing[1]);
-    int k = std::round((worldPos[2] - origin[2]) / spacing[2]);
+    if (m_sharedState->GetLoadState() == LoadState::Loading) {
+        std::cerr << "[LoadFileAsync] Already loading, ignoring duplicate call.\n";
+        return;
+    }
 
-    // 边界检查
-    if (i < 0) i = 0; if (i >= dims[0]) i = dims[0] - 1;
-    if (j < 0) j = 0; if (j >= dims[1]) j = dims[1] - 1;
-    if (k < 0) k = 0; if (k >= dims[2]) k = dims[2] - 1;
+    m_cancelFlag->store(false);
+    m_sharedState->SetLoadState(LoadState::Loading);
 
-    // 更新内部 State
-    m_sharedState->SetCursorPosition(i, j, k);
+    auto dataMgr = m_dataManager;
+    auto sharedState = m_sharedState;
+    auto cancelFlag = m_cancelFlag;
+
+    std::packaged_task<void()> task([dataMgr, sharedState, path, onComplete, cancelFlag]() mutable {
+        if (cancelFlag->load()) {
+            sharedState->SetLoadState(LoadState::Idle);
+            if (onComplete) {
+                onComplete(false);
+            }
+            return;
+        }
+
+        const bool ok = dataMgr->LoadData(path);
+
+        if (cancelFlag->load()) {
+            sharedState->SetLoadState(LoadState::Idle);
+            if (onComplete) {
+                onComplete(false);
+            }
+            return;
+        }
+
+        if (ok) {
+            auto img = dataMgr->GetVtkImage();
+            if (img) {
+                double range[2] = { 0.0, 0.0 };
+                img->GetScalarRange(range);
+                sharedState->NotifyDataReady(range[0], range[1]);
+            } else {
+                sharedState->NotifyLoadFailed();
+            }
+        } else {
+            sharedState->NotifyLoadFailed();
+        }
+
+        if (onComplete) {
+            onComplete(ok);
+        }
+    });
+
+    {
+        std::lock_guard<std::mutex> lock(m_loadMutex);
+        m_loadFuture = task.get_future();
+    }
+
+    std::thread(std::move(task)).detach();
+}
+
+LoadState MedicalVizService::GetLoadState() const
+{
+    return m_sharedState ? m_sharedState->GetLoadState() : LoadState::Idle;
+}
+
+void MedicalVizService::CancelLoad()
+{
+    if (m_cancelFlag) {
+        m_cancelFlag->store(true);
+    }
 }
 
 void MedicalVizService::ProcessPendingUpdates()
 {
-    if (!m_needsSync || !m_currentStrategy) return;
+    if (m_needsCacheClear.exchange(false)) {
+        ExecuteClearStrategyCache();
+    }
 
-    // 获取并清空待处理标记
-    int flagsInt = m_pendingFlags.exchange(0);
-    UpdateFlags flags = static_cast<UpdateFlags>(flagsInt);
+    if (m_needsLoadFailed.exchange(false)) {
+        PostData_HandleLoadFailed();
+        return;
+    }
 
-    // 如果没有任何更新标志,直接返回
+    if (m_needsDataRefresh.exchange(false)) {
+        PostData_RebuildPipeline();
+        return;
+    }
+
+    PostData_SyncStateToStrategy();
+}
+
+void MedicalVizService::PostData_RebuildPipeline()
+{
+    const VizMode mode = static_cast<VizMode>(m_pendingVizModeInt.load());
+    auto strategy = GetOrCreateStrategy(mode);
+    if (!strategy) {
+        std::cerr << "[RebuildPipeline] StrategyFactory returned null.\n";
+        return;
+    }
+
+    auto img = m_dataManager ? m_dataManager->GetVtkImage() : nullptr;
+    if (!img) {
+        std::cerr << "[RebuildPipeline] DataManager has no valid image.\n";
+        return;
+    }
+
+    int dims[3] = { 0, 0, 0 };
+    img->GetDimensions(dims);
+    if (dims[0] <= 0 || dims[1] <= 0 || dims[2] <= 0) {
+        std::cerr << "[RebuildPipeline] Image has zero dimension.\n";
+        return;
+    }
+
+    strategy->SetInputData(img);
+    SwitchStrategy(strategy);
+    MarkNeedsSync();
+}
+
+void MedicalVizService::PostData_SyncStateToStrategy()
+{
+    if (!m_needsSync.load() || !m_currentStrategy || !m_sharedState) {
+        return;
+    }
+
+    const int flagsInt = m_pendingFlags.exchange(0);
+    const UpdateFlags flags = static_cast<UpdateFlags>(flagsInt);
     if (flags == UpdateFlags::None) {
         m_needsSync = false;
         return;
     }
 
-    if ((int)flags & (int)UpdateFlags::Interaction) {
-        if (m_renderWindow) {
-            bool interacting = m_sharedState->IsInteracting();
-            // 如果正在交互（拖拽中），要求 15 FPS -> 触发降采样
-            // 如果停止交互，要求 0.001 FPS -> 恢复高质量
-            m_renderWindow->SetDesiredUpdateRate(interacting ? 15.0 : 0.001);
-        }
+    if (HasFlag(flags, UpdateFlags::Interaction) && m_renderWindow) {
+        const bool interacting = m_sharedState->IsInteracting();
+        m_renderWindow->SetDesiredUpdateRate(interacting ? 15.0 : 0.001);
     }
 
-	//修改 2/28 不更新2D切片视图的无关更新
-    const int flagsBits = static_cast<int>(flags);
-    const bool isSliceView = (m_currentStrategy->GetNavigationAxis() != -1);
-
-    //2D切片视图真正关心的更新类型
-    const int sliceRelevantBits =
-        static_cast<int>(UpdateFlags::Cursor) |
-        static_cast<int>(UpdateFlags::TF) |
-        static_cast<int>(UpdateFlags::Material);
-
-    // 2D 视图遇到仅IsoValue/ Interaction 等无关更新时，直接跳过
-    if (isSliceView && (flagsBits & sliceRelevantBits) == 0) {
-        m_needsSync = false;
-        return;
+    if (HasFlag(flags, UpdateFlags::Background) && m_renderer) {
+        const auto bg = m_sharedState->GetBackground();
+        m_renderer->SetBackground(bg.r, bg.g, bg.b);
     }
 
-    // 将 SharedState业务对象转换为 RenderParams纯数据对象
-    // 避免持有复杂的业务逻辑引用
-    RenderParams params;
-
-    // 获取位置
-    params.cursor = m_sharedState->GetCursorPosition();
-
-    // 获取 TF
-    params.tfNodes = m_sharedState->GetTFNodes();
-    auto range = m_sharedState->GetDataRange();
-    params.scalarRange[0] = range[0];
-    params.scalarRange[1] = range[1];
-    params.material = m_sharedState->GetMaterial();
-    params.isoValue = m_sharedState->GetIsoValue(); // 传递阈值
-
-    // 泛型调用
+    RenderParams params = BuildRenderParams(flags);
     m_currentStrategy->UpdateVisuals(params, flags);
-    // 逻辑同步完成，现在标记渲染层脏了
+
     m_isDirty = true;
     m_needsSync = false;
 }
 
-std::array<int, 3> MedicalVizService::GetCursorPosition() {
-    return m_sharedState->GetCursorPosition();
+void MedicalVizService::PostData_HandleLoadFailed()
+{
+    ExecuteClearStrategyCache();
+    m_needsDataRefresh = false;
+    m_pendingFlags = 0;
+    m_isDirty = true;
 }
 
-void MedicalVizService::SetLuxParams(double ambient, double diffuse, double specular, double power, bool shadeOn) {
+RenderParams MedicalVizService::BuildRenderParams(UpdateFlags flags) const
+{
+    RenderParams params;
+    if (!m_sharedState) {
+        return params;
+    }
+
+    const auto range = m_sharedState->GetDataRange();
+    params.scalarRange[0] = range[0];
+    params.scalarRange[1] = range[1];
+
+    if (HasFlag(flags, UpdateFlags::Cursor)) {
+        const auto pos = m_sharedState->GetCursorPosition();
+        params.cursor = { pos[0], pos[1], pos[2] };
+    }
+    if (HasFlag(flags, UpdateFlags::TF)) {
+        m_sharedState->GetTFNodes(params.tfNodes);
+    }
+    if (HasFlag(flags, UpdateFlags::WindowLevel)) {
+        params.windowLevel = m_sharedState->GetWindowLevel();
+    }
+    if (HasFlag(flags, UpdateFlags::Material)) {
+        params.material = m_sharedState->GetMaterial();
+    }
+    if (HasFlag(flags, UpdateFlags::IsoValue)) {
+        params.isoValue = m_sharedState->GetIsoValue();
+    }
+    if (HasFlag(flags, UpdateFlags::Transform)) {
+        params.modelMatrix = m_sharedState->GetModelMatrix();
+    }
+    if (HasFlag(flags, UpdateFlags::Background)) {
+        params.background = m_sharedState->GetBackground();
+    }
+    if (HasFlag(flags, UpdateFlags::Visibility)) {
+        params.visibilityMask = m_sharedState->GetVisibilityMask();
+    }
+
+    return params;
+}
+
+std::shared_ptr<AbstractVisualStrategy> MedicalVizService::GetOrCreateStrategy(VizMode mode)
+{
+    const auto it = m_strategyCache.find(mode);
+    if (it != m_strategyCache.end()) {
+        return it->second;
+    }
+
+    auto strategy = StrategyFactory::CreateStrategy(mode);
+    if (strategy) {
+        m_strategyCache[mode] = strategy;
+    }
+    return strategy;
+}
+
+void MedicalVizService::RequestClearStrategyCache()
+{
+    m_needsCacheClear = true;
+}
+
+void MedicalVizService::ExecuteClearStrategyCache()
+{
+    if (m_currentStrategy && m_renderer) {
+        m_currentStrategy->Detach(m_renderer);
+        m_currentStrategy = nullptr;
+    }
+    m_strategyCache.clear();
+}
+
+void MedicalVizService::ResetCursorToCenter()
+{
+    if (!m_dataManager || !m_sharedState) {
+        return;
+    }
+
+    auto img = m_dataManager->GetVtkImage();
+    if (!img) {
+        return;
+    }
+
+    int dims[3] = { 0, 0, 0 };
+    img->GetDimensions(dims);
+    m_sharedState->SetCursorPosition(dims[0] / 2, dims[1] / 2, dims[2] / 2);
+}
+
+void MedicalVizService::MarkNeedsSync()
+{
+    m_needsSync = true;
+    m_isDirty = true;
+}
+
+void MedicalVizService::UpdateInteraction(int delta)
+{
+    if (!m_sharedState) {
+        return;
+    }
+
+    VizMode mode = static_cast<VizMode>(m_pendingVizModeInt.load());
+    int axis = 2;
+    if (mode == VizMode::SliceCoronal) {
+        axis = 1;
+    } else if (mode == VizMode::SliceSagittal) {
+        axis = 0;
+    } else if (m_currentStrategy && m_currentStrategy->GetNavigationAxis() != -1) {
+        axis = m_currentStrategy->GetNavigationAxis();
+    }
+
+    auto pos = m_sharedState->GetCursorPosition();
+    pos[axis] += delta;
+
+    if (m_dataManager) {
+        auto img = m_dataManager->GetVtkImage();
+        if (img) {
+            int dims[3] = { 0, 0, 0 };
+            img->GetDimensions(dims);
+            pos[axis] = std::max(0, std::min(pos[axis], dims[axis] - 1));
+        }
+    }
+
+    m_sharedState->SetCursorPosition(pos[0], pos[1], pos[2]);
+    MarkNeedsSync();
+}
+
+void MedicalVizService::SyncCursorToWorldPosition(double worldPos[3], int axis)
+{
+    if (!m_dataManager || !m_sharedState) {
+        return;
+    }
+
+    auto img = m_dataManager->GetVtkImage();
+    if (!img) {
+        return;
+    }
+
+    double spacing[3] = { 1.0, 1.0, 1.0 };
+    double origin[3] = { 0.0, 0.0, 0.0 };
+    int dims[3] = { 0, 0, 0 };
+    img->GetSpacing(spacing);
+    img->GetOrigin(origin);
+    img->GetDimensions(dims);
+
+    auto clamp = [](int value, int lo, int hi) {
+        return std::max(lo, std::min(value, hi));
+    };
+
+    auto pos = m_sharedState->GetCursorPosition();
+    if (axis == -1 || axis == 0) {
+        pos[0] = clamp(static_cast<int>(std::round((worldPos[0] - origin[0]) / spacing[0])), 0, dims[0] - 1);
+    }
+    if (axis == -1 || axis == 1) {
+        pos[1] = clamp(static_cast<int>(std::round((worldPos[1] - origin[1]) / spacing[1])), 0, dims[1] - 1);
+    }
+    if (axis == -1 || axis == 2) {
+        pos[2] = clamp(static_cast<int>(std::round((worldPos[2] - origin[2]) / spacing[2])), 0, dims[2] - 1);
+    }
+
+    m_sharedState->SetCursorPosition(pos[0], pos[1], pos[2]);
+}
+
+std::array<int, 3> MedicalVizService::GetCursorPosition()
+{
+    return m_sharedState ? m_sharedState->GetCursorPosition() : std::array<int, 3>{ 0, 0, 0 };
+}
+
+void MedicalVizService::SetInteracting(bool val)
+{
+    if (m_sharedState) {
+        m_sharedState->SetInteracting(val);
+    }
+}
+
+int MedicalVizService::GetPlaneAxis(vtkActor* actor)
+{
+    return m_currentStrategy ? m_currentStrategy->GetPlaneAxis(actor) : -1;
+}
+
+vtkProp3D* MedicalVizService::GetMainProp()
+{
+    return m_currentStrategy ? m_currentStrategy->GetMainProp() : nullptr;
+}
+
+void MedicalVizService::SyncModelMatrix(vtkMatrix4x4* mat)
+{
+    if (m_transformService) {
+        m_transformService->SyncModelMatrix(mat);
+    }
+}
+
+void MedicalVizService::SetElementVisible(std::uint32_t flagBit, bool show)
+{
+    if (m_sharedState) {
+        m_sharedState->SetElementVisible(flagBit, show);
+    }
+}
+
+void MedicalVizService::AdjustWindowLevel(double deltaWW, double deltaWC)
+{
+    if (!m_sharedState) {
+        return;
+    }
+
+    const auto current = m_sharedState->GetWindowLevel();
+    const auto range = m_sharedState->GetDataRange();
+    const double dataSpan = range[1] - range[0];
+
+    const double scaledWW = (dataSpan > 0.0) ? deltaWW * dataSpan * 0.005 : deltaWW;
+    const double scaledWC = (dataSpan > 0.0) ? deltaWC * dataSpan * 0.003 : deltaWC;
+
+    constexpr double kMinWW = 1.0;
+    const double newWW = std::max(kMinWW, current.windowWidth + scaledWW);
+    const double newWC = (dataSpan > 0.0)
+        ? std::max(range[0], std::min(range[1], current.windowCenter + scaledWC))
+        : current.windowCenter + scaledWC;
+
+    m_sharedState->SetWindowLevel(newWW, newWC);
+    MarkNeedsSync();
+}
+
+void MedicalVizService::TransformModel(double translate[3], double rotate[3], double scale[3])
+{
+    if (m_transformService) {
+        m_transformService->TransformModel(translate, rotate, scale);
+    }
+}
+
+void MedicalVizService::ResetModelTransform()
+{
+    if (m_transformService) {
+        m_transformService->ResetModelTransform();
+    }
+}
+
+void MedicalVizService::WorldToModel(const double worldPos[3], double modelPos[3])
+{
+    if (m_transformService) {
+        m_transformService->WorldToModel(worldPos, modelPos);
+    }
+}
+
+void MedicalVizService::ModelToWorld(const double modelPos[3], double worldPos[3])
+{
+    if (m_transformService) {
+        m_transformService->ModelToWorld(modelPos, worldPos);
+    }
+}
+
+void MedicalVizService::LoadFile(const std::string& path)
+{
+    if (!m_dataManager || !m_sharedState) {
+        return;
+    }
+
+    if (!m_dataManager->LoadData(path)) {
+        m_sharedState->NotifyLoadFailed();
+        m_needsLoadFailed = true;
+        return;
+    }
+
+    auto img = m_dataManager->GetVtkImage();
+    if (!img) {
+        m_sharedState->NotifyLoadFailed();
+        m_needsLoadFailed = true;
+        return;
+    }
+
+    double range[2] = { 0.0, 0.0 };
+    img->GetScalarRange(range);
+    m_sharedState->NotifyDataReady(range[0], range[1]);
+    ShowIsoSurface();
+}
+
+void MedicalVizService::ActivateModeImmediate(VizMode mode)
+{
+    m_pendingVizModeInt.store(static_cast<int>(mode));
+
+    if (!m_dataManager) {
+        return;
+    }
+
+    auto img = m_dataManager->GetVtkImage();
+    if (!img) {
+        return;
+    }
+
+    auto strategy = GetOrCreateStrategy(mode);
+    if (!strategy) {
+        return;
+    }
+
+    strategy->SetInputData(img);
+    SwitchStrategy(strategy);
+    MarkNeedsSync();
+}
+
+void MedicalVizService::ShowVolume()
+{
+    ActivateModeImmediate(VizMode::Volume);
+}
+
+void MedicalVizService::ShowIsoSurface()
+{
+    ActivateModeImmediate(VizMode::IsoSurface);
+}
+
+void MedicalVizService::ShowSlice(VizMode sliceMode)
+{
+    ActivateModeImmediate(sliceMode);
+}
+
+void MedicalVizService::Show3DPlanes(VizMode renderMode)
+{
+    ActivateModeImmediate(renderMode);
+}
+
+void MedicalVizService::OnStateChanged()
+{
+    MarkNeedsSync();
+}
+
+void MedicalVizService::SetLuxParams(double ambient, double diffuse, double specular, double power, bool shadeOn)
+{
+    if (!m_sharedState) {
+        return;
+    }
+
     auto mat = m_sharedState->GetMaterial();
     mat.ambient = ambient;
     mat.diffuse = diffuse;
     mat.specular = specular;
     mat.specularPower = power;
     mat.shadeOn = shadeOn;
-    m_sharedState->SetMaterial(mat); // 触发 UpdateFlags::Material
+    m_sharedState->SetMaterial(mat);
 }
 
-void MedicalVizService::SetOpacity(double opacity) {
-    auto mat = m_sharedState->GetMaterial();
-    mat.opacity = opacity;
-    m_sharedState->SetMaterial(mat); // 触发 UpdateFlags::Material
+void MedicalVizService::SetOpacity(double opacity)
+{
+    PreInit_SetOpacity(opacity);
 }
 
-void MedicalVizService::SetIsoThreshold(double val) {
-    m_sharedState->SetIsoValue(val); // 触发 UpdateFlags::IsoValue
+void MedicalVizService::SetIsoThreshold(double val)
+{
+    PreInit_SetIsoThreshold(val);
 }
 
-void MedicalVizService::SetTransferFunction(const std::vector<TFNode>& nodes) {
-    m_sharedState->SetTFNodes(nodes); // 触发 UpdateFlags::TF
-}
-
-void MedicalVizService::SetInteracting(bool val) {
-    m_sharedState->SetInteracting(val);
+void MedicalVizService::SetTransferFunction(const std::vector<TFNode>& nodes)
+{
+    PreInit_SetTransferFunction(nodes);
 }

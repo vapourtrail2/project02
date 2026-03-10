@@ -35,6 +35,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AppTypes.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="AppInterfaces.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -53,9 +56,17 @@
     <ClInclude Include="StrategyFactory.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="AppState.h">
+    
+    <ClInclude Include="MemMappedFile.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="VolumeAnalysisService.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="VolumeTransformService.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+
     <ClInclude Include="c_ui\workbenches\PerformancePage.h">
       <Filter>c_ui\workbenches</Filter>
     </ClInclude>
@@ -136,9 +147,11 @@
     <ClCompile Include="DataManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="DataConverters.cpp">
+    
+    <ClCompile Include="MemMappedFile.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+
     <ClCompile Include="VisualStrategies.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -299,3 +312,4 @@
     </QtMoc>
   </ItemGroup>
 </Project>
+

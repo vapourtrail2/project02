@@ -169,9 +169,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <QtMoc Include="AppController.h" />
+    <ClInclude Include="AppTypes.h" />
     <ClInclude Include="AppInterfaces.h" />
     <ClInclude Include="AppService.h" />
     <ClInclude Include="AppState.h" />
+    <ClInclude Include="MemMappedFile.h" />
+    <ClInclude Include="VolumeAnalysisService.h" />
+    <ClInclude Include="VolumeTransformService.h" />
     <QtMoc Include="c_ui\app\app.h" />
     <QtMoc Include="c_ui\MainWindow.h" />
     <QtMoc Include="c_ui\panels\SceneTreePanel.h" />
@@ -253,6 +257,7 @@
     <ClCompile Include="c_ui\workbenches\VolumePage.cpp" />
     <ClCompile Include="c_ui\workbenches\WindowPage.cpp" />
     <ClCompile Include="DataConverters.cpp" />
+    <ClCompile Include="MemMappedFile.cpp" />
     <ClCompile Include="DataManager.cpp" />
     <ClCompile Include="ReconInteraction.cpp" />
     <ClCompile Include="VisualStrategies.cpp" />
@@ -270,3 +275,4 @@
     <Error Condition="!Exists('..\packages\Microsoft.Windows.CppWinRT.2.0.220531.1\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Windows.CppWinRT.2.0.220531.1\build\native\Microsoft.Windows.CppWinRT.targets'))" />
   </Target>
 </Project>
+

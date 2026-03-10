@@ -111,7 +111,6 @@ QWidget* WindowPage::buildRibbon12(QWidget* parent)
         button->setIconSize(QSize(32, 32));
         button->setMinimumSize(QSize(59, 90));
         button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-        // Shared wrap rule avoids duplicate text-layout code in each page.
         button->setText(RibbonCommon::shiftNewLine(action.text, button->font(), 43));
         if (inGroup_12)
         {

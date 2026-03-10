@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <QString>
 #include <memory>
 
@@ -16,6 +17,13 @@ public:
     explicit WorkspaceFlow(AppController* controller);
 
     bool openFile(const QString& path, QString* err);
+    bool openReconstructedData(
+        const float* data,
+        const std::array<int, 3>& dims,
+        const std::array<float, 3>& spacing,
+        const std::array<float, 3>& origin,
+        const QString& sourcePath,
+        QString* err);
     std::shared_ptr<AppSession> session() const;
     bool hasData() const;
 
@@ -24,12 +32,22 @@ public:
         SceneTreePanel* scenePanel,
         RenderPanel* renderPanel,
         QString* err);
-    
-	//将打开文件和绑定session合成一个接口，外部调用时只需调用这个接口即可完成打开文件并更新界面
-    bool openAndBind(const QString& path, 
+
+    bool openAndBind(
+        const QString& path,
         ReconstructPage* reconstructPage,
-		SceneTreePanel* scenePanel, 
-        RenderPanel* renderPanel, 
+        SceneTreePanel* scenePanel,
+        RenderPanel* renderPanel,
+        QString* err);
+    bool openReconstructedAndBind(
+        const float* data,
+        const std::array<int, 3>& dims,
+        const std::array<float, 3>& spacing,
+        const std::array<float, 3>& origin,
+        const QString& sourcePath,
+        ReconstructPage* reconstructPage,
+        SceneTreePanel* scenePanel,
+        RenderPanel* renderPanel,
         QString* err);
 
 private:

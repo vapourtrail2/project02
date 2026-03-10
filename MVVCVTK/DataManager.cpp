@@ -1,151 +1,316 @@
 ﻿#include "DataManager.h"
-#include <vtkFloatArray.h>
-#include <vtkPointData.h>
-#include <fstream>
-#include <filesystem>
-#include <regex>
+
+#include "MemMappedFile.h"
+#include <vtkStringArray.h>
+#include <vtkTIFFReader.h>
+#include <algorithm>
+#include <cctype>
 #include <cstring>
-#include <vector>   
-using namespace std;
+#include <filesystem>
+#include <fstream>
+#include <regex>
+#include <vector>
 
+namespace {
+bool ParseVolumeDims(const std::string& filePath, int dims[3])
+{
+    std::filesystem::path pathObj(filePath);
+    const std::string name = pathObj.filename().string();
 
-RawVolumeDataManager::RawVolumeDataManager() {
+    std::regex pattern(R"((\d+)[xX](\d+)[xX](\d+))");
+    std::smatch matches;
+    if (!std::regex_search(name, matches, pattern) || matches.size() <= 3) {
+        return false;
+    }
+
+    dims[0] = std::stoi(matches[1].str());
+    dims[1] = std::stoi(matches[2].str());
+    dims[2] = std::stoi(matches[3].str());
+    return dims[0] > 0 && dims[1] > 0 && dims[2] > 0;
+}
+}
+
+RawVolumeDataManager::RawVolumeDataManager()
+{
     m_vtkImage = vtkSmartPointer<vtkImageData>::New();
 }
 
 bool RawVolumeDataManager::LoadData(const std::string& filePath)
 {
-    namespace fs = std::filesystem;
+    auto setState = [this](LoadState state, bool isLoading) {
+        {
+            std::lock_guard<std::mutex> lock(m_stateMutex);
+            m_loadState = state;
+        }
+        m_isLoading.store(isLoading);
+    };
 
-    if (filePath.empty()) {
-        return false;
-    }
+    namespace fs = std::filesystem;
+    setState(LoadState::Loading, true);
 
     std::error_code ec;
-    if (!fs::exists(filePath, ec) || ec) {
+    if (filePath.empty() || !fs::exists(filePath, ec) || ec || !fs::is_regular_file(filePath, ec) || ec) {
+        setState(LoadState::Failed, false);
         return false;
     }
 
-    if (!fs::is_regular_file(filePath, ec) || ec) {
-        return false;
-    }
-
-    //从文件名解析尺寸 (例如 data_512x512x200.raw) 
-    fs::path pathObj(filePath);
-    const std::string name = pathObj.filename().string();
-
-    std::regex pattern(R"((\d+)[xX](\d+)[xX](\d+))");
-    std::smatch matches;
-
-    if (std::regex_search(name, matches, pattern) && matches.size() > 3) {
-        m_dims[0] = std::stoi(matches[1].str());
-        m_dims[1] = std::stoi(matches[2].str());
-        m_dims[2] = std::stoi(matches[3].str());
-    }
-    else {
-        std::cout << "文件名格式不对" << std::endl;
-        return false;
-    }
-
-    if (m_dims[0] <= 0 || m_dims[1] <= 0 || m_dims[2] <= 0) {
+    int newDims[3] = { 0, 0, 0 };
+    if (!ParseVolumeDims(filePath, newDims)) {
+        setState(LoadState::Failed, false);
         return false;
     }
 
     const size_t voxels =
-        static_cast<size_t>(m_dims[0]) *
-        static_cast<size_t>(m_dims[1]) *
-        static_cast<size_t>(m_dims[2]);
-        
+        static_cast<size_t>(newDims[0]) *
+        static_cast<size_t>(newDims[1]) *
+        static_cast<size_t>(newDims[2]);
     if (voxels == 0) {
+        setState(LoadState::Failed, false);
         return false;
     }
 
-    const uintmax_t fileBytes = fs::file_size(filePath, ec);//获取filePath文件的大小，以字节为单位
-    
+    const uintmax_t fileBytes = fs::file_size(filePath, ec);
     if (ec) {
+        setState(LoadState::Failed, false);
         return false;
     }
 
-    const uintmax_t finalFloatBytes = static_cast<uintmax_t>(voxels) * sizeof(float);
-    const uintmax_t finalU16Bytes = static_cast<uintmax_t>(voxels) * sizeof(uint16_t);
-
-    const bool isFloat = (fileBytes == finalFloatBytes);
-    const bool isU16 = (fileBytes == finalU16Bytes);
-
+    const size_t floatBytes = voxels * sizeof(float);
+    const size_t u16Bytes = voxels * sizeof(uint16_t);
+    const bool isFloat = fileBytes == floatBytes;
+    const bool isU16 = fileBytes == u16Bytes;
     if (!isFloat && !isU16) {
-        return false; // 体素数和文件大小不匹配
-    }
-
-    //构建 vtkImageData
-    m_vtkImage->SetDimensions(m_dims[0], m_dims[1], m_dims[2]);
-    m_vtkImage->SetSpacing(m_spacing, m_spacing, m_spacing); 
-    m_vtkImage->SetOrigin(0, 0, 0);
-    m_vtkImage->AllocateScalars(VTK_FLOAT, 1);//每个体素存一个值
-
-    float* out = static_cast<float*>(m_vtkImage->GetScalarPointer());
-
-    //读文件 
-	std::ifstream file(filePath, std::ios::binary);//文件以二进制方式打开 不会进行字符转换
-    if (!file.is_open()) {
-        std::cout << "打开失败" << std::endl;
+        setState(LoadState::Failed, false);
         return false;
     }
 
-    if (isFloat) {
-        file.read(reinterpret_cast<char*>(out),
-	    static_cast<std::streamsize>(finalFloatBytes));//read的作用是 从硬盘里文件种抓取指定数量的字节数 原封不动地存储到内存中
+    auto newImage = vtkSmartPointer<vtkImageData>::New();
+    newImage->SetDimensions(newDims[0], newDims[1], newDims[2]);
+    newImage->SetSpacing(m_spacing, m_spacing, m_spacing);
+    newImage->SetOrigin(0.0, 0.0, 0.0);
+    newImage->AllocateScalars(VTK_FLOAT, 1);
 
-        if (file.gcount() != static_cast<std::streamsize>(finalFloatBytes)) {
+    float* dst = static_cast<float*>(newImage->GetScalarPointer());
+    std::fill_n(dst, voxels, 0.0f);
+
+    MemMappedFile mmf;
+    if (mmf.open(filePath)) {
+        if (isFloat) {
+            std::memcpy(dst, mmf.data(), floatBytes);
+        } else {
+            const auto* src = static_cast<const uint16_t*>(mmf.data());
+            for (size_t i = 0; i < voxels; ++i) {
+                dst[i] = static_cast<float>(src[i]);
+            }
+        }
+    } else {
+        std::ifstream file(filePath, std::ios::binary);
+        if (!file.is_open()) {
+            setState(LoadState::Failed, false);
             return false;
         }
-    }
-    else {
-        std::vector<uint16_t> tmp(voxels);
-        file.read(reinterpret_cast<char*>(tmp.data()),
-            static_cast<std::streamsize>(finalU16Bytes));
 
-        if (file.gcount() != static_cast<std::streamsize>(finalU16Bytes)) {
-            return false;
+        if (isFloat) {
+            file.read(reinterpret_cast<char*>(dst), static_cast<std::streamsize>(floatBytes));
+            if (file.gcount() != static_cast<std::streamsize>(floatBytes)) {
+                setState(LoadState::Failed, false);
+                return false;
+            }
+        } else {
+            std::vector<uint16_t> tmp(voxels);
+            file.read(reinterpret_cast<char*>(tmp.data()), static_cast<std::streamsize>(u16Bytes));
+            if (file.gcount() != static_cast<std::streamsize>(u16Bytes)) {
+                setState(LoadState::Failed, false);
+                return false;
+            }
+            for (size_t i = 0; i < voxels; ++i) {
+                dst[i] = static_cast<float>(tmp[i]);
+            }
         }
-
-        for (size_t i = 0; i < voxels; ++i) {
-            out[i] = static_cast<float>(tmp[i]);
-        }
     }
 
-    m_vtkImage->Modified();
+    newImage->Modified();
+
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_vtkImage = newImage;
+        m_dims[0] = newDims[0];
+        m_dims[1] = newDims[1];
+        m_dims[2] = newDims[2];
+    }
+
+    setState(LoadState::Succeeded, false);
     return true;
 }
 
-vtkSmartPointer<vtkImageData> RawVolumeDataManager::GetVtkImage() const {
+vtkSmartPointer<vtkImageData> RawVolumeDataManager::GetVtkImage() const
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
     return m_vtkImage;
 }
 
-bool RawVolumeDataManager::SetFromBuffer(const float* data,
-    const std::array<int, 3 >& dims,
+bool RawVolumeDataManager::SetFromBuffer(
+    const float* data,
+    const std::array<int, 3>& dims,
     const std::array<float, 3>& spacing,
-    const std::array<float, 3>& origin) 
+    const std::array<float, 3>& origin)
 {
-    if (!data) {
+    auto setState = [this](LoadState state, bool isLoading) {
+        {
+            std::lock_guard<std::mutex> lock(m_stateMutex);
+            m_loadState = state;
+        }
+        m_isLoading.store(isLoading);
+    };
+
+    if (!data || dims[0] <= 0 || dims[1] <= 0 || dims[2] <= 0) {
+        setState(LoadState::Failed, false);
         return false;
     }
 
-    m_dims[0] = dims[0];
-    m_dims[1] = dims[1];
-    m_dims[2] = dims[2];
+    auto newImage = vtkSmartPointer<vtkImageData>::New();
+    newImage->SetDimensions(dims[0], dims[1], dims[2]);
+    newImage->SetSpacing(spacing[0], spacing[1], spacing[2]);
+    newImage->SetOrigin(origin[0], origin[1], origin[2]);
+    newImage->AllocateScalars(VTK_FLOAT, 1);
 
-	m_vtkImage->SetDimensions(m_dims[0], m_dims[1], m_dims[2]);
-	m_vtkImage->SetSpacing(spacing[0], spacing[1], spacing[2]);
-	m_vtkImage->SetOrigin(origin[0], origin[1], origin[2]);
-	m_vtkImage->AllocateScalars(VTK_FLOAT, 1); // 申请内存，类型为float，连续一维
+    const size_t total =
+        static_cast<size_t>(dims[0]) *
+        static_cast<size_t>(dims[1]) *
+        static_cast<size_t>(dims[2]);
+    float* dst = static_cast<float*>(newImage->GetScalarPointer());
+    std::memcpy(dst, data, total * sizeof(float));
+    newImage->Modified();
 
-    size_t total = size_t(m_dims[0] * m_dims[1] * m_dims[2]);
-    float* res = static_cast<float*>(m_vtkImage->GetScalarPointer());
-    std::memcpy(res, data, total * sizeof(float));//目标地址 源地址 拷贝字节数(复制的数据总量)
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_vtkImage = newImage;
+        m_dims[0] = dims[0];
+        m_dims[1] = dims[1];
+        m_dims[2] = dims[2];
+        m_spacing = spacing[0];
+    }
 
-	m_vtkImage->Modified();
-
-	return true;
+    setState(LoadState::Succeeded, false);
+    return true;
 }
 
+TiffVolumeDataManager::TiffVolumeDataManager()
+{
+    m_vtkImage = vtkSmartPointer<vtkImageData>::New();
+}
 
+bool TiffVolumeDataManager::LoadData(const std::string& inputPath)
+{
+    auto setState = [this](LoadState state, bool isLoading) {
+        {
+            std::lock_guard<std::mutex> lock(m_stateMutex);
+            m_loadState = state;
+        }
+        m_isLoading.store(isLoading);
+    };
+
+    namespace fs = std::filesystem;
+    setState(LoadState::Loading, true);
+
+    fs::path pathObj(inputPath);
+    if (!fs::exists(pathObj)) {
+        setState(LoadState::Failed, false);
+        return false;
+    }
+
+    auto reader = vtkSmartPointer<vtkTIFFReader>::New();
+    if (fs::is_directory(pathObj)) {
+        std::vector<std::string> fileList;
+        for (const auto& entry : fs::directory_iterator(pathObj)) {
+            if (!entry.is_regular_file()) {
+                continue;
+            }
+
+            std::string ext = entry.path().extension().string();
+            std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char ch) {
+                return static_cast<char>(std::tolower(ch));
+            });
+            if (ext == ".tif" || ext == ".tiff") {
+                fileList.push_back(entry.path().string());
+            }
+        }
+
+        if (fileList.empty()) {
+            setState(LoadState::Failed, false);
+            return false;
+        }
+
+        auto naturalSort = [](const std::string& lhs, const std::string& rhs) {
+            size_t i = 0;
+            size_t j = 0;
+            while (i < lhs.size() && j < rhs.size()) {
+                if (std::isdigit(static_cast<unsigned char>(lhs[i])) && std::isdigit(static_cast<unsigned char>(rhs[j]))) {
+                    unsigned long long n1 = 0;
+                    unsigned long long n2 = 0;
+                    while (i < lhs.size() && std::isdigit(static_cast<unsigned char>(lhs[i]))) {
+                        n1 = n1 * 10 + static_cast<unsigned long long>(lhs[i] - '0');
+                        ++i;
+                    }
+                    while (j < rhs.size() && std::isdigit(static_cast<unsigned char>(rhs[j]))) {
+                        n2 = n2 * 10 + static_cast<unsigned long long>(rhs[j] - '0');
+                        ++j;
+                    }
+                    if (n1 != n2) {
+                        return n1 < n2;
+                    }
+                } else {
+                    if (lhs[i] != rhs[j]) {
+                        return lhs[i] < rhs[j];
+                    }
+                    ++i;
+                    ++j;
+                }
+            }
+            return lhs.size() < rhs.size();
+        };
+
+        std::sort(fileList.begin(), fileList.end(), naturalSort);
+        auto vtkFiles = vtkSmartPointer<vtkStringArray>::New();
+        for (const auto& file : fileList) {
+            vtkFiles->InsertNextValue(file);
+        }
+        reader->SetFileNames(vtkFiles);
+    } else {
+        reader->SetFileName(inputPath.c_str());
+        if (!reader->CanReadFile(inputPath.c_str())) {
+            setState(LoadState::Failed, false);
+            return false;
+        }
+    }
+
+    try {
+        reader->Update();
+    } catch (...) {
+        setState(LoadState::Failed, false);
+        return false;
+    }
+
+    auto output = reader->GetOutput();
+    if (!output || output->GetDimensions()[0] == 0) {
+        setState(LoadState::Failed, false);
+        return false;
+    }
+
+    auto newImage = vtkSmartPointer<vtkImageData>::New();
+    newImage->ShallowCopy(output);
+
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_vtkImage = newImage;
+    }
+
+    setState(LoadState::Succeeded, false);
+    return true;
+}
+
+vtkSmartPointer<vtkImageData> TiffVolumeDataManager::GetVtkImage() const
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_vtkImage;
+}

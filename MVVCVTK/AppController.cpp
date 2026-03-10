@@ -10,12 +10,11 @@ bool AppController::openFile(const QString& path, QString* errorOut)
     const QString p = path.trimmed();
     if (p.isEmpty()) {
         if (errorOut) {
-            *errorOut = QStringLiteral("路径为空，请选择文件。");
+            *errorOut = QStringLiteral("Empty path.");
         }
         return false;
     }
 
-    //  newSession 到 m_session
     auto newSession = std::make_shared<AppSession>();
     newSession->dataMgr = std::make_shared<RawVolumeDataManager>();
     newSession->sharedState = std::make_shared<SharedInteractionState>();
@@ -24,30 +23,71 @@ bool AppController::openFile(const QString& path, QString* errorOut)
     const bool ok = newSession->dataMgr->LoadData(p.toStdString());
     if (!ok) {
         if (errorOut) {
-            *errorOut = QStringLiteral("加载失败！请确认文件名包含尺寸(如 data_512x512x200.raw)");
+            *errorOut = QStringLiteral("Load failed. Check whether the file name contains dimensions.");
         }
         return false;
     }
 
-    // 把标量范围写进 sharedState
-    if (auto img = newSession->dataMgr->GetVtkImage()) {
-        double range[2];
-        img->GetScalarRange(range);
-        newSession->sharedState->SetScalarRange(range[0], range[1]);
+    return finalizeSession(newSession, errorOut);
+}
 
-        // 设置初始光标位置到图像中心 (修复画面为空的问题)
-        int dims[3];
-        img->GetDimensions(dims);
-        newSession->sharedState->SetCursorPosition(dims[0] / 2, dims[1] / 2, dims[2] / 2);
-
-        // 设置一个默认的 ISO 阈值 (防止3D视图为空)
-        newSession->sharedState->SetIsoValue(range[0] + (range[1] - range[0]) * 0.2);
+bool AppController::openReconstructedData(
+    const float* data,
+    const std::array<int, 3>& dims,
+    const std::array<float, 3>& spacing,
+    const std::array<float, 3>& origin,
+    const QString& sourcePath,
+    QString* errorOut)
+{
+    auto rawDataManager = std::make_shared<RawVolumeDataManager>();
+    if (!rawDataManager->SetFromBuffer(data, dims, spacing, origin)) {
+        if (errorOut) {
+            *errorOut = QStringLiteral("Invalid reconstruction buffer.");
+        }
+        return false;
     }
 
-    // 分析服务 跟dataMgr同生命周期
+    auto newSession = std::make_shared<AppSession>();
+    newSession->dataMgr = rawDataManager;
+    newSession->sharedState = std::make_shared<SharedInteractionState>();
+    newSession->sourcePath = sourcePath.trimmed().isEmpty()
+        ? QStringLiteral("CT reconstruction")
+        : sourcePath.trimmed();
+
+    return finalizeSession(newSession, errorOut);
+}
+
+//不管重建数据还是从文件加载的数据，最终都要走这个函数来完成后续的状态初始化和信号通知
+//公共路径
+bool AppController::finalizeSession(const std::shared_ptr<AppSession>& newSession, QString* errorOut)
+{
+    if (!newSession || !newSession->dataMgr || !newSession->sharedState) {
+        if (errorOut) {
+            *errorOut = QStringLiteral("Session initialization failed.");
+        }
+        return false;
+    }
+
+    auto img = newSession->dataMgr->GetVtkImage();
+    if (!img) {
+        if (errorOut) {
+            *errorOut = QStringLiteral("No image data was produced.");
+        }
+        return false;
+    }
+
+    double range[2];
+    img->GetScalarRange(range);
+    newSession->sharedState->SetScalarRange(range[0], range[1]);
+
+    int dims[3];
+    img->GetDimensions(dims);
+    newSession->sharedState->SetCursorPosition(dims[0] / 2, dims[1] / 2, dims[2] / 2);
+    newSession->sharedState->SetIsoValue(range[0] + (range[1] - range[0]) * 0.2);
+
     newSession->analysisService = std::make_shared<VolumeAnalysisService>(newSession->dataMgr);
 
-    m_session = std::move(newSession);
+    m_session = newSession;
     emit sessionChanged(m_session);
     return true;
 }

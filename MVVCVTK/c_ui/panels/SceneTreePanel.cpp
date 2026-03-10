@@ -27,7 +27,7 @@ void SceneTreePanel::setSession(const std::shared_ptr<AbstractDataManager>& data
 
     if (!dataMgr || !dataMgr->GetVtkImage()) {
         new QTreeWidgetItem(root_, QStringList() << QStringLiteral("£¨Î´¼ÓÔØÊý¾Ý£©"));
-        root_->setExpanded(true);
+        root_->setExpanded(true); 
         return;
     }
 

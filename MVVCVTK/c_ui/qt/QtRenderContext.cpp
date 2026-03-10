@@ -17,6 +17,14 @@ QtRenderContext::QtRenderContext()
 QtRenderContext::~QtRenderContext()
 {
     TeardownObservers();
+    DetachRendererFromWindow();
+}
+
+void QtRenderContext::DetachRendererFromWindow()
+{
+    if (m_renderWindow && m_renderer) {
+        m_renderWindow->RemoveRenderer(m_renderer);
+    }
 }
 
 void QtRenderContext::SetQtWidget(QVTKOpenGLNativeWidget* widget)
@@ -30,13 +38,17 @@ void QtRenderContext::SetQtWidget(QVTKOpenGLNativeWidget* widget)
         TeardownObservers();
     }
 
+    DetachRendererFromWindow();
+
     if (!widget->renderWindow()) {
         auto rw = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
         widget->setRenderWindow(rw);
     }
     m_renderWindow = widget->renderWindow();
 
-    m_renderer = vtkSmartPointer<vtkRenderer>::New();
+    if (!m_renderer) {
+        m_renderer = vtkSmartPointer<vtkRenderer>::New();
+    }
     m_renderWindow->AddRenderer(m_renderer);
 
     m_interactor = widget->interactor();

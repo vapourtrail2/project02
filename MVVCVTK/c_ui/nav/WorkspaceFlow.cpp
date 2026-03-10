@@ -14,11 +14,28 @@ bool WorkspaceFlow::openFile(const QString& path, QString* err)
 {
     if (!controller_) {
         if (err) {
-            *err = QStringLiteral("AppController 无效");
+            *err = QStringLiteral("Invalid AppController.");
         }
         return false;
     }
     return controller_->openFile(path, err);
+}
+
+bool WorkspaceFlow::openReconstructedData(
+    const float* data,
+    const std::array<int, 3>& dims,
+    const std::array<float, 3>& spacing,
+    const std::array<float, 3>& origin,
+    const QString& sourcePath,
+    QString* err)
+{
+    if (!controller_) {
+        if (err) {
+            *err = QStringLiteral("Invalid AppController.");
+        }
+        return false;
+    }
+    return controller_->openReconstructedData(data, dims, spacing, origin, sourcePath, err);
 }
 
 std::shared_ptr<AppSession> WorkspaceFlow::session() const
@@ -44,7 +61,7 @@ bool WorkspaceFlow::bindSession(
     const auto s = session();
     if (!s || !s->dataMgr || !s->sharedState) {
         if (err) {
-            *err = QStringLiteral("Session 无效");
+            *err = QStringLiteral("Invalid session.");
         }
         return false;
     }
@@ -61,16 +78,40 @@ bool WorkspaceFlow::bindSession(
     return true;
 }
 
-bool WorkspaceFlow::openAndBind(const QString& path,
+bool WorkspaceFlow::openAndBind(
+    const QString& path,
     ReconstructPage* reconstructPage,
     SceneTreePanel* scenePanel,
     RenderPanel* renderPanel,
-    QString* err) {
+    QString* err)
+{
     if (!openFile(path, err)) {
         return false;
     }
 
-    if (!bindSession(reconstructPage, scenePanel, renderPanel,err)) {
+    if (!bindSession(reconstructPage, scenePanel, renderPanel, err)) {
+        return false;
+    }
+
+    return true;
+}
+
+bool WorkspaceFlow::openReconstructedAndBind(
+    const float* data,
+    const std::array<int, 3>& dims,
+    const std::array<float, 3>& spacing,
+    const std::array<float, 3>& origin,
+    const QString& sourcePath,
+    ReconstructPage* reconstructPage,
+    SceneTreePanel* scenePanel,
+    RenderPanel* renderPanel,
+    QString* err)
+{
+    if (!openReconstructedData(data, dims, spacing, origin, sourcePath, err)) {
+        return false;
+    }
+
+    if (!bindSession(reconstructPage, scenePanel, renderPanel, err)) {
         return false;
     }
 

@@ -219,7 +219,7 @@ void CTViewer::buildRibbonTitleBar(QWidget* topBarContainer, QVBoxLayout* topBar
     tabBar_->setDrawBase(false);
     tabBar_->setExpanding(false);
     tabBar_->setMovable(false);
-    tabBar_->setAttribute(Qt::WA_StyledBackground, true); //
+    tabBar_->setAttribute(Qt::WA_StyledBackground, true); 
     tabBar_->setStyleSheet(QStringLiteral(
         "QTabBar#mainRibbonTabBar{background-color:#202020; color:#f5f5f5;}"
         "QTabBar#mainRibbonTabBar::tab{padding:8px 16px; margin:0px; border:none; background-color:#202020;}"
@@ -317,6 +317,18 @@ void CTViewer::buildRibbonStack(QWidget* totalContainer, QVBoxLayout* rootLayout
     pageWindow_ = new WindowPage(stack_);
     stack_->addWidget(pageWindow_);
     bindPage(TabIndex::Window, pageWindow_);
+
+    // Gauge页暂时空着，后续再完善功能
+    pageGauge_ = new QWidget(stack_);
+    auto* gaugeLayout = new QHBoxLayout(pageGauge_);
+    gaugeLayout->setContentsMargins(12, 8, 12, 8);
+    gaugeLayout->setSpacing(0);
+    auto* gaugeLabel = new QLabel(QStringLiteral("Gauge tools are not wired yet"), pageGauge_);
+    gaugeLabel->setStyleSheet(QStringLiteral("color:#b0b0b0;"));
+    gaugeLayout->addWidget(gaugeLabel);
+    gaugeLayout->addStretch();
+    stack_->addWidget(pageGauge_);
+    bindPage(TabIndex::Gauge, pageGauge_);
 }
 
 void CTViewer::buildContentStack(QWidget* totalContainer, QVBoxLayout* rootLayout) {
@@ -421,7 +433,7 @@ UiState CTViewer::buildUiState(int index) const{
     state.tabIndex = index;
 
     //业务集中在一个地方
-    const bool hasData = (workspaceFlow_ && workspaceFlow_->hasData())||(m_currentDataMgr && m_currentState);
+    const bool hasData = workspaceFlow_ && workspaceFlow_->hasData();
     //文件页
     if (tabMap_ && tabMap_->isFileTab(index)) {
 		state.showRibbon = false;
@@ -572,3 +584,4 @@ void CTViewer::setDefaults() {
         move(availableGeometry.topLeft());
     }
 }
+

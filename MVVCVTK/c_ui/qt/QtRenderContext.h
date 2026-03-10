@@ -29,6 +29,7 @@ private:
     void SetupObservers();
     void TeardownObservers();
     void BuildInteractionRouter();
+    void DetachRendererFromWindow();
 
     std::shared_ptr<AbstractInteractiveService> m_interactiveService;
     InteractionRouter m_interactionRouter;

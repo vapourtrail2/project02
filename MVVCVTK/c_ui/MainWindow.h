@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <QMainWindow>
 #include <QPointer>
 #include <QPoint>
@@ -33,10 +33,8 @@ class AppController;
 class RenderPanel;
 class SceneTreePanel;
 
-//修改架构
 class TabMap;
 class WorkspaceFlow;
-
 
 class CTViewer : public QMainWindow
 {
@@ -44,7 +42,7 @@ class CTViewer : public QMainWindow
 public:
     explicit CTViewer(QWidget* parent = nullptr);
     ~CTViewer();
-    
+
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
 
@@ -56,29 +54,24 @@ private:
     void updateMaximizeButtonIcon();
     void openCtReconUi();
 
-    //top area
-	void buildTitleBar(QWidget* topBarContainer,QVBoxLayout* topBarLayout);
-	void buildRibbonTitleBar(QWidget* topBarContainer,QVBoxLayout* topBarLayout);
-	void connectWindowButtonSignals();
+    void buildTitleBar(QWidget* topBarContainer, QVBoxLayout* topBarLayout);
+    void buildRibbonTitleBar(QWidget* topBarContainer, QVBoxLayout* topBarLayout);
+    void connectWindowButtonSignals();
 
-    //middle area
     void buildRibbonStack(QWidget* totalContainer, QVBoxLayout* rootLayout);
     void buildContentStack(QWidget* totalContainer, QVBoxLayout* rootLayout);
-	void buildWorkspacePage();
-	void buildEmptyPage();
-	void applyInitialUiState();
-    
-    //signal
+    void buildWorkspacePage();
+    void buildEmptyPage();
+    void applyInitialUiState();
+
     void connectTabSignals();
     void connectDocumentSignals();
     void connectReconSignals();
-    
-    //handers
-	void onTabChanged(int index);
-	void onOpenRequested(const QString& path);
+
+    void onTabChanged(int index);
+    void onOpenRequested(const QString& path);
 
 private:
-    //关于标题栏拖动的变量
     bool draggingWindow_ = false;
     QPoint dragOffset_;
 
@@ -86,54 +79,49 @@ private:
     QPointer<QWidget> titleLeftArea_;
     QPointer<QWidget> titleCenterArea_;
 
-    QPointer<QWidget> whatEmpty_; //“文件”Tab对应的空ribbon页（占位）
-    QPointer<QWidget> workspacePage_;//contentStack里的workspace容器页
-    QPointer<QWidget> emptyPage_;//contentStack里的“无数据提示”页
+    QPointer<QWidget> whatEmpty_;
+    QPointer<QWidget> workspacePage_;
+    QPointer<QWidget> emptyPage_;
 
-    QPointer<QLabel>  titleLabel_;
+    QPointer<QLabel> titleLabel_;
     QPointer<QToolButton> btnTitleUndo_;
     QPointer<QToolButton> btnTitleUndo02_;
     QPointer<QToolButton> btnMinimize_;
     QPointer<QToolButton> btnMaximize_;
     QPointer<QToolButton> btnClose_;
-	QPointer<QTabBar> tabBar_;//主界面状态栏指针
- 
-	QPointer<DocumentPage> pageDocument_;//文档页面的指针
+    QPointer<QTabBar> tabBar_;
+
+    QPointer<DocumentPage> pageDocument_;
     QPointer<StartPagePage> pageStart_;
-	QPointer<EditPage> pageEdit_;
-	QPointer<VolumePage> pageVolume_;
-	QPointer<SelectPage> pageSelect_;
+    QPointer<EditPage> pageEdit_;
+    QPointer<VolumePage> pageVolume_;
+    QPointer<SelectPage> pageSelect_;
     QPointer<AlignmentPage> pageAlignment_;
     QPointer<GeometryPage> pageGeometry_;
     QPointer<MeasurePage> pageMeasure_;
     QPointer<CADAndThen> pageCAD_;
-	QPointer<AnalysisPage> pageAnalysis_;
+    QPointer<AnalysisPage> pageAnalysis_;
     QPointer<WindowPage> pageWindow_;
-	QPointer<ReportPage> pageReport_;
-	QPointer<AnimationPage> pageAnimation_;
+    QPointer<QWidget> pageGauge_;
+    QPointer<ReportPage> pageReport_;
+    QPointer<AnimationPage> pageAnimation_;
     QPointer<ReconstructPage> mprViews_;
-	QPointer<QStackedWidget> stack_;//放开始 编辑 体积 这些工具页 固定高度iconHeight_
-    QPointer<QStackedWidget> secondstack_;//占满剩余高度，放 Backstage(DocumentPage)、Workspace(四视图+右侧面板)、Empty(无数据提示)
-  
-    std::shared_ptr<AbstractDataManager> m_currentDataMgr;
-    std::shared_ptr<SharedInteractionState> m_currentState;
+    QPointer<QStackedWidget> stack_;
+    QPointer<QStackedWidget> secondstack_;
 
-    //修改
-	std::unique_ptr<TabMap> tabMap_;
-	std::unique_ptr<WorkspaceFlow> workspaceFlow_;
+    std::unique_ptr<TabMap> tabMap_;
+    std::unique_ptr<WorkspaceFlow> workspaceFlow_;
 
-    //UI
     UiState buildUiState(int index) const;
-	void applyUiState(const UiState& state);
+    void applyUiState(const UiState& state);
 
-	UIReconstruct3D* uiRecon3d_ = nullptr;
-	QPointer<AppController> appController_;
+    UIReconstruct3D* uiRecon3d_ = nullptr;
+    QPointer<AppController> appController_;
 
-    //workspace
-    QPointer<QSplitter> workspaceSplit_;       // 水平splitter: 左视口和右面板
-    QPointer<QSplitter> rightSplit_;           // 垂直splitter: 场景树与渲染
+    QPointer<QSplitter> workspaceSplit_;
+    QPointer<QSplitter> rightSplit_;
     QPointer<SceneTreePanel> scenePanel_;
     QPointer<RenderPanel> renderPanel_;
 
-    int iconHeight_ = 100;// 图标区高度
+    int iconHeight_ = 100;
 };

@@ -1,12 +1,12 @@
-#pragma once
+ï»¿#pragma once
 #include <QObject>
+#include <array>
 #include <memory>
 #include <QString>
 #include "DataManager.h"
 #include "AppState.h"
-#include "AppService.h"  
+#include "VolumeAnalysisService.h"
 
-// ÕâÒ»·Ý¾ÍÊÇ¡°µ±Ç°»á»°¡±µÄºËÐÄ¶ÔÏó¼¯ºÏ
 struct AppSession
 {
     std::shared_ptr<AbstractDataManager> dataMgr;
@@ -23,8 +23,14 @@ public:
 
     std::shared_ptr<AppSession> session() const { return m_session; }
 
-    // ³É¹¦ÔòÌæ»» Ê§°ÜÔò²»Ìæ»»
     bool openFile(const QString& path, QString* errorOut = nullptr);
+    bool openReconstructedData(
+        const float* data,
+        const std::array<int, 3>& dims,
+        const std::array<float, 3>& spacing,
+        const std::array<float, 3>& origin,
+        const QString& sourcePath,
+        QString* errorOut = nullptr);
 
     void clearSession();
 
@@ -32,5 +38,7 @@ signals:
     void sessionChanged(std::shared_ptr<AppSession> session);
 
 private:
+    bool finalizeSession(const std::shared_ptr<AppSession>& newSession, QString* errorOut);
+
     std::shared_ptr<AppSession> m_session;
 };

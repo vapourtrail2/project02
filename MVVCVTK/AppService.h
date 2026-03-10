@@ -2,83 +2,97 @@
 
 #include "AppInterfaces.h"
 #include "AppState.h"
-#include "DataConverters.h"
-#include <vtkTable.h>
+#include "VolumeTransformService.h"
+#include <atomic>
+#include <functional>
+#include <future>
 #include <map>
+#include <memory>
+#include <mutex>
 
-/**
- * @class VolumeAnalysisService
- * @brief 专注于数据分析的服务，负责直方图计算、统计导出等，与渲染解耦。
- */
-class VolumeAnalysisService {
-private:
-    std::shared_ptr<AbstractDataManager> m_dataManager;
-
+class MedicalVizService
+    : public AbstractInteractiveService
+    , public IPreInitService
+    , public IDataLoaderService
+    , public std::enable_shared_from_this<MedicalVizService>
+{
 public:
-    explicit VolumeAnalysisService(std::shared_ptr<AbstractDataManager> dataMgr)
-        : m_dataManager(dataMgr) {
-    }
-
-    // 计算直方图数据
-    //vtkSmartPointer<vtkTable> GetHistogramData(int binCount = 2048) {
-    //    if (!m_dataManager || !m_dataManager->GetVtkImage()) return nullptr;
-
-    //    auto converter = std::make_shared<HistogramConverter>();
-    //    converter->SetParameter("BinCount", (double)binCount);
-    //    return converter->Process(m_dataManager->GetVtkImage());
-    //}
-
-    //// 保存直方图图片
-    //void SaveHistogramImage(const std::string& filePath, int binCount = 2048) {
-    //    if (!m_dataManager || !m_dataManager->GetVtkImage()) return;
-
-    //    auto converter = std::make_shared<HistogramConverter>();
-    //    converter->SetParameter("BinCount", (double)binCount);
-    //    converter->SaveHistogramImage(m_dataManager->GetVtkImage(), filePath);
-    //}
-};
-
-class MedicalVizService : public AbstractInteractiveService,
-    public std::enable_shared_from_this<MedicalVizService> {
-private:
-    std::map<VizMode, std::shared_ptr<AbstractVisualStrategy>> m_strategyCache;
-    std::shared_ptr<SharedInteractionState> m_sharedState;
-
-public:
-    MedicalVizService(std::shared_ptr<AbstractDataManager> dataMgr,
+    MedicalVizService(
+        std::shared_ptr<AbstractDataManager> dataMgr,
         std::shared_ptr<SharedInteractionState> state);
+    ~MedicalVizService();
+
     void Initialize(vtkSmartPointer<vtkRenderWindow> win, vtkSmartPointer<vtkRenderer> ren) override;
 
-    // --- 核心渲染业务 ---
+    void PreInit_SetVizMode(VizMode mode) override;
+    void PreInit_SetMaterial(const MaterialParams& mat) override;
+    void PreInit_SetOpacity(double opacity) override;
+    void PreInit_SetTransferFunction(const std::vector<TFNode>& nodes) override;
+    void PreInit_SetIsoThreshold(double val) override;
+    void PreInit_SetBackground(const BackgroundColor& bg) override;
+    void PreInit_SetWindowLevel(double ww, double wc) override;
+    void PreInit_CommitConfig(const PreInitConfig& cfg) override;
+
+    void LoadFileAsync(
+        const std::string& path,
+        std::function<void(bool success)> onComplete = nullptr) override;
+    LoadState GetLoadState() const override;
+    void CancelLoad() override;
+
+    void ProcessPendingUpdates() override;
+
+    void UpdateInteraction(int delta) override;
+    void SyncCursorToWorldPosition(double worldPos[3], int axis = -1) override;
+    std::array<int, 3> GetCursorPosition() override;
+    void SetInteracting(bool val) override;
+    int GetPlaneAxis(vtkActor* actor) override;
+    vtkProp3D* GetMainProp() override;
+    void SyncModelMatrix(vtkMatrix4x4* mat) override;
+    void SetElementVisible(std::uint32_t flagBit, bool show) override;
+    void AdjustWindowLevel(double deltaWW, double deltaWC) override;
+
+    void TransformModel(double translate[3], double rotate[3], double scale[3]);
+    void ResetModelTransform();
+    void WorldToModel(const double worldPos[3], double modelPos[3]);
+    void ModelToWorld(const double modelPos[3], double worldPos[3]);
+
+    std::shared_ptr<SharedInteractionState> GetSharedState() const { return m_sharedState; }
+
+    // Compatibility surface used by the current Qt frontend.
     void LoadFile(const std::string& path);
     void ShowVolume();
     void ShowIsoSurface();
     void ShowSlice(VizMode sliceMode);
     void Show3DPlanes(VizMode renderMode);
-
-    // --- 交互业务,具体实现 ---
     void OnStateChanged();
-    int GetPlaneAxis(vtkActor* actor) override;
-    void UpdateInteraction(int delta) override;
-    void SyncCursorToWorldPosition(double worldPos[3]) override;
-    void ProcessPendingUpdates() override;
-    std::array<int, 3> GetCursorPosition() override;
-    void SetInteracting(bool val) override;
-
-    std::shared_ptr<SharedInteractionState> GetSharedState() {
-        return m_sharedState;
-    }
-
-public:
-    // 参数设置接口
     void SetLuxParams(double ambient, double diffuse, double specular, double power, bool shadeOn = false);
     void SetOpacity(double opacity);
     void SetIsoThreshold(double val);
     void SetTransferFunction(const std::vector<TFNode>& nodes);
 
+private:
+    void PostData_RebuildPipeline();
+    void PostData_SyncStateToStrategy();
+    void PostData_HandleLoadFailed();
+    RenderParams BuildRenderParams(UpdateFlags flags) const;
+    std::shared_ptr<AbstractVisualStrategy> GetOrCreateStrategy(VizMode mode);
+    void RequestClearStrategyCache();
+    void ExecuteClearStrategyCache();
+    void ResetCursorToCenter();
+    void MarkNeedsSync();
+    void ActivateModeImmediate(VizMode mode);
 
 private:
-    std::shared_ptr<AbstractVisualStrategy> GetStrategy(VizMode mode);
-    void ResetCursorCenter();
-    void ClearCache();
+    std::map<VizMode, std::shared_ptr<AbstractVisualStrategy>> m_strategyCache;
+    std::shared_ptr<SharedInteractionState> m_sharedState;
+    std::unique_ptr<VolumeTransformService> m_transformService;
+
+    std::atomic<int> m_pendingVizModeInt{ static_cast<int>(VizMode::IsoSurface) };
+    std::atomic<bool> m_needsDataRefresh{ false };
+    std::atomic<bool> m_needsCacheClear{ false };
+    std::atomic<bool> m_needsLoadFailed{ false };
+    std::shared_ptr<std::atomic<bool>> m_cancelFlag;
+
+    std::future<void> m_loadFuture;
+    mutable std::mutex m_loadMutex;
 };
