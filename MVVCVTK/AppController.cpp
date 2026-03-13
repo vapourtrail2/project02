@@ -34,7 +34,6 @@ bool AppController::openFile(const QString& path, QString* errorOut)
     newSession->dataMgr = createDataManagerForPath(p);
     newSession->sharedState = std::make_shared<SharedInteractionState>();
 	newSession->service = std::make_shared<MedicalVizService>(newSession->dataMgr, newSession->sharedState);
-    newSession->sharedState->SetLoadState(LoadState::Loading);
     newSession->sourcePath = p;
 	newSession->analysisService = std::make_shared<VolumeAnalysisService>(newSession->dataMgr);
     
@@ -42,29 +41,28 @@ bool AppController::openFile(const QString& path, QString* errorOut)
     newSession->service->LoadFileAsync(p.toStdString(), 
         [weakSession](bool ok)
         {
-            auto sess = weakSession.lock();
-            if (!sess) return;
-            if (ok) {
-				auto img = sess->dataMgr->GetVtkImage();
-                if (!img) return;
+            // 所以这里的设值是没有任何影响的，不影响业务，我已经设了初始值，可以删去
+            //// 在后台线程，只允许操作 SharedState
+            //// 这里的设值可以抽离，或者删去，放在这里只是做验证
+            //auto sess = weakSession.lock();
+            //if (!sess || !ok) return;
 
-                // 拆解findingsetup的逻辑，直接在这里设置初始窗口/层级和iso值，避免重复调用notifyDataReady导致界面刷新两次
-                double range[2];
-                img->GetScalarRange(range);
-                int dims[3];
-                img->GetDimensions(dims);
-                const double rangeSpan = range[1] - range[0];
-                const double safeWindowWidth = rangeSpan > 0.0 ? rangeSpan : 1.0;
-                const double windowCenter = range[0] + safeWindowWidth * 0.5;
+            //auto img = sess->dataMgr->GetVtkImage();
+            //if (!img) return;
 
-                sess->sharedState->SetWindowLevel(safeWindowWidth, windowCenter);
-                sess->sharedState->SetCursorPosition(dims[0] / 2, dims[1] / 2, dims[2] / 2);
-                sess->sharedState->SetIsoValue(range[0] + safeWindowWidth * 0.2);
-                sess->sharedState->NotifyDataReady(range[0], range[1]);
-                    
-            } else {
-                sess->sharedState->NotifyLoadFailed();
-            }
+            //// 拆解findingsetup的逻辑，直接在这里设置初始窗口/层级和iso值，避免重复调用notifyDataReady导致界面刷新两次
+            //double range[2];
+            //img->GetScalarRange(range);
+            //int dims[3];
+            //img->GetDimensions(dims);
+            //const double rangeSpan = range[1] - range[0];
+            //const double safeWindowWidth = rangeSpan > 0.0 ? rangeSpan : 1.0;
+            //const double windowCenter = range[0] + safeWindowWidth * 0.5;
+
+            //sess->sharedState->SetWindowLevel(safeWindowWidth, windowCenter);
+            //sess->sharedState->SetCursorPosition(dims[0] / 2, dims[1] / 2, dims[2] / 2);
+            //sess->sharedState->SetIsoValue(range[0] + safeWindowWidth * 0.2);
+            //sess->sharedState->NotifyDataReady(range[0], range[1]);
         });
     m_session = newSession;
     emit sessionChanged(m_session);
@@ -97,6 +95,7 @@ bool AppController::openReconstructedData(
     const bool queen = newSession->service->SetFromBufferAsync(data, dims, spacing, origin, [weakSession]
     (bool ok) 
         {
+            // 同上
 			auto sess = weakSession.lock();
             if (!sess || !ok) return;
 
@@ -152,22 +151,22 @@ bool AppController::finalizeSession(const std::shared_ptr<AppSession>& newSessio
         return false;
     }
 
-    double range[2];
-    img->GetScalarRange(range);
+    //double range[2];
+    //img->GetScalarRange(range);
 
 
-    int dims[3];
-    img->GetDimensions(dims);
-    const double rangeSpan = range[1] - range[0];
-    const double safeWindowWidth = rangeSpan > 0.0 ? rangeSpan : 1.0;
-    const double windowCenter = range[0] + safeWindowWidth * 0.5;
+    //int dims[3];
+    //img->GetDimensions(dims);
+    //const double rangeSpan = range[1] - range[0];
+    //const double safeWindowWidth = rangeSpan > 0.0 ? rangeSpan : 1.0;
+    //const double windowCenter = range[0] + safeWindowWidth * 0.5;
 
-    newSession->sharedState->SetWindowLevel(safeWindowWidth, windowCenter);
-    newSession->sharedState->SetCursorPosition(dims[0] / 2, dims[1] / 2, dims[2] / 2);
-    newSession->sharedState->SetIsoValue(range[0] + safeWindowWidth * 0.2);
-    newSession->sharedState->NotifyDataReady(range[0], range[1]);
+    //newSession->sharedState->SetWindowLevel(safeWindowWidth, windowCenter);
+    //newSession->sharedState->SetCursorPosition(dims[0] / 2, dims[1] / 2, dims[2] / 2);
+    //newSession->sharedState->SetIsoValue(range[0] + safeWindowWidth * 0.2);
+    //newSession->sharedState->NotifyDataReady(range[0], range[1]);
 
-    newSession->analysisService = std::make_shared<VolumeAnalysisService>(newSession->dataMgr);
+    //newSession->analysisService = std::make_shared<VolumeAnalysisService>(newSession->dataMgr);
 
     m_session = newSession;
     emit sessionChanged(m_session);
