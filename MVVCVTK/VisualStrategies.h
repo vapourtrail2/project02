@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "AppInterfaces.h"
 #include <vtkActor.h>
 #include <vtkVolume.h>
@@ -25,14 +25,20 @@ public:
     vtkProp3D* GetMainProp() override;
 
 private:
+    void RebuildIsoInput(IsoRenderQuality quality);
+    int DecideIsoSampleRate() const;
+
     vtkSmartPointer<vtkActor> m_actor;
     vtkSmartPointer<vtkCubeAxesActor> m_cubeAxes;
     vtkSmartPointer<vtkImageData> m_sourceImage;
+    vtkSmartPointer<vtkImageData> m_isoWorkingImage;
     vtkSmartPointer<vtkFlyingEdges3D> m_isoExtractor;
     vtkSmartPointer<vtkPolyDataMapper> m_isoMapper;
 
     double m_lastIsoValue = 0.0;
     bool m_hasLastIsoValue = false;
+    IsoRenderQuality m_isoQuality = IsoRenderQuality::Fast;
+    int m_isoSampleRate = 1;
 };
 
 class VolumeStrategy : public AbstractVisualStrategy {

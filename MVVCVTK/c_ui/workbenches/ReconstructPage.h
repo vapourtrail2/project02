@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <QWidget>
 #include <QPointer>
 
@@ -19,6 +19,8 @@ public:
 
 private:
     void buildUi();
+    void applyPrimary3DMode(VizMode mode);
+    void refreshViews();
 
     QPointer<QWidget> viewAxial_;
     QPointer<QWidget> viewSagittal_;
@@ -27,6 +29,7 @@ private:
 
     std::shared_ptr<AbstractDataManager> m_dataMgr;
     std::shared_ptr<SharedInteractionState> m_sharedState;
+    std::shared_ptr<void> m_lifeToken;
 
     std::shared_ptr<MedicalVizService> m_svcAxial;
     std::shared_ptr<QtRenderContext>   m_ctxAxial;
@@ -36,4 +39,5 @@ private:
     std::shared_ptr<QtRenderContext>   m_ctxSagittal;
     std::shared_ptr<MedicalVizService> m_svc3D;
     std::shared_ptr<QtRenderContext>   m_ctx3D;
+    VizMode m_current3DMode = VizMode::IsoSurface;
 };

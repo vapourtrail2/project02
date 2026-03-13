@@ -42,7 +42,7 @@ AlignmentPage::AlignmentPage(QWidget* parent)
 
 QWidget* AlignmentPage::buildRibbon04(QWidget* parent)
 {
-    auto* ribbon04 = new QFrame(parent);//ribbon04是"  "功能区的容器
+    auto* ribbon04 = new QFrame(parent);
     ribbon04->setObjectName(QStringLiteral("alignmentRibbon"));
     ribbon04->setStyleSheet(QStringLiteral(
         "QFrame#alignmentRibbon{background-color:#322F30; border-radius:8px; border:1px solid #2b2b2b;}"
@@ -82,7 +82,7 @@ QWidget* AlignmentPage::buildRibbon04(QWidget* parent)
     {
         auto* button = new QToolButton(ribbon04);
         button->setIcon(loadIconFor(action.text));
-        button->setIconSize(QSize(40, 40));
+     /*   button->setIconSize(QSize(40, 40));*/
         button->setMinimumSize(QSize(70, 90));
         button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
         // Shared wrap rule avoids duplicate text-layout code in each page.

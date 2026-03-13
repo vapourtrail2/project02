@@ -1,4 +1,5 @@
 ﻿#include "VisualStrategies.h"
+#include <vtkExtractVOI.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
 #include <vtkSmartVolumeMapper.h>
@@ -7,24 +8,88 @@
 #include <vtkPiecewiseFunction.h>
 #include <vtkCamera.h>
 #include <vtkImageProperty.h>
+#include <algorithm>
 #include <cmath>
 
 // ================= IsoSurfaceStrategy =================
-//修改 2/28 等值面阈值  3/2 修改
 IsoSurfaceStrategy::IsoSurfaceStrategy() {
     m_actor = vtkSmartPointer<vtkActor>::New();
     m_cubeAxes = vtkSmartPointer<vtkCubeAxesActor>::New();
 
     m_isoExtractor = vtkSmartPointer<vtkFlyingEdges3D>::New();
-    // 法线计算会显著增加等值面重建成本，默认关闭，
-    // 当用户开启光照时在材质更新里按需打开
-	m_isoExtractor->ComputeNormalsOff();//这个函数的意思是关闭法线计算，等值面提取时不计算法线，这样可以提高性能，但会导致渲染效果较差，特别是在有光照的情况下。用户可以在材质更新时根据需要开启或关闭法线计算，以平衡性能和视觉效果
+    m_isoExtractor->ComputeScalarsOff();
+    m_isoExtractor->ComputeGradientsOff();
+    m_isoExtractor->ComputeNormalsOff();
 
     m_isoMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-	m_isoMapper->ScalarVisibilityOff(); // Iso-surface uses a solid material color.
+    m_isoMapper->ScalarVisibilityOff();
     m_actor->SetMapper(m_isoMapper);
     m_actor->SetPickable(false);
     m_cubeAxes->SetPickable(false);
+}
+
+//改变降采样率
+int IsoSurfaceStrategy::DecideIsoSampleRate() const
+{
+    if (!m_sourceImage || m_isoQuality == IsoRenderQuality::HighQuality) {
+        return 1;
+    }
+
+    int dims[3] = { 0, 0, 0 };
+    m_sourceImage->GetDimensions(dims);
+    const long long voxels = 1LL * dims[0] * dims[1] * dims[2];
+    const long long mediumThreshold = 1LL * 256 * 256 * 256;
+    const long long largeThreshold = 1LL * 384 * 384 * 384;
+    const long long hugeThreshold = 1LL * 512 * 512 * 512;
+
+    if (voxels > hugeThreshold) {
+        return 4;
+    }
+    if (voxels > largeThreshold) {
+        return 3;
+    }
+    if (voxels > mediumThreshold) {
+        return 2;
+    }
+    return 1;
+}
+
+void IsoSurfaceStrategy::RebuildIsoInput(IsoRenderQuality quality)
+{
+    m_isoQuality = quality;
+    m_isoSampleRate = DecideIsoSampleRate();
+
+    if (!m_sourceImage) {
+        m_isoWorkingImage = nullptr;
+        return;
+    }
+
+    if (m_isoSampleRate <= 1) {
+        m_isoWorkingImage = m_sourceImage;
+        m_isoExtractor->SetInputData(m_isoWorkingImage);
+        return;
+    }
+
+    auto extractor = vtkSmartPointer<vtkExtractVOI>::New();
+    extractor->SetInputData(m_sourceImage);
+    extractor->SetSampleRate(m_isoSampleRate, m_isoSampleRate, m_isoSampleRate);
+    extractor->IncludeBoundaryOn();
+    extractor->Update();
+
+    m_isoWorkingImage = vtkSmartPointer<vtkImageData>::New();
+    m_isoWorkingImage->ShallowCopy(extractor->GetOutput());
+
+    double spacing[3] = { 1.0, 1.0, 1.0 };
+    double origin[3] = { 0.0, 0.0, 0.0 };
+    m_sourceImage->GetSpacing(spacing);
+    m_sourceImage->GetOrigin(origin);
+    m_isoWorkingImage->SetSpacing(
+        spacing[0] * m_isoSampleRate,
+        spacing[1] * m_isoSampleRate,
+        spacing[2] * m_isoSampleRate);
+    m_isoWorkingImage->SetOrigin(origin);
+
+    m_isoExtractor->SetInputData(m_isoWorkingImage);
 }
 
 void IsoSurfaceStrategy::SetInputData(vtkSmartPointer<vtkDataObject> data) {
@@ -36,41 +101,35 @@ void IsoSurfaceStrategy::SetInputData(vtkSmartPointer<vtkDataObject> data) {
         m_actor->SetMapper(mapper);
         m_cubeAxes->SetBounds(poly->GetBounds());
 
-        // VG Style
         auto prop = m_actor->GetProperty();
-        prop->SetColor(0.75, 0.75, 0.75); // VG 灰
+        prop->SetColor(0.75, 0.75, 0.75);
         prop->SetAmbient(0.2);
         prop->SetDiffuse(0.8);
-        prop->SetSpecular(0.15);      // 稍微增加一点高光
+        prop->SetSpecular(0.15);
         prop->SetSpecularPower(15.0);
         prop->SetInterpolationToGouraud();
         return;
     }
 
-    // 作为 ImageData (需要实时计算)
     auto img = vtkImageData::SafeDownCast(data);
-    //修改 2/28
-    if (img) {
-        m_sourceImage = img;
-        m_cubeAxes->SetBounds(img->GetBounds());
-
-        m_isoExtractor->SetInputData(m_sourceImage);
-        m_isoMapper->SetInputConnection(m_isoExtractor->GetOutputPort());
-
-        m_hasLastIsoValue = false;
-
-        RenderParams dummy;
-        double range[2]; img->GetScalarRange(range);
-        dummy.isoValue = range[0] + (range[1] - range[0]) * 0.2;
-        UpdateVisuals(dummy, UpdateFlags::IsoValue);
+    if (!img) {
+        return;
     }
+
+    //auto lowimg = std::make_shared<>
+    //m_sourceImage = img;
+    m_cubeAxes->SetBounds(img->GetBounds());
+    m_isoMapper->SetInputConnection(m_isoExtractor->GetOutputPort());
+    m_hasLastIsoValue = false;
+
+    RebuildIsoInput(m_isoQuality);
 }
 
 void IsoSurfaceStrategy::Attach(vtkSmartPointer<vtkRenderer> ren) {
     ren->AddActor(m_actor);
     ren->AddActor(m_cubeAxes);
     m_cubeAxes->SetCamera(ren->GetActiveCamera());
-    ren->SetBackground(0.1, 0.15, 0.2); // 蓝色调背景
+    ren->SetBackground(0.1, 0.15, 0.2);
 }
 
 void IsoSurfaceStrategy::Detach(vtkSmartPointer<vtkRenderer> ren) {
@@ -79,35 +138,38 @@ void IsoSurfaceStrategy::Detach(vtkSmartPointer<vtkRenderer> ren) {
 }
 
 void IsoSurfaceStrategy::SetupCamera(vtkSmartPointer<vtkRenderer> ren) {
-    // 3D 模式必须是透视投影
     ren->GetActiveCamera()->ParallelProjectionOff();
 }
 
 void IsoSurfaceStrategy::UpdateVisuals(const RenderParams& params, UpdateFlags flags)
 {
     if (!m_actor) return;
-	auto prop = m_actor->GetProperty();//获取当前 actor 的属性对象，这个对象包含了控制渲染外观的各种参数，如颜色、光照、透明度等。通过这个属性对象，策略可以根据传入的 RenderParams 来更新等值面的视觉效果。
+    auto prop = m_actor->GetProperty();
 
-    // 响应 UpdateFlags::Material
+    bool isoInputChanged = false;
+    if (HasFlag(flags, UpdateFlags::IsoQuality) && m_sourceImage) {
+        if (!m_isoWorkingImage || params.isoRenderQuality != m_isoQuality) {
+            RebuildIsoInput(params.isoRenderQuality);
+            m_hasLastIsoValue = false;
+            isoInputChanged = true;
+        }
+    }
+
     if ((int)flags & (int)UpdateFlags::Material) {
-		const bool wasShadeOn = (prop->GetInterpolation() == VTK_PHONG);//这句话的具体意思是检查当前材质的插值方式是否为 Phong 插值，如果是，则认为之前的光照状态是开启的（shadeOn = true），否则认为是关闭的（shadeOn = false）。这个状态会在后续判断中用来决定是否需要重新计算法线，以优化性能。
+        const bool wasShadeOn = (prop->GetInterpolation() == VTK_PHONG);
 
-        // 设置光照参数
         prop->SetAmbient(params.material.ambient);
         prop->SetDiffuse(params.material.diffuse);
         prop->SetSpecular(params.material.specular);
         prop->SetSpecularPower(params.material.specularPower);
-        // 设置几何体透明度
         prop->SetOpacity(params.material.opacity);
-        // 设置着色方式,开启光照
-        if (params.material.shadeOn) { 
+        if (params.material.shadeOn) {
             prop->SetInterpolationToPhong();
         }
         else {
             prop->SetInterpolationToFlat();
         }
 
-        // 仅在需要时计算法线，减少阈值变更时的提取开销
         if (m_sourceImage && m_isoExtractor && (params.material.shadeOn != wasShadeOn)) {
             if (params.material.shadeOn) {
                 m_isoExtractor->ComputeNormalsOn();
@@ -119,22 +181,20 @@ void IsoSurfaceStrategy::UpdateVisuals(const RenderParams& params, UpdateFlags f
         }
     }
 
-    // 响应 UpdateFlags::IsoValue
-    if (((int)flags & (int)UpdateFlags::IsoValue) && m_sourceImage) {
-        if (m_hasLastIsoValue && std::abs(params.isoValue - m_lastIsoValue) < 1e-3) {
+    if ((HasFlag(flags, UpdateFlags::IsoValue) || isoInputChanged) && m_sourceImage) {
+        if (!m_isoWorkingImage) {
+            RebuildIsoInput(m_isoQuality);
+        }
+        if (m_hasLastIsoValue && !isoInputChanged && std::abs(params.isoValue - m_lastIsoValue) < 1e-3) {
             return;
         }
 
         m_isoExtractor->SetValue(0, params.isoValue);
-        // 不在这里强制同步 Update，交由后续 Render 懒更新，
-        // 避免在事件处理线程中长时间阻塞。
         m_isoExtractor->Modified();
-
         m_lastIsoValue = params.isoValue;
         m_hasLastIsoValue = true;
     }
 }
-
 // ================= VolumeStrategy =================
 VolumeStrategy::VolumeStrategy() {
     m_volume = vtkSmartPointer<vtkVolume>::New();
@@ -182,42 +242,34 @@ void VolumeStrategy::UpdateVisuals(const RenderParams& params, UpdateFlags flags
 {
     if (!m_volume || !m_volume->GetProperty()) return;
 
-    // 响应 UpdateFlags::TF
     auto prop = m_volume->GetProperty();
-    if ((int)flags & (int)UpdateFlags::TF) {
-        // 构建 VTK 函数
+    if (HasFlag(flags, UpdateFlags::TF)) {
         auto ctf = prop->GetRGBTransferFunction();
         auto otf = prop->GetScalarOpacity();
 
-        if (!ctf)
-        {
+        if (!ctf) {
             ctf = vtkSmartPointer<vtkColorTransferFunction>::New();
-            prop->SetColor(ctf);
+        }
+        if (!otf) {
+            otf = vtkSmartPointer<vtkPiecewiseFunction>::New();
         }
 
-        if (!otf)
-        {
-            otf = vtkSmartPointer<vtkPiecewiseFunction>::New();
-            prop->SetScalarOpacity(otf);
-        }
         ctf->RemoveAllPoints();
         otf->RemoveAllPoints();
 
-        double min = params.scalarRange[0];
-        double max = params.scalarRange[1];
-
+        const double min = params.scalarRange[0];
+        const double max = params.scalarRange[1];
         for (const auto& node : params.tfNodes) {
-            double val = min + node.position * (max - min);
-            ctf->AddRGBPoint(val, node.r, node.g, node.b);
-            otf->AddPoint(val, node.opacity);
+            const double value = min + node.position * (max - min);
+            ctf->AddRGBPoint(value, node.r, node.g, node.b);
+            otf->AddPoint(value, node.opacity);
         }
-        // 应用到底层
+
         prop->SetColor(ctf);
         prop->SetScalarOpacity(otf);
     }
 
-    // 响应 UpdateFlags::Material
-    if ((int)flags & (int)UpdateFlags::Material) {
+    if (HasFlag(flags, UpdateFlags::Material)) {
         prop->SetAmbient(params.material.ambient);
         prop->SetDiffuse(params.material.diffuse);
         prop->SetSpecular(params.material.specular);
@@ -254,10 +306,12 @@ SliceStrategy::SliceStrategy(Orientation orient) : m_orientation(orient) {
     m_vLineActor->GetProperty()->SetLineWidth(1.5);
     // 为了防止遮挡，可以关闭深度测试或者稍微抬高一点 Z 值，但 VTK RendererLayer 更好
     m_vLineActor->GetProperty()->SetLighting(false); // 关闭光照，纯色显示
+    m_vLineActor->SetPickable(false);
 
     m_hLineActor->GetProperty()->SetColor(1.0, 1.0, 0.0);
     m_hLineActor->GetProperty()->SetLineWidth(1.5);
     m_hLineActor->GetProperty()->SetLighting(false);
+    m_hLineActor->SetPickable(false);
 
     // 初始化颜色映射表
     m_lut = vtkSmartPointer<vtkColorTransferFunction>::New();
@@ -295,6 +349,7 @@ void SliceStrategy::SetInputData(vtkSmartPointer<vtkDataObject> data) {
     // 将 Plane 对象传递给 Mapper
     m_mapper->SetSlicePlane(plane);
     m_slice->SetMapper(m_mapper);
+    m_slice->SetPickable(true);
 
     int dims[3];
     img->GetDimensions(dims);
@@ -503,6 +558,13 @@ void SliceStrategy::ApplyColorMap(vtkSmartPointer<vtkColorTransferFunction> ctf)
 
 void SliceStrategy::UpdateVisuals(const RenderParams& params, UpdateFlags flags)
 {
+    if (((int)flags & (int)UpdateFlags::Visibility))
+    {
+        const bool visible = (params.visibilityMask & VisFlags::Crosshair) != 0;
+        m_vLineActor->SetVisibility(visible ? 1 : 0);
+        m_hLineActor->SetVisibility(visible ? 1 : 0);
+    }
+
     if (((int)flags & (int)UpdateFlags::Cursor))
     {
         int x = params.cursor[0];
@@ -520,40 +582,25 @@ void SliceStrategy::UpdateVisuals(const RenderParams& params, UpdateFlags flags)
         UpdateCrosshair(x, y, z);
     }
 
-    // 更新颜色映射表
-    if (((int)flags & (int)UpdateFlags::TF))
+    if (((int)flags & (int)UpdateFlags::WindowLevel))
     {
-        if (!params.tfNodes.empty()) {
-            m_lut->RemoveAllPoints();
-            double min = params.scalarRange[0];
-            double diff = params.scalarRange[1] - min;
-
-            for (const auto& node : params.tfNodes) {
-                double scalarVal = min + diff * node.position;
-                m_lut->AddRGBPoint(scalarVal, node.r, node.g, node.b);
-            }
-            m_slice->GetProperty()->SetLookupTable(m_lut);
+        if (m_slice && m_slice->GetProperty())
+        {
+            auto imgProp = m_slice->GetProperty();
+            imgProp->SetLookupTable(nullptr);
+            imgProp->SetColorWindow(params.windowLevel.windowWidth);
+            imgProp->SetColorLevel(params.windowLevel.windowCenter);
         }
     }
 
-    // 响应材质参数更新
     if (((int)flags & (int)UpdateFlags::Material))
     {
         if (m_slice && m_slice->GetProperty())
         {
-            auto imgProp = m_slice->GetProperty(); // 返回 vtkImageProperty
-
-            // --- 设置透明度 ---
-            // 允许切片半透明
+            auto imgProp = m_slice->GetProperty();
             imgProp->SetOpacity(params.material.opacity);
-
-            // --- 设置基础光照 ---
-            // vtkImageProperty 仅支持 Ambient 和 Diffuse
-            // 它可以让切片在 3D 环境中受光照变暗/变亮，或者完全自发光(Ambient=1)
             imgProp->SetAmbient(params.material.ambient);
             imgProp->SetDiffuse(params.material.diffuse);
-
-            // vtkImageProperty 没有 SetSpecular() 和 SetSpecularPower(),切片视为图片，不产生金属高光
         }
     }
 }
@@ -841,8 +888,16 @@ int ColoredPlanesStrategy::GetPlaneAxis(vtkActor* actor) {
 
 void ColoredPlanesStrategy::UpdateVisuals(const RenderParams& params, UpdateFlags flags)
 {
-    if (!((int)flags & (int)UpdateFlags::Cursor)) return;
-    UpdateAllPositions(params.cursor[0], params.cursor[1], params.cursor[2]);
+    if ((static_cast<int>(flags) & static_cast<int>(UpdateFlags::Visibility)) != 0) {
+        const bool visible = (params.visibilityMask & VisFlags::ClipPlanes) != 0;
+        for (int i = 0; i < 3; ++i) {
+            m_planeActors[i]->SetVisibility(visible ? 1 : 0);
+        }
+    }
+
+    if ((static_cast<int>(flags) & static_cast<int>(UpdateFlags::Cursor)) != 0) {
+        UpdateAllPositions(params.cursor[0], params.cursor[1], params.cursor[2]);
+    }
 }
 
 
@@ -857,6 +912,12 @@ vtkProp3D* VolumeStrategy::GetMainProp() {
 vtkProp3D* CompositeStrategy::GetMainProp() {
     return m_mainStrategy ? m_mainStrategy->GetMainProp() : nullptr;
 }
+
+
+
+
+
+
 
 
 

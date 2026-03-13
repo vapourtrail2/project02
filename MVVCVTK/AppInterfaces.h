@@ -1,4 +1,4 @@
-ï»¿#pragma once
+#pragma once
 
 #include "AppTypes.h"
 #include <vtkActor.h>
@@ -16,6 +16,7 @@
 #include <memory>
 #include <mutex>
 #include <thread>
+#include <utility>
 #include <vector>
 
 class AbstractDataManager {
@@ -23,7 +24,14 @@ public:
     virtual ~AbstractDataManager() = default;
     virtual bool LoadData(const std::string& filePath) = 0;
     virtual vtkSmartPointer<vtkImageData> GetVtkImage() const = 0;
-
+	//ÐÂÔöÖØ½¨½Ó¿Ú 3/13
+    virtual bool SetFromBuffer(
+        const float* data,
+        const std::array<int, 3>& dims,
+        const std::array<float, 3>& spacing,
+        const std::array<float, 3>& origin) {
+        return false;
+    }
     LoadState GetLoadState() const
     {
         std::lock_guard<std::mutex> lock(m_stateMutex);
@@ -69,6 +77,7 @@ protected:
     std::shared_ptr<AbstractVisualStrategy> m_currentStrategy;
     vtkSmartPointer<vtkRenderer> m_renderer;
     vtkSmartPointer<vtkRenderWindow> m_renderWindow;
+    std::function<void()> m_presentFrame;
     std::atomic<bool> m_isDirty{ false };
     std::atomic<bool> m_needsSync{ false };
     std::atomic<int> m_pendingFlags{ static_cast<int>(UpdateFlags::All) };
@@ -83,6 +92,24 @@ public:
     }
 
     virtual void ProcessPendingUpdates() {}
+
+    virtual void SetPresentCallback(std::function<void()> cb)
+    {
+        m_presentFrame = std::move(cb);
+    }
+
+    virtual bool PresentFrame()
+    {
+        if (m_presentFrame) {
+            m_presentFrame();
+            return true;
+        }
+        if (m_renderWindow) {
+            m_renderWindow->Render();
+            return true;
+        }
+        return false;
+    }
 
     bool IsDirty() const { return m_isDirty; }
     void SetDirty(bool val) { m_isDirty = val; }
@@ -105,6 +132,7 @@ public:
     virtual void PreInit_SetOpacity(double opacity) = 0;
     virtual void PreInit_SetTransferFunction(const std::vector<TFNode>& nodes) = 0;
     virtual void PreInit_SetIsoThreshold(double val) = 0;
+    virtual void PreInit_SetIsoRenderQuality(IsoRenderQuality quality) = 0;
     virtual void PreInit_SetBackground(const BackgroundColor& bg) = 0;
     virtual void PreInit_SetWindowLevel(double ww, double wc) = 0;
     virtual void PreInit_CommitConfig(const PreInitConfig& cfg) = 0;
@@ -205,6 +233,11 @@ public:
     virtual ~AbstractInteractiveService() = default;
 
     virtual void UpdateInteraction(int value) {}
+    virtual void UpdateInteractionAxis(int axis, int delta)
+    {
+        (void)axis;
+        (void)delta;
+    }
     virtual int GetPlaneAxis(vtkActor* actor) { return -1; }
     virtual void SyncCursorToWorldPosition(double worldPos[3])
     {
@@ -216,6 +249,7 @@ public:
         SyncCursorToWorldPosition(worldPos);
     }
     virtual std::array<int, 3> GetCursorPosition() { return { 0, 0, 0 }; }
+    virtual std::array<double, 3> GetCursorWorldPosition() { return { 0.0, 0.0, 0.0 }; }
     virtual void SetInteracting(bool val) { (void)val; }
     virtual vtkProp3D* GetMainProp() { return nullptr; }
     virtual void SyncModelMatrix(vtkMatrix4x4* mat) { (void)mat; }
@@ -229,4 +263,10 @@ public:
         (void)deltaWW;
         (void)deltaWC;
     }
+    virtual void SetIsoRenderQuality(IsoRenderQuality quality)
+    {
+        (void)quality;
+    }
 };
+
+

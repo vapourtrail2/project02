@@ -1,6 +1,7 @@
 ﻿#include "AppController.h"
-
+#include  "AppService.h"
 #include <QFileInfo>
+#include <QDebug>
 
 namespace {
 std::shared_ptr<AbstractDataManager> CreateManagerForPath(const QString& path)
@@ -56,17 +57,29 @@ bool AppController::openReconstructedData(
     QString* errorOut)
 {
     auto rawDataManager = std::make_shared<RawVolumeDataManager>();
-    if (!rawDataManager->SetFromBuffer(data, dims, spacing, origin)) {
-        if (errorOut) {
-            *errorOut = QStringLiteral("Invalid reconstruction buffer.");
+    auto sharedState = std::make_shared<SharedInteractionState>();
+    auto service = std::make_shared<MedicalVizService>(rawDataManager, sharedState);
+    if (!service->SetFromBufferAsync(data, dims, spacing, origin, [service](bool ok) {
+        if (ok) {
+            qDebug() << "Buffer data processed and queued for main thread.";
         }
+        })) {
+        if (errorOut) *errorOut = QStringLiteral("Service is busy or initialization failed.");
         return false;
     }
 
+    //if (!rawDataManager->SetFromBufferAsync(reconData, dims, spacing, origin)) {
+    //    if (errorOut) {
+    //        *errorOut = QStringLiteral("Invalid reconstruction buffer.");
+    //    }
+    //    return false;
+    //}
+
+
     auto newSession = std::make_shared<AppSession>();
     newSession->dataMgr = rawDataManager;
-    newSession->sharedState = std::make_shared<SharedInteractionState>();
-    newSession->sharedState->SetLoadState(LoadState::Loading);
+    newSession->sharedState = std::move(sharedState);
+    /*newSession->sharedState->SetLoadState(LoadState::Loading);*/
     newSession->sourcePath = sourcePath.trimmed().isEmpty()
         ? QStringLiteral("CT reconstruction")
         : sourcePath.trimmed();
@@ -81,6 +94,7 @@ std::shared_ptr<AbstractDataManager> AppController::createDataManagerForPath(con
 
 bool AppController::finalizeSession(const std::shared_ptr<AppSession>& newSession, QString* errorOut)
 {
+
     if (!newSession || !newSession->dataMgr || !newSession->sharedState) {
         if (errorOut) {
             *errorOut = QStringLiteral("Session initialization failed.");
@@ -88,7 +102,9 @@ bool AppController::finalizeSession(const std::shared_ptr<AppSession>& newSessio
         return false;
     }
 
+
     auto img = newSession->dataMgr->GetVtkImage();
+
     if (!img) {
         newSession->sharedState->NotifyLoadFailed();
         if (errorOut) {
@@ -100,9 +116,9 @@ bool AppController::finalizeSession(const std::shared_ptr<AppSession>& newSessio
     double range[2];
     img->GetScalarRange(range);
 
+
     int dims[3];
     img->GetDimensions(dims);
-
     const double rangeSpan = range[1] - range[0];
     const double safeWindowWidth = rangeSpan > 0.0 ? rangeSpan : 1.0;
     const double windowCenter = range[0] + safeWindowWidth * 0.5;

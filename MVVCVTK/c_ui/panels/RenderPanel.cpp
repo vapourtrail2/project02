@@ -1,19 +1,21 @@
-﻿#include "RenderPanel.h"
+#include "RenderPanel.h"
 
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QGroupBox>
-#include <QStandardPaths>
-#include <QFileInfo>
 #include <QDir>
-#include <QPixmap>
-#include <QResizeEvent>
+#include <QFileInfo>
+#include <QGroupBox>
+#include <QHBoxLayout>
 #include <QMetaObject>
+#include <QImage>
+#include <QPainter>
+#include <QResizeEvent>
+#include <QStandardPaths>
 #include <QThread>
+#include <QVBoxLayout>
 
+#include <algorithm>
 #include <cmath>
 
-#include "AppController.h" // AppSession
+#include "AppController.h"
 #include "VolumeAnalysisService.h"
 
 static inline double clamp01(double v)
@@ -26,119 +28,200 @@ static inline double clamp01(double v)
 RenderPanel::RenderPanel(QWidget* parent)
     : QWidget(parent)
 {
-    auto v = new QVBoxLayout(this);
+    auto* v = new QVBoxLayout(this);
     v->setContentsMargins(6, 6, 6, 6);
     v->setSpacing(8);
 
-    // 1) 鐩存柟鍥?
-    auto histGroup = new QGroupBox(QStringLiteral("Histogram"), this);
+    auto* histGroup = new QGroupBox(QStringLiteral("Histogram"), this);
     histGroup->setStyleSheet(
         "QGroupBox{color:#ddd; border:1px solid #333; margin-top:8px;}"
         "QGroupBox::title{subcontrol-origin: margin; left:8px;}"
     );
-    auto hv = new QVBoxLayout(histGroup);
+    auto* hv = new QVBoxLayout(histGroup);
 
     histLabel_ = new QLabel(QStringLiteral("(Not loaded)"), histGroup);
-    histLabel_->setMinimumHeight(140);
+    histLabel_->setFixedHeight(160);
+    histLabel_->setMinimumWidth(0);
+    histLabel_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
     histLabel_->setAlignment(Qt::AlignCenter);
     histLabel_->setStyleSheet("QLabel{background:#111; border:1px solid #444; color:#888;}");
     hv->addWidget(histLabel_);
-
     v->addWidget(histGroup);
 
-    // 2) ISO
-    auto isoGroup = new QGroupBox(QStringLiteral("Threshold / ISO"), this);
+    auto* isoGroup = new QGroupBox(QStringLiteral("Threshold / ISO"), this);
     isoGroup->setStyleSheet(
         "QGroupBox{color:#ddd; border:1px solid #333; margin-top:8px;}"
         "QGroupBox::title{subcontrol-origin: margin; left:8px;}"
     );
-    auto iv = new QVBoxLayout(isoGroup);
+    auto* iv = new QVBoxLayout(isoGroup);
 
     isoValueLabel_ = new QLabel("ISO: -", isoGroup);
     isoSlider_ = new QSlider(Qt::Horizontal, isoGroup);
     isoSlider_->setRange(0, 1000);
+    isoQuality_ = new QComboBox(isoGroup);
+    isoQuality_->addItem(QStringLiteral("Fast"), static_cast<int>(IsoRenderQuality::Fast));
+    isoQuality_->addItem(QStringLiteral("High Quality"), static_cast<int>(IsoRenderQuality::HighQuality));
+
     iv->addWidget(isoValueLabel_);
     iv->addWidget(isoSlider_);
+
+    auto* qualityRow = new QHBoxLayout();
+    qualityRow->addWidget(new QLabel(QStringLiteral("Quality"), isoGroup));
+    qualityRow->addWidget(isoQuality_, 1);
+    iv->addLayout(qualityRow);
     v->addWidget(isoGroup);
 
-    // 3) 鏉愯川
-    auto matGroup = new QGroupBox(QStringLiteral("Lighting / Material"), this);
-    matGroup->setStyleSheet(
+    auto* wlGroup = new QGroupBox(QStringLiteral("Window / Level"), this);
+    wlGroup->setStyleSheet(
         "QGroupBox{color:#ddd; border:1px solid #333; margin-top:8px;}"
         "QGroupBox::title{subcontrol-origin: margin; left:8px;}"
     );
-    auto mv = new QVBoxLayout(matGroup);
+    auto* wv = new QVBoxLayout(wlGroup);
 
-    auto makeSlider = [&](const QString& text, QSlider*& out) {
-        auto row = new QHBoxLayout();
-        auto lbl = new QLabel(text, matGroup);
-        lbl->setFixedWidth(60);
-        out = new QSlider(Qt::Horizontal, matGroup);
-        out->setRange(0, 100);
-        row->addWidget(lbl);
-        row->addWidget(out, 1);
-        mv->addLayout(row);
-        };
+    renderMode_ = new QComboBox(wlGroup);
+    renderMode_->addItem(QStringLiteral("Iso Surface"), static_cast<int>(VizMode::CompositeIsoSurface));
+    renderMode_->addItem(QStringLiteral("Volume Rendering"), static_cast<int>(VizMode::CompositeVolume));
 
-    makeSlider("Ambient", ambient_);
-    makeSlider("Diffuse", diffuse_);
-    makeSlider("Specular", specular_);
-    makeSlider("Power", power_);
+    auto* renderModeRow = new QHBoxLayout();
+    renderModeRow->addWidget(new QLabel(QStringLiteral("3D Model"), wlGroup));
+    renderModeRow->addWidget(renderMode_, 1);
+    wv->addLayout(renderModeRow);
 
-    shadeOn_ = new QCheckBox(QStringLiteral("Shade"), matGroup);
-    mv->addWidget(shadeOn_);
+    clipPlanesToggle_ = new QCheckBox(QStringLiteral("Orthogonal Slice Planes"), wlGroup);
+    wv->addWidget(clipPlanesToggle_);
 
-    v->addWidget(matGroup);
+    crosshairToggle_ = new QCheckBox(QStringLiteral("2D Crosshair"), wlGroup);
+    wv->addWidget(crosshairToggle_);
+
+    windowWidthLabel_ = new QLabel(QStringLiteral("WW: -"), wlGroup);
+    windowWidthSlider_ = new QSlider(Qt::Horizontal, wlGroup);
+    windowWidthSlider_->setRange(0, 1000);
+    wv->addWidget(windowWidthLabel_);
+    wv->addWidget(windowWidthSlider_);
+
+    windowCenterLabel_ = new QLabel(QStringLiteral("WC: -"), wlGroup);
+    windowCenterSlider_ = new QSlider(Qt::Horizontal, wlGroup);
+    windowCenterSlider_->setRange(0, 1000);
+    wv->addWidget(windowCenterLabel_);
+    wv->addWidget(windowCenterSlider_);
+
+    v->addWidget(wlGroup);
     v->addStretch();
 
-    //淇敼 閬垮厤姣忎竴甯ч兘瑙﹀彂3D閲嶇畻
-    auto sliderToIso= [this](int v) {
-        const double t = static_cast<double>(v) / 1000.0;
-		return rangeMin_ + (rangeMax_ - rangeMin_) * t;
-		};
+    auto sliderToIso = [this](int value) {
+        const double t = static_cast<double>(value) / 1000.0;
+        return rangeMin_ + (rangeMax_ - rangeMin_) * t;
+    };
 
-    //3/3 涓や釜淇″彿鏈夌偣闂
-    connect(isoSlider_, &QSlider::valueChanged, this, [this,sliderToIso](int v) {
-        if (!state_ || updatingUi_) { 
+    auto updateWindowLevelLabels = [this](double ww, double wc) {
+        windowWidthLabel_->setText(QString("WW: %1").arg(ww, 0, 'f', 2));
+        windowCenterLabel_->setText(QString("WC: %1").arg(wc, 0, 'f', 2));
+    };
+
+    auto pushWindowLevel = [this, updateWindowLevelLabels]() {
+        if (!state_ || updatingUi_) {
             return;
         }
 
-		const double iso = sliderToIso(v);
-        isoValueLabel_->setText(QString("ISO: %1").arg(iso, 0, 'f', 2));
-        });
+        const double ww = sliderToWindowWidth(windowWidthSlider_->value());
+        const double wc = sliderToWindowCenter(windowCenterSlider_->value());
+        updateWindowLevelLabels(ww, wc);
+        state_->SetWindowLevel(ww, wc);
+    };
 
-    //鎷栧姩鏉炬墜鍚庡啀鎻愪氦涓€娆?
+    connect(isoSlider_, &QSlider::sliderPressed, this, [this]() {
+        if (!state_ || updatingUi_) {
+            return;
+        }
+        state_->SetInteracting(true);
+    });
+
+    connect(isoSlider_, &QSlider::valueChanged, this, [this, sliderToIso](int value) {
+        if (!state_ || updatingUi_) {
+            return;
+        }
+
+        const double iso = sliderToIso(value);
+        isoValueLabel_->setText(QString("ISO: %1").arg(iso, 0, 'f', 2));
+    });
+
     connect(isoSlider_, &QSlider::sliderReleased, this, [this, sliderToIso]() {
-        if (!state_ || updatingUi_) return;
+        if (!state_ || updatingUi_) {
+            return;
+        }
+
         const double iso = sliderToIso(isoSlider_->value());
         state_->SetIsoValue(iso);
-        });
+        state_->SetInteracting(false);
+    });
 
+    connect(windowWidthSlider_, &QSlider::sliderPressed, this, [this]() {
+        if (!state_ || updatingUi_) {
+            return;
+        }
+        state_->SetInteracting(true);
+    });
 
-    auto onMatChanged = [this]() {
-        if (!state_ || updatingUi_) return;
+    connect(windowCenterSlider_, &QSlider::sliderPressed, this, [this]() {
+        if (!state_ || updatingUi_) {
+            return;
+        }
+        state_->SetInteracting(true);
+    });
 
-        auto mat = state_->GetMaterial();
-        mat.ambient = ambient_->value() / 100.0;
-        mat.diffuse = diffuse_->value() / 100.0;
-        mat.specular = specular_->value() / 100.0;
-        // power 鍙?1~100
-        mat.specularPower = 1.0 + (power_->value() / 100.0) * 99.0;
-        mat.shadeOn = shadeOn_->isChecked();
+    connect(windowWidthSlider_, &QSlider::valueChanged, this, [this, pushWindowLevel](int) {
+        pushWindowLevel();
+    });
 
-        state_->SetMaterial(mat);
-        };
+    connect(windowCenterSlider_, &QSlider::valueChanged, this, [this, pushWindowLevel](int) {
+        pushWindowLevel();
+    });
 
-    connect(ambient_, &QSlider::valueChanged, this, [=](int) { onMatChanged(); });
-    connect(diffuse_, &QSlider::valueChanged, this, [=](int) { onMatChanged(); });
-    connect(specular_, &QSlider::valueChanged, this, [=](int) { onMatChanged(); });
-    connect(power_, &QSlider::valueChanged, this, [=](int) { onMatChanged(); });
-    connect(shadeOn_, &QCheckBox::toggled, this, [=](bool) { onMatChanged(); });
+    auto finishWindowLevelInteraction = [this]() {
+        if (!state_ || updatingUi_) {
+            return;
+        }
+        state_->SetInteracting(false);
+    };
+
+    connect(windowWidthSlider_, &QSlider::sliderReleased, this, finishWindowLevelInteraction);
+    connect(windowCenterSlider_, &QSlider::sliderReleased, this, finishWindowLevelInteraction);
+
+    connect(isoQuality_, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int index) {
+        if (!state_ || updatingUi_ || index < 0) {
+            return;
+        }
+
+        const auto quality = static_cast<IsoRenderQuality>(isoQuality_->itemData(index).toInt());
+        state_->SetIsoRenderQuality(quality);
+    });
+
+    connect(renderMode_, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int index) {
+        if (!state_ || updatingUi_ || index < 0) {
+            return;
+        }
+
+        const auto mode = static_cast<VizMode>(renderMode_->itemData(index).toInt());
+        state_->SetPrimary3DMode(mode);
+    });
+
+    connect(clipPlanesToggle_, &QCheckBox::toggled, this, [this](bool checked) {
+        if (!state_ || updatingUi_) {
+            return;
+        }
+        state_->SetElementVisible(VisFlags::ClipPlanes, checked);
+    });
+
+    connect(crosshairToggle_, &QCheckBox::toggled, this, [this](bool checked) {
+        if (!state_ || updatingUi_) {
+            return;
+        }
+        state_->SetElementVisible(VisFlags::Crosshair, checked);
+    });
 }
 
 RenderPanel::~RenderPanel()
 {
-    // 鍏抽敭锛氳瑙傚療鑰呭嚟璇佸け鏁堬紝state 涓嬫閫氱煡浼氳嚜鍔ㄦ竻鎺?expired 鐨?observer
     lifeToken_.reset();
 }
 
@@ -156,25 +239,25 @@ void RenderPanel::setSession(const std::shared_ptr<AppSession>& session)
 void RenderPanel::setAnalysisService(const std::shared_ptr<VolumeAnalysisService>& analysis)
 {
     analysis_ = analysis;
-    /*refreshHistogram();*/
 }
 
 void RenderPanel::setSharedState(const std::shared_ptr<SharedInteractionState>& state)
 {
     state_ = state;
-
-    // 姣忔閲嶆柊缁戝畾 state锛岄兘閲嶆柊鐢熸垚 token
     lifeToken_ = std::make_shared<int>(1);
 
     if (!state_) {
         updatingUi_ = true;
         isoValueLabel_->setText("ISO: -");
+        windowWidthLabel_->setText("WW: -");
+        windowCenterLabel_->setText("WC: -");
         isoSlider_->setValue(0);
-        ambient_->setValue(0);
-        diffuse_->setValue(0);
-        specular_->setValue(0);
-        power_->setValue(0);
-        shadeOn_->setChecked(false);
+        windowWidthSlider_->setValue(0);
+        windowCenterSlider_->setValue(0);
+        isoQuality_->setCurrentIndex(0);
+        renderMode_->setCurrentIndex(0);
+        clipPlanesToggle_->setChecked(true);
+        crosshairToggle_->setChecked(true);
         updatingUi_ = false;
 
         histPixmap_ = QPixmap();
@@ -183,13 +266,6 @@ void RenderPanel::setSharedState(const std::shared_ptr<SharedInteractionState>& 
         return;
     }
 
-    // 浠?state 璇?scalar range锛堢敤浜?slider 鏄犲皠锛?
-    const auto r = state_->GetDataRange();
-    rangeMin_ = r[0];
-    rangeMax_ = r[1];
-
-    // state -> UI锛氭敞鍐岃瀵熻€咃紙owner 鏄?shared_ptr<void>锛屽唴閮ㄥ瓨 weak_ptr锛?
-    // 浣犵殑椤圭洰灏辨槸杩欎箞璁捐鐨勶細AddObserver(owner, cb) :contentReference[oaicite:2]{index=2}
     state_->AddObserver(lifeToken_, [this](UpdateFlags flags) {
         if (QThread::currentThread() == thread()) {
             syncFromState(flags);
@@ -204,18 +280,41 @@ void RenderPanel::setSharedState(const std::shared_ptr<SharedInteractionState>& 
             Qt::QueuedConnection);
     });
 
-    // 棣栨鍏ㄩ噺鍚屾
     syncFromState(UpdateFlags::All);
-    /*refreshHistogram();*/
 }
 
 void RenderPanel::syncFromState(UpdateFlags flags)
 {
-    if (!state_) return;
+    if (!state_) {
+        return;
+    }
 
     updatingUi_ = true;
 
-    // 1) ISO
+    if (HasFlag(flags, UpdateFlags::DataReady) || flags == UpdateFlags::All) {
+        const auto range = state_->GetDataRange();
+        rangeMin_ = range[0];
+        rangeMax_ = range[1];
+        if (rangeMax_ <= rangeMin_) {
+            rangeMax_ = rangeMin_ + 1.0;
+        }
+        rebuildHistogramPixmap();
+    }
+
+    if (HasFlag(flags, UpdateFlags::RenderMode) || flags == UpdateFlags::All) {
+        const int mode = static_cast<int>(state_->GetPrimary3DMode());
+        const int index = renderMode_->findData(mode);
+        if (index >= 0) {
+            renderMode_->setCurrentIndex(index);
+        }
+    }
+
+    if (HasFlag(flags, UpdateFlags::Visibility) || flags == UpdateFlags::All) {
+        const std::uint32_t mask = state_->GetVisibilityMask();
+        clipPlanesToggle_->setChecked((mask & VisFlags::ClipPlanes) != 0);
+        crosshairToggle_->setChecked((mask & VisFlags::Crosshair) != 0);
+    }
+
     if (HasFlag(flags, UpdateFlags::IsoValue) || flags == UpdateFlags::All) {
         const double iso = state_->GetIsoValue();
         double t = 0.0;
@@ -227,80 +326,166 @@ void RenderPanel::syncFromState(UpdateFlags flags)
         isoValueLabel_->setText(QString("ISO: %1").arg(iso, 0, 'f', 2));
     }
 
-    // 2) Material
-    if (HasFlag(flags, UpdateFlags::Material) || flags == UpdateFlags::All) {
-        const auto mat = state_->GetMaterial();
+    if (HasFlag(flags, UpdateFlags::IsoQuality) || flags == UpdateFlags::All) {
+        const int quality = static_cast<int>(state_->GetIsoRenderQuality());
+        const int index = isoQuality_->findData(quality);
+        if (index >= 0) {
+            isoQuality_->setCurrentIndex(index);
+        }
+    }
 
-        auto to01_100 = [](double v01) {
-            int v = static_cast<int>(std::round(clamp01(v01) * 100.0));
-            if (v < 0) v = 0;
-            if (v > 100) v = 100;
-            return v;
-            };
-
-        auto powerToSlider = [](double p) {
-            if (p < 1.0) p = 1.0;
-            if (p > 100.0) p = 100.0;
-            const double t = (p - 1.0) / 99.0;
-            return static_cast<int>(std::round(t * 100.0));
-            };
-
-        ambient_->setValue(to01_100(mat.ambient));
-        diffuse_->setValue(to01_100(mat.diffuse));
-        specular_->setValue(to01_100(mat.specular));
-        power_->setValue(powerToSlider(mat.specularPower));
-        shadeOn_->setChecked(mat.shadeOn);
+    if (HasFlag(flags, UpdateFlags::WindowLevel)
+        || HasFlag(flags, UpdateFlags::DataReady)
+        || flags == UpdateFlags::All) {
+        const auto wl = state_->GetWindowLevel();
+        windowWidthSlider_->setValue(windowWidthToSlider(wl.windowWidth));
+        windowCenterSlider_->setValue(windowCenterToSlider(wl.windowCenter));
+        windowWidthLabel_->setText(QString("WW: %1").arg(wl.windowWidth, 0, 'f', 2));
+        windowCenterLabel_->setText(QString("WC: %1").arg(wl.windowCenter, 0, 'f', 2));
     }
 
     updatingUi_ = false;
 }
 
-//void RenderPanel::refreshHistogram()
-//{
-//    if (!histLabel_) return;
-//
-//    if (!analysis_) {
-//        histPixmap_ = QPixmap();
-//        histLabel_->setPixmap(QPixmap());
-//        histLabel_->setText(QStringLiteral("锛堟湭鍔犺浇锛?));
-//        return;
-//    }
-//
-//    // 缂撳瓨璺緞
-//    const QString dir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
-//    QDir().mkpath(dir);
-//    histCachePath_ = dir + "/ctviewer_hist.png";
-//
-//    // 鐢熸垚鐩存柟鍥惧浘鐗囷紙浣犵殑 VolumeAnalysisService::SaveHistogramImage 宸插疄鐜帮級
-//    //analysis_->SaveHistogramImage(histCachePath_.toStdString(), 1024);
-//
-//    QFileInfo fi(histCachePath_);
-//    if (!fi.exists() || fi.size() <= 0) {
-//        histPixmap_ = QPixmap();
-//        histLabel_->setPixmap(QPixmap());
-//        histLabel_->setText(QStringLiteral("锛堢洿鏂瑰浘鐢熸垚澶辫触锛?));
-//        return;
-//    }
-//
-//    QPixmap pm(histCachePath_);
-//    if (pm.isNull()) {
-//        histPixmap_ = QPixmap();
-//        histLabel_->setPixmap(QPixmap());
-//        histLabel_->setText(QStringLiteral("锛堢洿鏂瑰浘鍔犺浇澶辫触锛?));
-//        return;
-//    }
-//
-//    histPixmap_ = pm;
-//    applyHistogramPixmap();
-//}
-
+void RenderPanel::rebuildHistogramPixmap()
+{
+    histPixmap_ = QPixmap();
+    histLabel_->setPixmap(QPixmap());
+    if (!analysis_) {
+        histLabel_->setText(QStringLiteral("(Not loaded)"));
+        return;
+    }
+    vtkSmartPointer<vtkTable> table = analysis_->GetHistogramData(512);
+    if (!table || table->GetNumberOfRows() <= 0) {
+        histLabel_->setText(QStringLiteral("(Not loaded)"));
+        return;
+    }
+    vtkDataArray* values = vtkDataArray::SafeDownCast(table->GetColumnByName("LogFrequency"));
+    if (!values) {
+        values = vtkDataArray::SafeDownCast(table->GetColumnByName("Frequency"));
+    }
+    if (!values || values->GetNumberOfTuples() <= 0) {
+        histLabel_->setText(QStringLiteral("(Not loaded)"));
+        return;
+    }
+    const int imageWidth = 512;
+    const int imageHeight = 160;
+    const int baseline = imageHeight - 12;
+    const int topPadding = 8;
+    QImage image(imageWidth, imageHeight, QImage::Format_ARGB32_Premultiplied);
+    image.fill(QColor(17, 17, 17));
+    QPainter painter(&image);
+    painter.fillRect(QRect(0, 0, imageWidth, imageHeight), QColor(17, 17, 17));
+    painter.setPen(QColor(68, 68, 68));
+    painter.drawRect(0, 0, imageWidth - 1, imageHeight - 1);
+    painter.drawLine(0, baseline, imageWidth - 1, baseline);
+    double maxValue = 0.0;
+    for (vtkIdType i = 0; i < values->GetNumberOfTuples(); ++i) {
+        maxValue = std::max(maxValue, values->GetComponent(i, 0));
+    }
+    if (maxValue <= 0.0) {
+        painter.end();
+        histLabel_->setText(QStringLiteral("(Empty histogram)"));
+        return;
+    }
+    const vtkIdType count = values->GetNumberOfTuples();
+    for (vtkIdType i = 0; i < count; ++i) {
+        const double value = values->GetComponent(i, 0);
+        const double t = value / maxValue;
+        const int x0 = static_cast<int>((static_cast<double>(i) * imageWidth) / count);
+        const int x1 = static_cast<int>((static_cast<double>(i + 1) * imageWidth) / count);
+        const int barWidth = std::max(1, x1 - x0);
+        const int barHeight = static_cast<int>(std::round(t * (baseline - topPadding)));
+        painter.fillRect(QRect(x0, baseline - barHeight, barWidth, barHeight), QColor(150, 150, 150));
+    }
+    painter.end();
+    histPixmap_ = QPixmap::fromImage(image);
+    applyHistogramPixmap();
+}
 void RenderPanel::applyHistogramPixmap()
 {
-    if (histPixmap_.isNull()) return;
+    if (histPixmap_.isNull()) {
+        return;
+    }
+    const QSize targetSize = histLabel_->contentsRect().size();
+    if (targetSize.width() <= 0 || targetSize.height() <= 0) {
+        return;
+    }
     histLabel_->setText(QString());
     histLabel_->setPixmap(
-        histPixmap_.scaled(histLabel_->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation)
+        histPixmap_.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation)
     );
+}
+
+double RenderPanel::currentScalarSpan() const
+{
+    return std::max(rangeMax_ - rangeMin_, 1e-6);
+}
+
+double RenderPanel::currentWindowWidthMin() const
+{
+    return std::max(currentScalarSpan() * 0.01, 1e-6);
+}
+
+double RenderPanel::currentWindowWidthMax() const
+{
+    return currentScalarSpan() * 2.0;
+}
+
+double RenderPanel::currentWindowCenterMin() const
+{
+    return rangeMin_;
+}
+
+double RenderPanel::currentWindowCenterMax() const
+{
+    return rangeMax_;
+}
+
+double RenderPanel::sliderToWindowWidth(int value) const
+{
+    const double t = static_cast<double>(value) / 1000.0;
+    const double minWidth = currentWindowWidthMin();
+    const double maxWidth = currentWindowWidthMax();
+    if (maxWidth <= minWidth) {
+        return minWidth;
+    }
+
+    const double logMin = std::log(minWidth);
+    const double logMax = std::log(maxWidth);
+    return std::exp(logMin + (logMax - logMin) * t);
+}
+
+double RenderPanel::sliderToWindowCenter(int value) const
+{
+    const double t = static_cast<double>(value) / 1000.0;
+    const double minCenter = currentWindowCenterMin();
+    const double maxCenter = currentWindowCenterMax();
+    return minCenter + (maxCenter - minCenter) * t;
+}
+
+int RenderPanel::windowWidthToSlider(double value) const
+{
+    const double minWidth = currentWindowWidthMin();
+    const double maxWidth = currentWindowWidthMax();
+    if (maxWidth <= minWidth) {
+        return 0;
+    }
+
+    const double clamped = std::max(minWidth, std::min(value, maxWidth));
+    const double logMin = std::log(minWidth);
+    const double logMax = std::log(maxWidth);
+    const double t = (std::log(clamped) - logMin) / (logMax - logMin);
+    return static_cast<int>(std::round(clamp01(t) * 1000.0));
+}
+
+int RenderPanel::windowCenterToSlider(double value) const
+{
+    const double minCenter = currentWindowCenterMin();
+    const double maxCenter = currentWindowCenterMax();
+    const double span = maxCenter - minCenter;
+    const double t = (span <= 1e-12) ? 0.0 : (value - minCenter) / span;
+    return static_cast<int>(std::round(clamp01(t) * 1000.0));
 }
 
 void RenderPanel::resizeEvent(QResizeEvent* e)
@@ -310,4 +495,7 @@ void RenderPanel::resizeEvent(QResizeEvent* e)
         applyHistogramPixmap();
     }
 }
+
+
+
 

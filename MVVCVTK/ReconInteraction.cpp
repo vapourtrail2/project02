@@ -1,7 +1,5 @@
 ﻿#include "uireconstruct3d.h"
-
 #include <array>
-
 #include "c_ui/MainWindow.h"
 #include "c_ui/nav/WorkspaceFlow.h"
 #include "c_ui/workbenches/StartPage.h"

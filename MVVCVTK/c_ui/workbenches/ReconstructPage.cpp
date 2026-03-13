@@ -1,6 +1,7 @@
-﻿#include "ReconstructPage.h"
+#include "ReconstructPage.h"
 
 #include <QGridLayout>
+#include <QMetaObject>
 #include <QWidget>
 
 #include <QVTKOpenGLNativeWidget.h>
@@ -37,6 +38,7 @@ void ReconstructPage::initWithData(
 {
     m_dataMgr = std::move(data);
     m_sharedState = std::move(state);
+    m_lifeToken = std::make_shared<int>(1);
 
     if (!m_dataMgr || !m_sharedState || !m_dataMgr->GetVtkImage()) {
         return;
@@ -71,9 +73,57 @@ void ReconstructPage::initWithData(
     m_ctx3D = std::make_shared<QtRenderContext>();
     m_ctx3D->SetQtWidget(getVtkWidget(viewReserved_));
     m_ctx3D->BindService(m_svc3D);
-    m_svc3D->Show3DPlanes(VizMode::CompositeIsoSurface);
-    m_ctx3D->SetInteractionMode(VizMode::CompositeIsoSurface);
+    applyPrimary3DMode(m_sharedState->GetPrimary3DMode());
 
+    if (m_sharedState) {
+        m_sharedState->AddObserver(m_lifeToken, [this](UpdateFlags flags) {
+            if (!HasFlag(flags, UpdateFlags::RenderMode) || !m_sharedState) {
+                return;
+            }
+
+            const VizMode mode = m_sharedState->GetPrimary3DMode();
+            QMetaObject::invokeMethod(
+                this,
+                [this, mode]() {
+                    applyPrimary3DMode(mode);
+                },
+                Qt::QueuedConnection);
+        });
+    }
+
+    refreshViews();
+
+    if (m_ctxAxial) m_ctxAxial->Start();
+    if (m_ctxCoronal) m_ctxCoronal->Start();
+    if (m_ctxSagittal) m_ctxSagittal->Start();
+    if (m_ctx3D) m_ctx3D->Start();
+}
+
+void ReconstructPage::applyPrimary3DMode(VizMode mode)
+{
+    if (!m_svc3D || !m_ctx3D) {
+        return;
+    }
+
+    VizMode effectiveMode = mode;
+    if (effectiveMode != VizMode::CompositeVolume && effectiveMode != VizMode::CompositeIsoSurface) {
+        effectiveMode = VizMode::CompositeIsoSurface;
+    }
+
+    if (m_current3DMode == effectiveMode) {
+        return;
+    }
+
+    m_current3DMode = effectiveMode;
+    m_svc3D->Show3DPlanes(effectiveMode);
+    m_ctx3D->SetInteractionMode(effectiveMode);
+    m_svc3D->OnStateChanged();
+    m_svc3D->ProcessPendingUpdates();
+    m_ctx3D->Render();
+}
+
+void ReconstructPage::refreshViews()
+{
     if (m_svcAxial) m_svcAxial->OnStateChanged();
     if (m_svcCoronal) m_svcCoronal->OnStateChanged();
     if (m_svcSagittal) m_svcSagittal->OnStateChanged();
@@ -88,9 +138,4 @@ void ReconstructPage::initWithData(
     if (m_ctxCoronal) m_ctxCoronal->Render();
     if (m_ctxSagittal) m_ctxSagittal->Render();
     if (m_ctx3D) m_ctx3D->Render();
-
-    if (m_ctxAxial) m_ctxAxial->Start();
-    if (m_ctxCoronal) m_ctxCoronal->Start();
-    if (m_ctxSagittal) m_ctxSagittal->Start();
-    if (m_ctx3D) m_ctx3D->Start();
 }

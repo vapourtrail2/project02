@@ -1,4 +1,4 @@
-ï»¿#pragma once
+#pragma once
 
 #include "AppTypes.h"
 #include <algorithm>
@@ -34,6 +34,8 @@ public:
             std::lock_guard<std::mutex> lock(m_mutex);
             m_dataRange[0] = rangeMin;
             m_dataRange[1] = rangeMax;
+            m_windowLevel.windowWidth = std::max(rangeMax - rangeMin, 1e-6);
+            m_windowLevel.windowCenter = (rangeMin + rangeMax) * 0.5;
             m_loadState = LoadState::Succeeded;
         }
         NotifyObservers(UpdateFlags::DataReady);
@@ -84,6 +86,16 @@ public:
             if (cfg.hasIso && std::abs(m_isoValue - cfg.isoThreshold) > 1e-6) {
                 m_isoValue = cfg.isoThreshold;
                 flags |= UpdateFlags::IsoValue;
+            }
+
+            if (cfg.hasIsoQuality && m_isoRenderQuality != cfg.isoRenderQuality) {
+                m_isoRenderQuality = cfg.isoRenderQuality;
+                flags |= UpdateFlags::IsoQuality;
+            }
+
+            if (cfg.hasPrimary3DMode && m_primary3DMode != cfg.primary3DMode) {
+                m_primary3DMode = cfg.primary3DMode;
+                flags |= UpdateFlags::RenderMode;
             }
 
             if (cfg.hasBgColor &&
@@ -178,6 +190,52 @@ public:
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         return m_isoValue;
+    }
+
+    void SetIsoRenderQuality(IsoRenderQuality quality)
+    {
+        bool changed = false;
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            if (m_isoRenderQuality != quality) {
+                m_isoRenderQuality = quality;
+                changed = true;
+            }
+        }
+        if (changed) {
+            NotifyObservers(UpdateFlags::IsoQuality);
+        }
+    }
+
+    IsoRenderQuality GetIsoRenderQuality() const
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_isoRenderQuality;
+    }
+
+    void SetPrimary3DMode(VizMode mode)
+    {
+        if (mode != VizMode::CompositeVolume && mode != VizMode::CompositeIsoSurface) {
+            return;
+        }
+
+        bool changed = false;
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            if (m_primary3DMode != mode) {
+                m_primary3DMode = mode;
+                changed = true;
+            }
+        }
+        if (changed) {
+            NotifyObservers(UpdateFlags::RenderMode);
+        }
+    }
+
+    VizMode GetPrimary3DMode() const
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_primary3DMode;
     }
 
     void SetMaterial(const MaterialParams& mat)
@@ -346,12 +404,14 @@ public:
 private:
     void NotifyObservers(UpdateFlags flags)
     {
-        std::vector<ObserverCallback> callbacks;
+		std::vector<ObserverCallback> callbacks;//°ÑÓÐÐ§µÄ»Øµ÷º¯ÊýÈ«²¿¿½±´µ½ÕâÀï  Õâ¸öÊÇ±¾µØÊý×é ÓÃÀ´´æÕâ´ÎÒªÍ¨ÖªµÄ»Øµ÷º¯Êý
         {
             std::lock_guard<std::mutex> lock(m_mutex);
             for (auto it = m_observers.begin(); it != m_observers.end();) {
-                if (it->owner.expired()) {
+				if (it->owner.expired()) {//itÖ¸Ïòµ±Ç°ÔªËØ £¬µ±¹Û²ìÕßµÄownerÒÑ¾­¹ýÆÚ
                     it = m_observers.erase(it);
+					//erase»á·µ»ØÏÂÒ»¸öÔªËØµÄµü´úÆ÷£¬ËùÒÔ²»ÐèÒª++it
+					//ABCD É¾µôB ºó£¬erase·µ»ØCµÄµü´úÆ÷£¬ÏÂÒ»ÂÖÑ­»·itÖ¸ÏòC
                 }
                 else {
                     callbacks.push_back(it->callback);
@@ -362,14 +422,17 @@ private:
 
         for (const auto& callback : callbacks) {
             if (callback) {
-                callback(flags);
+				callback(flags);//¸ù¾ÝÀàÐÍµ÷ÓÃ»Øµ÷º¯Êý
             }
         }
     }
 
+    //µ±ÕâÐ©×´Ì¬±ä»¯ Í¨ÖªËùÓÐ¹Û²ìÕß
     mutable std::mutex m_mutex;
     int m_cursorPos[3] = { 0, 0, 0 };
     double m_isoValue = 0.0;
+    IsoRenderQuality m_isoRenderQuality = IsoRenderQuality::Fast;
+    VizMode m_primary3DMode = VizMode::CompositeIsoSurface;
     MaterialParams m_material;
     BackgroundColor m_background;
     WindowLevelParams m_windowLevel;
@@ -389,3 +452,6 @@ private:
         VisFlags::RulerAxes;
     std::vector<ObserverEntry> m_observers;
 };
+
+
+

@@ -16,7 +16,6 @@ TabMap::TabMap()
         QStringLiteral("报告"),
         QStringLiteral("动画"),
         QStringLiteral("窗口"),
-        QStringLiteral("量具")
     }
 {
 }

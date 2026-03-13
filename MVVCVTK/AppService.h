@@ -1,4 +1,4 @@
-ï»¿#pragma once
+#pragma once
 
 #include "AppInterfaces.h"
 #include "AppState.h"
@@ -29,6 +29,7 @@ public:
     void PreInit_SetOpacity(double opacity) override;
     void PreInit_SetTransferFunction(const std::vector<TFNode>& nodes) override;
     void PreInit_SetIsoThreshold(double val) override;
+    void PreInit_SetIsoRenderQuality(IsoRenderQuality quality) override;
     void PreInit_SetBackground(const BackgroundColor& bg) override;
     void PreInit_SetWindowLevel(double ww, double wc) override;
     void PreInit_CommitConfig(const PreInitConfig& cfg) override;
@@ -36,20 +37,30 @@ public:
     void LoadFileAsync(
         const std::string& path,
         std::function<void(bool success)> onComplete = nullptr) override;
+    // ÖØ½¨×¢ÈëÒì²½½Ó¿Ú£º½« SetFromBuffer µÄºÄÊ±²Ù×÷Í¶µÝµ½ºóÌ¨Ïß³Ì
+    bool SetFromBufferAsync(
+        const float* data,
+        const std::array<int, 3>& dims,
+        const std::array<float, 3>& spacing,
+        const std::array<float, 3>& origin,
+        std::function<void(bool success)> onComplete = nullptr);
     LoadState GetLoadState() const override;
     void CancelLoad() override;
 
     void ProcessPendingUpdates() override;
 
     void UpdateInteraction(int delta) override;
+    void UpdateInteractionAxis(int axis, int delta) override;
     void SyncCursorToWorldPosition(double worldPos[3], int axis = -1) override;
     std::array<int, 3> GetCursorPosition() override;
+    std::array<double, 3> GetCursorWorldPosition() override;
     void SetInteracting(bool val) override;
     int GetPlaneAxis(vtkActor* actor) override;
     vtkProp3D* GetMainProp() override;
     void SyncModelMatrix(vtkMatrix4x4* mat) override;
     void SetElementVisible(std::uint32_t flagBit, bool show) override;
     void AdjustWindowLevel(double deltaWW, double deltaWC) override;
+    void SetIsoRenderQuality(IsoRenderQuality quality) override;
 
     void TransformModel(double translate[3], double rotate[3], double scale[3]);
     void ResetModelTransform();
@@ -75,6 +86,7 @@ private:
     void PostData_SyncStateToStrategy();
     void PostData_HandleLoadFailed();
     RenderParams BuildRenderParams(UpdateFlags flags) const;
+    void RequestImmediateFrame(UpdateFlags flags);
     std::shared_ptr<AbstractVisualStrategy> GetOrCreateStrategy(VizMode mode);
     void RequestClearStrategyCache();
     void ExecuteClearStrategyCache();
@@ -96,3 +108,7 @@ private:
     std::future<void> m_loadFuture;
     mutable std::mutex m_loadMutex;
 };
+
+
+
+

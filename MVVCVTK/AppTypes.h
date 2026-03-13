@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <array>
 #include <cstdint>
@@ -57,6 +57,11 @@ struct WindowLevelParams {
     double windowCenter = 40.0;
 };
 
+enum class IsoRenderQuality {
+    Fast,
+    HighQuality
+};
+
 enum class UpdateFlags : int {
     None = 0,
     Cursor = 1 << 0,
@@ -70,7 +75,9 @@ enum class UpdateFlags : int {
     Background = 1 << 8,
     Visibility = 1 << 9,
     WindowLevel = 1 << 10,
-    All = Cursor | TF | IsoValue | Material | Interaction | Transform | WindowLevel
+    IsoQuality = 1 << 11,
+    RenderMode = 1 << 12,
+    All = Cursor | TF | IsoValue | Material | Interaction | Transform | WindowLevel | IsoQuality | RenderMode
 };
 
 inline UpdateFlags operator|(UpdateFlags a, UpdateFlags b)
@@ -106,6 +113,8 @@ struct RenderParams {
     double scalarRange[2] = { 0.0, 255.0 };
     MaterialParams material;
     double isoValue = 0.0;
+    IsoRenderQuality isoRenderQuality = IsoRenderQuality::Fast;
+    VizMode primary3DMode = VizMode::CompositeIsoSurface;
     WindowLevelParams windowLevel;
     std::array<double, 16> modelMatrix = {
         1, 0, 0, 0,
@@ -127,10 +136,14 @@ struct PreInitConfig {
     MaterialParams material;
     std::vector<TFNode> tfNodes;
     double isoThreshold = 0.0;
+    IsoRenderQuality isoRenderQuality = IsoRenderQuality::Fast;
+    VizMode primary3DMode = VizMode::CompositeIsoSurface;
     BackgroundColor bgColor;
     WindowLevelParams windowLevel;
     bool hasTF = false;
     bool hasIso = false;
+    bool hasIsoQuality = false;
+    bool hasPrimary3DMode = false;
     bool hasBgColor = false;
     bool hasWindowLevel = false;
 };
@@ -145,3 +158,5 @@ struct WindowConfig {
     bool showAxes = false;
     PreInitConfig preInitCfg;
 };
+
+

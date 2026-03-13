@@ -2,7 +2,7 @@
 #include "VisualStrategies.h" 
 #include "AppInterfaces.h"
 // 工厂引用所有策略
-
+//显示
 class StrategyFactory {
 public:
     static std::shared_ptr<AbstractVisualStrategy> CreateStrategy(VizMode mode) {
