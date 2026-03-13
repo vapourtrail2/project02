@@ -116,8 +116,7 @@ void IsoSurfaceStrategy::SetInputData(vtkSmartPointer<vtkDataObject> data) {
         return;
     }
 
-    //auto lowimg = std::make_shared<>
-    //m_sourceImage = img;
+    m_sourceImage = img;
     m_cubeAxes->SetBounds(img->GetBounds());
     m_isoMapper->SetInputConnection(m_isoExtractor->GetOutputPort());
     m_hasLastIsoValue = false;

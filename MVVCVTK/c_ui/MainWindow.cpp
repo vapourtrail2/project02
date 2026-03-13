@@ -138,7 +138,7 @@ void CTViewer::buildTitleBar(QWidget* topBarContainer, QVBoxLayout* topBarLayout
     barLayout->setSpacing(0);
 
     // 左侧撤回/前进按钮
-    titleLeftArea_ = new QWidget(titleBar_);
+    /*titleLeftArea_ = new QWidget(titleBar_);
     auto* leftLayout = new QHBoxLayout(titleLeftArea_);
     leftLayout->setContentsMargins(0, 0, 0, 0);
     leftLayout->setSpacing(6);
@@ -159,10 +159,10 @@ void CTViewer::buildTitleBar(QWidget* topBarContainer, QVBoxLayout* topBarLayout
 
     titleLeftArea_->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
     titleLeftArea_->installEventFilter(this);
-    barLayout->addWidget(titleLeftArea_, 0);
+    barLayout->addWidget(titleLeftArea_, 0);*/
 
     //  中间标题 
-    titleCenterArea_ = new QWidget(titleBar_);
+    /*titleCenterArea_ = new QWidget(titleBar_);
     auto* centerLayout = new QHBoxLayout(titleCenterArea_);
     centerLayout->setContentsMargins(0, 0, 0, 0);
     titleLabel_ = new QLabel(windowTitle(), titleCenterArea_);
@@ -173,13 +173,14 @@ void CTViewer::buildTitleBar(QWidget* topBarContainer, QVBoxLayout* topBarLayout
     titleCenterArea_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     titleCenterArea_->installEventFilter(this);
     titleLabel_->installEventFilter(this);
-    barLayout->addWidget(titleCenterArea_, 1);
+    barLayout->addWidget(titleCenterArea_, 1);*/
 
     // 右侧控制按钮 
     auto* rightContainer = new QWidget(titleBar_);
     auto* rightLayout = new QHBoxLayout(rightContainer);
     rightLayout->setContentsMargins(0, 0, 0, 0);
     rightLayout->setSpacing(0);
+
 
     const QString titleButtonStyle = QStringLiteral(
         "QToolButton { background:transparent; border:none; padding:6px; color:#f5f5f5; border-radius:4px; }"

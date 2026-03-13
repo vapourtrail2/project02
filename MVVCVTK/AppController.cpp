@@ -2,7 +2,7 @@
 #include  "AppService.h"
 #include <QFileInfo>
 #include <QDebug>
-
+#include <qapplication.h>
 namespace {
 std::shared_ptr<AbstractDataManager> CreateManagerForPath(const QString& path)
 {
@@ -33,19 +33,42 @@ bool AppController::openFile(const QString& path, QString* errorOut)
     auto newSession = std::make_shared<AppSession>();
     newSession->dataMgr = createDataManagerForPath(p);
     newSession->sharedState = std::make_shared<SharedInteractionState>();
+	newSession->service = std::make_shared<MedicalVizService>(newSession->dataMgr, newSession->sharedState);
     newSession->sharedState->SetLoadState(LoadState::Loading);
     newSession->sourcePath = p;
+	newSession->analysisService = std::make_shared<VolumeAnalysisService>(newSession->dataMgr);
+    
+	auto weakSession = std::weak_ptr<AppSession>(newSession);
+    newSession->service->LoadFileAsync(p.toStdString(), 
+        [weakSession](bool ok)
+        {
+            auto sess = weakSession.lock();
+            if (!sess) return;
+            if (ok) {
+				auto img = sess->dataMgr->GetVtkImage();
+                if (!img) return;
 
-    const bool ok = newSession->dataMgr && newSession->dataMgr->LoadData(p.toStdString());
-    if (!ok) {
-        newSession->sharedState->NotifyLoadFailed();
-        if (errorOut) {
-            *errorOut = QStringLiteral("Load failed. Check whether the file path and input format are valid.");
-        }
-        return false;
-    }
+                // 拆解findingsetup的逻辑，直接在这里设置初始窗口/层级和iso值，避免重复调用notifyDataReady导致界面刷新两次
+                double range[2];
+                img->GetScalarRange(range);
+                int dims[3];
+                img->GetDimensions(dims);
+                const double rangeSpan = range[1] - range[0];
+                const double safeWindowWidth = rangeSpan > 0.0 ? rangeSpan : 1.0;
+                const double windowCenter = range[0] + safeWindowWidth * 0.5;
 
-    return finalizeSession(newSession, errorOut);
+                sess->sharedState->SetWindowLevel(safeWindowWidth, windowCenter);
+                sess->sharedState->SetCursorPosition(dims[0] / 2, dims[1] / 2, dims[2] / 2);
+                sess->sharedState->SetIsoValue(range[0] + safeWindowWidth * 0.2);
+                sess->sharedState->NotifyDataReady(range[0], range[1]);
+                    
+            } else {
+                sess->sharedState->NotifyLoadFailed();
+            }
+        });
+    m_session = newSession;
+    emit sessionChanged(m_session);
+	return true;
 }
 
 bool AppController::openReconstructedData(
@@ -56,35 +79,53 @@ bool AppController::openReconstructedData(
     const QString& sourcePath,
     QString* errorOut)
 {
+	// 目前重建数据仅支持 RawVolumeDataManager，后续可根据需要扩展更多类型的 DataManager
     auto rawDataManager = std::make_shared<RawVolumeDataManager>();
     auto sharedState = std::make_shared<SharedInteractionState>();
-    auto service = std::make_shared<MedicalVizService>(rawDataManager, sharedState);
-    if (!service->SetFromBufferAsync(data, dims, spacing, origin, [service](bool ok) {
-        if (ok) {
-            qDebug() << "Buffer data processed and queued for main thread.";
-        }
-        })) {
-        if (errorOut) *errorOut = QStringLiteral("Service is busy or initialization failed.");
-        return false;
-    }
-
-    //if (!rawDataManager->SetFromBufferAsync(reconData, dims, spacing, origin)) {
-    //    if (errorOut) {
-    //        *errorOut = QStringLiteral("Invalid reconstruction buffer.");
-    //    }
-    //    return false;
-    //}
-
-
+	auto service = std::make_shared<MedicalVizService>(rawDataManager, sharedState);
     auto newSession = std::make_shared<AppSession>();
     newSession->dataMgr = rawDataManager;
-    newSession->sharedState = std::move(sharedState);
-    /*newSession->sharedState->SetLoadState(LoadState::Loading);*/
+    newSession->sharedState = sharedState;
+    newSession->service = service;
     newSession->sourcePath = sourcePath.trimmed().isEmpty()
         ? QStringLiteral("CT reconstruction")
         : sourcePath.trimmed();
+	newSession->analysisService = std::make_shared<VolumeAnalysisService>(rawDataManager);
+    
+	// 弱引用，用于托管回调中的 this 指针，避免循环引用导致内存泄漏
+	auto weakSession = std::weak_ptr<AppSession>(newSession);
+    const bool queen = newSession->service->SetFromBufferAsync(data, dims, spacing, origin, [weakSession]
+    (bool ok) 
+        {
+			auto sess = weakSession.lock();
+            if (!sess || !ok) return;
 
-    return finalizeSession(newSession, errorOut);
+			auto img = sess->dataMgr->GetVtkImage();
+            if (!img) return;
+
+			// 拆解findingsetup的逻辑，直接在这里设置初始窗口/层级和iso值，避免重复调用notifyDataReady导致界面刷新两次
+			double range[2];
+            img->GetScalarRange(range);
+            int dims[3];
+            img->GetDimensions(dims);
+            const double rangeSpan = range[1] - range[0];
+            const double safeWindowWidth = rangeSpan > 0.0 ? rangeSpan : 1.0;
+            const double windowCenter = range[0] + safeWindowWidth * 0.5;
+            
+            sess->sharedState->SetWindowLevel(safeWindowWidth, windowCenter);
+            sess->sharedState->SetCursorPosition(dims[0] / 2, dims[1] / 2, dims[2] / 2);
+            sess->sharedState->SetIsoValue(range[0] + safeWindowWidth * 0.2);
+			sess->sharedState->NotifyDataReady(range[0], range[1]);
+        });
+
+    if (!queen)
+    {
+        if (errorOut) *errorOut = QStringLiteral("Service is busy or initialization failed."); 
+		return false;
+    }
+	m_session = newSession;
+	emit sessionChanged(m_session);
+    return true;
 }
 
 std::shared_ptr<AbstractDataManager> AppController::createDataManagerForPath(const QString& path) const
@@ -94,14 +135,12 @@ std::shared_ptr<AbstractDataManager> AppController::createDataManagerForPath(con
 
 bool AppController::finalizeSession(const std::shared_ptr<AppSession>& newSession, QString* errorOut)
 {
-
     if (!newSession || !newSession->dataMgr || !newSession->sharedState) {
         if (errorOut) {
             *errorOut = QStringLiteral("Session initialization failed.");
         }
         return false;
     }
-
 
     auto img = newSession->dataMgr->GetVtkImage();
 

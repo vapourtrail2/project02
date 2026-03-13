@@ -91,7 +91,7 @@ void MedicalVizService::Initialize(vtkSmartPointer<vtkRenderWindow> win, vtkSmar
             oldValue | static_cast<int>(flags))) {
         }
         self->MarkNeedsSync();
-        self->RequestImmediateFrame(flags);
+        //self->RequestImmediateFrame(flags);
     });
 }
 
@@ -263,20 +263,9 @@ bool MedicalVizService::SetFromBufferAsync(
             // ── 结果通知：只写 SharedState，不碰任何 VTK 渲染对象 ────
             // DataReady/LoadFailed → Observer → m_needsDataRefresh
             // 主线程 ProcessPendingUpdates → PostData_RebuildPipeline
-            if (ok) {
-                auto img = dataMgr->GetVtkImage();
-                if (img) {
-                    double range[2];
-                    img->GetScalarRange(range);
-                    sharedState->NotifyDataReady(range[0], range[1]);
-                }
-                else {
-                    sharedState->NotifyLoadFailed();
-                }
-            }
-            else {
+            if (!ok)
                 sharedState->NotifyLoadFailed();
-            }
+
             if (onComplete) onComplete(ok);
         });
 
@@ -737,6 +726,12 @@ void MedicalVizService::ActivateModeImmediate(VizMode mode)
     auto img = m_dataManager->GetVtkImage();
     if (!img) {
         return;
+    }
+
+    int dims[3] = { 0, 0, 0 };
+    img->GetDimensions(dims);
+    if (dims[0] <= 0 || dims[1] <= 0 || dims[2] <= 0) {
+        return;  // 数据未就绪，等 Timer 心跳 PostData_RebuildPipeline 触发
     }
 
     auto strategy = GetOrCreateStrategy(mode);

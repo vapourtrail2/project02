@@ -5,13 +5,15 @@
 #include <QString>
 #include "DataManager.h"
 #include "AppState.h"
+#include "AppService.h"
 #include "VolumeAnalysisService.h"
-
+#include <atomic>
 struct AppSession
 {
     std::shared_ptr<AbstractDataManager> dataMgr;
     std::shared_ptr<SharedInteractionState> sharedState;
     std::shared_ptr<VolumeAnalysisService> analysisService;
+	std::shared_ptr<MedicalVizService> service;
     QString sourcePath;
 };
 
