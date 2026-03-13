@@ -29,7 +29,7 @@ bool AppController::openFile(const QString& path, QString* errorOut)
         }
         return false;
     }
-
+    //git
     auto newSession = std::make_shared<AppSession>();
     newSession->dataMgr = createDataManagerForPath(p);
     newSession->sharedState = std::make_shared<SharedInteractionState>();
