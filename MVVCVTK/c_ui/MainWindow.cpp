@@ -70,7 +70,7 @@ CTViewer::CTViewer(QWidget* parent)
     buildTheTop();
     buildTheMiddle();  
     wireConnect();     
-    setDefaults();      
+  /*  setDefaults();   */   
 }
 
 CTViewer::~CTViewer() {
@@ -109,7 +109,6 @@ void CTViewer::buildTheMiddle()
     setCentralWidget(totalContainer);
     appController_ = new AppController(this);//这行的作用存疑
 	workspaceFlow_ = std::make_unique<WorkspaceFlow>(appController_);//这句话的意思是创建一个WorkspaceFlow对象，并将appController_的指针传递给它，以便WorkspaceFlow能够与AppController进行交互和通信。这种设计通常用于实现应用程序中不同组件之间的协调和数据共享。
-	//make_unique的作用是？
     applyInitialUiState();
 }   
 
@@ -204,7 +203,8 @@ void CTViewer::buildTitleBar(QWidget* topBarContainer, QVBoxLayout* topBarLayout
     QFont f = btnMaximize_->font();
     f.setFamily(QStringLiteral("Segoe UI Symbol"));
     btnMaximize_->setFont(f);
-
+    
+    barLayout->addStretch(0);
     barLayout->addWidget(rightContainer, 0);
 
     //拖动窗口
@@ -621,12 +621,12 @@ void CTViewer::updateMaximizeButtonIcon()
     //btnMaximize_->setText(QStringLiteral("□"));
 }
 
-void CTViewer::setDefaults() {
-    // 在默认显示时把窗口定位到主屏幕的可用区域左上角，避免每次运行都要手动拖动窗口
-    if (auto* screen = QGuiApplication::primaryScreen()) {
-        const QRect availableGeometry = screen->availableGeometry();
-        move(availableGeometry.topLeft());
-    }
-}
+//void CTViewer::setDefaults() {
+//    // 在默认显示时把窗口定位到主屏幕的可用区域左上角，避免每次运行都要手动拖动窗口
+//    if (auto* screen = QGuiApplication::primaryScreen()) {
+//        const QRect availableGeometry = screen->availableGeometry();
+//        move(availableGeometry.topLeft());
+//    }
+//}
 
 

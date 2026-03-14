@@ -73,10 +73,6 @@ void DocumentPage::buildLeftDock()
         listNav_->addItem(item);
     };
 
-    //Dock的内容
-    addItem(QStringLiteral("欢迎使用"));
-    addSeparator();
-
     addItem(QStringLiteral("新建"));
     addItem(QStringLiteral("打开"));
     addItem(QStringLiteral("保存"));
@@ -98,11 +94,7 @@ void DocumentPage::buildLeftDock()
 	addItem(QStringLiteral("保存报告"));
 	addItem(QStringLiteral("批处理"));
 	addItem(QStringLiteral("首选项"));
-    addSeparator();
-
-    addItem(QStringLiteral("退出"));
 }
-
 
 //  构建右侧主内容
 QWidget* DocumentPage::buildRightContent(QWidget* parent)
@@ -124,10 +116,11 @@ QWidget* DocumentPage::buildRightContent(QWidget* parent)
     auto title = new QLabel(QStringLiteral("欢迎使用 data_viewer_demo"), banner);
     title->setStyleSheet(QStringLiteral("font-size:24px; font-weight:700;"));
     bannerLayout->addWidget(title);
-    auto subtitle = new QLabel(QStringLiteral("继续最近项目，或通过下方模块快速开始您的工作流程。"), banner);
+
+    /*auto subtitle = new QLabel(QStringLiteral("继续最近项目，或通过下方模块快速开始您的工作流程。"), banner);
     subtitle->setStyleSheet(QStringLiteral("font-size:14px; color:#bbbbbb;"));
     subtitle->setWordWrap(true);
-    bannerLayout->addWidget(subtitle);
+    bannerLayout->addWidget(subtitle);*/
     vl->addWidget(banner);
 
     // 操作提示
@@ -136,6 +129,7 @@ QWidget* DocumentPage::buildRightContent(QWidget* parent)
     tipsFrame->setStyleSheet(QStringLiteral(
         "QFrame#tipsFrame{background:#322F30; border-radius:10px;}"
         "QFrame#tipsFrame QLabel{color:#d8d8d8;}"));
+    tipsFrame->setFixedHeight(92);
     auto tipsLayout = new QVBoxLayout(tipsFrame);
     tipsLayout->setContentsMargins(20, 18, 20, 18);
     tipsLayout->setSpacing(10);
@@ -143,8 +137,8 @@ QWidget* DocumentPage::buildRightContent(QWidget* parent)
     tipsTitle->setStyleSheet(QStringLiteral("font-size:16px; font-weight:600;"));
     tipsLayout->addWidget(tipsTitle);
     auto tips = new QLabel(QStringLiteral(
-        "1.可导入 DICOM、TIFF、RAW 等常见工业 CT 数据。\n"
-        "2.若需培训资料，可访问帮助中心以获取最新教程。"), tipsFrame);
+        "1.可导入 RAW 等常见工业 CT 数据。\n"
+        "2.三维重建。"), tipsFrame);
     tips->setWordWrap(true);
     tips->setStyleSheet(QStringLiteral("font-size:13px; line-height:20px;"));
     tipsLayout->addWidget(tips);
@@ -152,84 +146,84 @@ QWidget* DocumentPage::buildRightContent(QWidget* parent)
     vl->addWidget(tipsFrame);
 
     // 模块入口按钮
-    auto moduleFrame = new QFrame(right);
-    moduleFrame->setObjectName(QStringLiteral("moduleFrame"));
-    moduleFrame->setStyleSheet(QStringLiteral(
-        "QFrame#moduleFrame{background:#322F30; border-radius:10px;}"
-        "QFrame#moduleFrame QPushButton{background:#2C2C2C; border-radius:8px; border:1px solid #333;"
-        " color:#f5f5f5; font-size:16px; padding:18px 12px;}"
-        "QFrame#moduleFrame QPushButton:hover{background:#2C2C2C; border-color:#4d6fff;}"
-        "QFrame#moduleFrame QLabel{color:#f5f5f5;}"));
-    auto moduleLayout = new QVBoxLayout(moduleFrame);
-    moduleLayout->setContentsMargins(20, 18, 20, 18);
-    moduleLayout->setSpacing(12);
-    auto moduleTitle = new QLabel(QStringLiteral("选择最适合您工作流程的“开始”选项卡"), moduleFrame);
-    moduleTitle->setStyleSheet(QStringLiteral("font-size:16px; font-weight:600;"));
-    moduleLayout->addWidget(moduleTitle);
+    //auto moduleFrame = new QFrame(right);
+    //moduleFrame->setObjectName(QStringLiteral("moduleFrame"));
+    //moduleFrame->setStyleSheet(QStringLiteral(
+    //    "QFrame#moduleFrame{background:#322F30; border-radius:10px;}"
+    //    "QFrame#moduleFrame QPushButton{background:#2C2C2C; border-radius:8px; border:1px solid #333;"
+    //    " color:#f5f5f5; font-size:16px; padding:18px 12px;}"
+    //    "QFrame#moduleFrame QPushButton:hover{background:#2C2C2C; border-color:#4d6fff;}"
+    //    "QFrame#moduleFrame QLabel{color:#f5f5f5;}"));
+    //auto moduleLayout = new QVBoxLayout(moduleFrame);
+    //moduleLayout->setContentsMargins(20, 18, 20, 18);
+    //moduleLayout->setSpacing(12);
+    //auto moduleTitle = new QLabel(QStringLiteral("选择最适合您工作流程的“开始”选项卡"), moduleFrame);
+    //moduleTitle->setStyleSheet(QStringLiteral("font-size:16px; font-weight:600;"));
+    //moduleLayout->addWidget(moduleTitle);
 
-    auto grid = new QGridLayout();
-    grid->setHorizontalSpacing(16);
-    grid->setVerticalSpacing(16);
-    btnVisCheck_ = new QPushButton(QStringLiteral("视觉检查"), moduleFrame);
-    btnPorosity_ = new QPushButton(QStringLiteral("孔隙度"), moduleFrame);
-    btnMetrology_ = new QPushButton(QStringLiteral("计量"), moduleFrame);
-    btnMaterial_ = new QPushButton(QStringLiteral("材料"), moduleFrame);
-    for (auto* b : { btnVisCheck_.data(), btnPorosity_.data(), btnMetrology_.data(), btnMaterial_.data() })
-        b->setMinimumSize(160, 70);
-    grid->addWidget(btnVisCheck_, 0, 0);
-    grid->addWidget(btnPorosity_, 0, 1);
-    grid->addWidget(btnMetrology_, 0, 2);
-    grid->addWidget(btnMaterial_, 0, 3);
-    moduleLayout->addLayout(grid);
-    vl->addWidget(moduleFrame);
+    //auto grid = new QGridLayout();
+    //grid->setHorizontalSpacing(16);
+    //grid->setVerticalSpacing(16);
+    //btnVisCheck_ = new QPushButton(QStringLiteral("视觉检查"), moduleFrame);
+    //btnPorosity_ = new QPushButton(QStringLiteral("孔隙度"), moduleFrame);
+    //btnMetrology_ = new QPushButton(QStringLiteral("计量"), moduleFrame);
+    //btnMaterial_ = new QPushButton(QStringLiteral("材料"), moduleFrame);
+    //for (auto* b : { btnVisCheck_.data(), btnPorosity_.data(), btnMetrology_.data(), btnMaterial_.data() })
+    //    b->setMinimumSize(160, 70);
+    //grid->addWidget(btnVisCheck_, 0, 0);
+    //grid->addWidget(btnPorosity_, 0, 1);
+    //grid->addWidget(btnMetrology_, 0, 2);
+    //grid->addWidget(btnMaterial_, 0, 3);
+    //moduleLayout->addLayout(grid);
+    //vl->addWidget(moduleFrame);
 
-    // 最近项目
-    auto recentFrame = new QFrame(right);
-    recentFrame->setObjectName(QStringLiteral("recentFrame"));
-    recentFrame->setStyleSheet(QStringLiteral(
-        "QFrame#recentFrame{background:#322F30; border-radius:10px;}"
-        "QFrame#recentFrame QLabel{color:#f5f5f5;}"
-        "QFrame#recentFrame QHeaderView::section{background:#2c2c2c; color:#f0f0f0; border:0;}"
-        "QFrame#recentFrame QTableWidget{background:transparent; border:0; color:#f5f5f5;}"
-        "QFrame#recentFrame QTableWidget::item:selected{background-color:#3d65f5;}"));
-    auto recentLayout = new QVBoxLayout(recentFrame);
-    recentLayout->setContentsMargins(20, 18, 20, 18);
-    recentLayout->setSpacing(12);
+    //// 最近项目
+    //auto recentFrame = new QFrame(right);
+    //recentFrame->setObjectName(QStringLiteral("recentFrame"));
+    //recentFrame->setStyleSheet(QStringLiteral(
+    //    "QFrame#recentFrame{background:#322F30; border-radius:10px;}"
+    //    "QFrame#recentFrame QLabel{color:#f5f5f5;}"
+    //    "QFrame#recentFrame QHeaderView::section{background:#2c2c2c; color:#f0f0f0; border:0;}"
+    //    "QFrame#recentFrame QTableWidget{background:transparent; border:0; color:#f5f5f5;}"
+    //    "QFrame#recentFrame QTableWidget::item:selected{background-color:#3d65f5;}"));
+    //auto recentLayout = new QVBoxLayout(recentFrame);
+    //recentLayout->setContentsMargins(20, 18, 20, 18);
+    //recentLayout->setSpacing(12);
 
-    auto recentTitle = new QLabel(QStringLiteral("最近项目"), recentFrame);
-    recentTitle->setStyleSheet(QStringLiteral("font-size:16px; font-weight:600;"));
-    recentLayout->addWidget(recentTitle);
+    //auto recentTitle = new QLabel(QStringLiteral("最近项目"), recentFrame);
+    //recentTitle->setStyleSheet(QStringLiteral("font-size:16px; font-weight:600;"));
+    //recentLayout->addWidget(recentTitle);
 
-    tableRecent_ = new QTableWidget(0, 3, recentFrame);
-    tableRecent_->setHorizontalHeaderLabels({ QStringLiteral("名称"), QStringLiteral("位置"), QStringLiteral("上次打开") });
-    tableRecent_->horizontalHeader()->setStretchLastSection(true);
-    tableRecent_->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    tableRecent_->verticalHeader()->setVisible(false);
-    tableRecent_->setShowGrid(false);
-    tableRecent_->setSelectionBehavior(QAbstractItemView::SelectRows);
-    tableRecent_->setSelectionMode(QAbstractItemView::SingleSelection);
-    tableRecent_->setAlternatingRowColors(true);
-    tableRecent_->setStyleSheet(QStringLiteral(
-        "QTableWidget{alternate-background-color:#2C2C2C;}"
-        "QTableWidget QTableCornerButton::section{background:#2c2c2c;}"));
+    //tableRecent_ = new QTableWidget(0, 3, recentFrame);
+    //tableRecent_->setHorizontalHeaderLabels({ QStringLiteral("名称"), QStringLiteral("位置"), QStringLiteral("上次打开") });
+    //tableRecent_->horizontalHeader()->setStretchLastSection(true);
+    //tableRecent_->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    //tableRecent_->verticalHeader()->setVisible(false);
+    //tableRecent_->setShowGrid(false);
+    //tableRecent_->setSelectionBehavior(QAbstractItemView::SelectRows);
+    //tableRecent_->setSelectionMode(QAbstractItemView::SingleSelection);
+    //tableRecent_->setAlternatingRowColors(true);
+    //tableRecent_->setStyleSheet(QStringLiteral(
+    //    "QTableWidget{alternate-background-color:#2C2C2C;}"
+    //    "QTableWidget QTableCornerButton::section{background:#2c2c2c;}"));
 
-    struct RecentItem { QString name; QString path; QString time; };
-    const QList<RecentItem> recents = {
-        { QStringLiteral("发动机缸体.vgl"), QStringLiteral("D:/Projects/CT/EngineBlock"), QStringLiteral("今天 09:24") },
-        { QStringLiteral("齿轮箱.vgl"),     QStringLiteral("D:/Projects/CT/GearBox"),     QStringLiteral("昨天 17:42") },
-        { QStringLiteral("叶片扫描.vgi"),   QStringLiteral("E:/Scan/Blade"),              QStringLiteral("2024-05-12") },
-        { QStringLiteral("材料试样.raw"),   QStringLiteral("E:/Lab/Materials"),           QStringLiteral("2024-04-28") }
-    };
-    for (const auto& it : recents) {
-        int row = tableRecent_->rowCount();
-        tableRecent_->insertRow(row);
-        tableRecent_->setItem(row, 0, new QTableWidgetItem(it.name));
-        tableRecent_->setItem(row, 1, new QTableWidgetItem(it.path));
-        tableRecent_->setItem(row, 2, new QTableWidgetItem(it.time));
-    }
-    tableRecent_->setMinimumHeight(220);
-    recentLayout->addWidget(tableRecent_);
-    vl->addWidget(recentFrame);
+    //struct RecentItem { QString name; QString path; QString time; };
+    //const QList<RecentItem> recents = {
+    //    { QStringLiteral("发动机缸体.vgl"), QStringLiteral("D:/Projects/CT/EngineBlock"), QStringLiteral("今天 09:24") },
+    //    { QStringLiteral("齿轮箱.vgl"),     QStringLiteral("D:/Projects/CT/GearBox"),     QStringLiteral("昨天 17:42") },
+    //    { QStringLiteral("叶片扫描.vgi"),   QStringLiteral("E:/Scan/Blade"),              QStringLiteral("2024-05-12") },
+    //    { QStringLiteral("材料试样.raw"),   QStringLiteral("E:/Lab/Materials"),           QStringLiteral("2024-04-28") }
+    //};
+    //for (const auto& it : recents) {
+    //    int row = tableRecent_->rowCount();
+    //    tableRecent_->insertRow(row);
+    //    tableRecent_->setItem(row, 0, new QTableWidgetItem(it.name));
+    //    tableRecent_->setItem(row, 1, new QTableWidgetItem(it.path));
+    //    tableRecent_->setItem(row, 2, new QTableWidgetItem(it.time));
+    //}
+    //tableRecent_->setMinimumHeight(220);
+    //recentLayout->addWidget(tableRecent_);
+    //vl->addWidget(recentFrame);
 
     vl->addStretch();
     return right;

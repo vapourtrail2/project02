@@ -51,7 +51,7 @@ private:
     void buildTheTop();
     void buildTheMiddle();
     void wireConnect();
-    void setDefaults();
+ /*   void setDefaults();*/   //固定到左上角
     void updateMaximizeButtonIcon();
     void openCtReconUi();
 

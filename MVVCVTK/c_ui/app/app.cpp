@@ -19,7 +19,7 @@ namespace app {
 		applyGlobalStyle();
 
         CTViewer mainWindow;
-        mainWindow.show();
+        mainWindow.showMaximized();
 
         const int exitCode = qtApp.exec();
         return exitCode;
