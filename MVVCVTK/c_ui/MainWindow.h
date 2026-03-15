@@ -69,6 +69,7 @@ private:
     void connectDocumentSignals();
     void connectReconSignals();
     void connectDistanceSignals();
+    void connectAngelSignals();
     void connectAppSignals();
     void handleSessionChanged(const std::shared_ptr<AppSession>& session);
 

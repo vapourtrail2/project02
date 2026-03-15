@@ -117,6 +117,7 @@ void CTViewer::wireConnect() {
     connectDocumentSignals();
     connectReconSignals();
     connectDistanceSignals();
+	connectAngelSignals();
     connectAppSignals();
     connectWindowButtonSignals();
 }
@@ -432,9 +433,14 @@ void CTViewer::connectReconSignals() {
 
 void CTViewer::connectDistanceSignals() {
     connect(pageStart_, &StartPagePage::distanceRequested, this, [this]() {
-		/*qDebug() << "Distance measure requested";*/
 		if (mprViews_) mprViews_->setToolMode(ToolMode::DistanceMeasure); // 切换到距离测量工具
     });
+}
+
+void CTViewer::connectAngelSignals() {
+    connect(pageStart_, &StartPagePage::angleRequested, this, [this]() {
+        if (mprViews_) mprViews_->setToolMode(ToolMode::AngleMeasure); // 切换到距离测量工具
+        });
 }
 
 void CTViewer::connectAppSignals() {
