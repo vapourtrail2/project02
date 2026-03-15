@@ -8,6 +8,7 @@
 #include "AppService.h"
 #include "VolumeAnalysisService.h"
 #include <atomic>
+
 struct AppSession
 {
     std::shared_ptr<AbstractDataManager> dataMgr;

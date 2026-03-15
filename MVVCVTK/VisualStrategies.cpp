@@ -777,9 +777,9 @@ void CompositeStrategy::UpdateVisuals(const RenderParams& params, UpdateFlags fl
 // ================= ColoredPlanesStrategy =================
 ColoredPlanesStrategy::ColoredPlanesStrategy() {
     double colors[3][3] = {
-        {1.0, 0.0, 0.0}, // 红色: 矢状面 (Sagittal)
-        {0.0, 1.0, 0.0}, // 绿色: 冠状面 (Coronal)
-        {0.0, 0.0, 1.0}  // 蓝色: 轴状面 (Axial)
+        {1.0, 0.0, 0.0}, // 红色: 矢状面 (Sagittal) 0
+        {0.0, 1.0, 0.0}, // 绿色: 冠状面 (Coronal) 1
+        {0.0, 0.0, 1.0}  // 蓝色: 轴状面 (Axial) 2
     };
 
     for (int i = 0; i < 3; i++) {
