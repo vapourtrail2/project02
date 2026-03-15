@@ -39,5 +39,5 @@ private:
     std::shared_ptr<QtRenderContext>   m_ctxSagittal;
     std::shared_ptr<MedicalVizService> m_svc3D;
     std::shared_ptr<QtRenderContext>   m_ctx3D;
-    VizMode m_current3DMode = VizMode::IsoSurface;
+    VizMode m_current3DMode = static_cast<VizMode>(-1);
 };

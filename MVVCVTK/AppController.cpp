@@ -57,7 +57,7 @@ bool AppController::openFile(const QString& path, QString* errorOut)
             const double rangeSpan = range[1] - range[0];
             const double safeWindowWidth = rangeSpan > 0.0 ? rangeSpan : 1.0;
             const double windowCenter = range[0] + safeWindowWidth * 0.5;
-			sess->service->OnStateChanged();
+
             sess->sharedState->SetWindowLevel(safeWindowWidth, windowCenter);
             sess->sharedState->SetCursorPosition(dims[0] / 2, dims[1] / 2, dims[2] / 2);
             sess->sharedState->SetIsoValue(range[0] + safeWindowWidth * 0.2);

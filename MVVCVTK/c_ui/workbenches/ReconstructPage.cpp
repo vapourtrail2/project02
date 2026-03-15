@@ -36,6 +36,22 @@ void ReconstructPage::initWithData(
     std::shared_ptr<AbstractDataManager> data,
     std::shared_ptr<SharedInteractionState> state)
 {
+	// 这里的reset是为了提前断开与旧数据和状态的关联，确保在后续赋新值时不会有旧数据触发的回调干扰界面更新。通过先reset，再赋新值，可以保证界面在整个过程中保持一致性和稳定性。
+	m_lifeToken.reset();
+
+    m_ctxAxial.reset();
+    m_ctxCoronal.reset();
+    m_ctxSagittal.reset();
+    m_ctx3D.reset();
+
+	m_svc3D.reset();
+	m_svcSagittal.reset();
+	m_svcCoronal.reset();
+	m_svcAxial.reset();
+    
+    // 状态没有重置 主要原因 对，就是状态位不对，上面都无关紧要
+    m_current3DMode = static_cast<VizMode>(-1);
+
     m_dataMgr = std::move(data);
     m_sharedState = std::move(state);
     m_lifeToken = std::make_shared<int>(1);

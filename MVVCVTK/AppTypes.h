@@ -77,7 +77,7 @@ enum class UpdateFlags : int {
     WindowLevel = 1 << 10,
     IsoQuality = 1 << 11,
     RenderMode = 1 << 12,
-    All = Cursor | TF | IsoValue | Material | Interaction | Transform | WindowLevel | IsoQuality | RenderMode
+    All = Cursor | TF | IsoValue | Material | Interaction | Transform | WindowLevel | IsoQuality | RenderMode | Visibility
 };
 
 inline UpdateFlags operator|(UpdateFlags a, UpdateFlags b)
