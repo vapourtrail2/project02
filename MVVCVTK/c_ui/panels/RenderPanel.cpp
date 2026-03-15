@@ -269,6 +269,7 @@ void RenderPanel::setSharedState(const std::shared_ptr<SharedInteractionState>& 
         renderMode_->setCurrentIndex(0);
         clipPlanesToggle_->setChecked(true);
         crosshairToggle_->setChecked(true);
+		rulerAxesToggle_->setChecked(true);
         updatingUi_ = false;
 
         histPixmap_ = QPixmap();
@@ -324,6 +325,7 @@ void RenderPanel::syncFromState(UpdateFlags flags)
         const std::uint32_t mask = state_->GetVisibilityMask();
         clipPlanesToggle_->setChecked((mask & VisFlags::ClipPlanes) != 0);
         crosshairToggle_->setChecked((mask & VisFlags::Crosshair) != 0);
+		rulerAxesToggle_->setChecked((mask & VisFlags::RulerAxes) != 0);
     }
 
     if (HasFlag(flags, UpdateFlags::IsoValue) || flags == UpdateFlags::All) {
