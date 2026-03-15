@@ -43,25 +43,25 @@ bool AppController::openFile(const QString& path, QString* errorOut)
             // 所以这里的设值是没有任何影响的，不影响业务，我已经设了初始值，可以删去
             //// 在后台线程，只允许操作 SharedState
             //// 这里的设值可以抽离，或者删去，放在这里只是做验证
-            //auto sess = weakSession.lock();
-            //if (!sess || !ok) return;
+            auto sess = weakSession.lock();
+            if (!sess || !ok) return;
 
-            //auto img = sess->dataMgr->GetVtkImage();
-            //if (!img) return;
+            auto img = sess->dataMgr->GetVtkImage();
+            if (!img) return;
 
-            //// 拆解findingsetup的逻辑，直接在这里设置初始窗口/层级和iso值，避免重复调用notifyDataReady导致界面刷新两次
-            //double range[2];
-            //img->GetScalarRange(range);
-            //int dims[3];
-            //img->GetDimensions(dims);
-            //const double rangeSpan = range[1] - range[0];
-            //const double safeWindowWidth = rangeSpan > 0.0 ? rangeSpan : 1.0;
-            //const double windowCenter = range[0] + safeWindowWidth * 0.5;
-
-            //sess->sharedState->SetWindowLevel(safeWindowWidth, windowCenter);
-            //sess->sharedState->SetCursorPosition(dims[0] / 2, dims[1] / 2, dims[2] / 2);
-            //sess->sharedState->SetIsoValue(range[0] + safeWindowWidth * 0.2);
-            //sess->sharedState->NotifyDataReady(range[0], range[1]);
+            // 拆解findingsetup的逻辑，直接在这里设置初始窗口/层级和iso值，避免重复调用notifyDataReady导致界面刷新两次
+            double range[2];
+            img->GetScalarRange(range);
+            int dims[3];
+            img->GetDimensions(dims);
+            const double rangeSpan = range[1] - range[0];
+            const double safeWindowWidth = rangeSpan > 0.0 ? rangeSpan : 1.0;
+            const double windowCenter = range[0] + safeWindowWidth * 0.5;
+			sess->service->OnStateChanged();
+            sess->sharedState->SetWindowLevel(safeWindowWidth, windowCenter);
+            sess->sharedState->SetCursorPosition(dims[0] / 2, dims[1] / 2, dims[2] / 2);
+            sess->sharedState->SetIsoValue(range[0] + safeWindowWidth * 0.2);
+            sess->sharedState->NotifyDataReady(range[0], range[1]);
         });
     m_session = newSession;
     emit sessionChanged(m_session);

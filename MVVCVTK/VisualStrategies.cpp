@@ -379,8 +379,13 @@ void SliceStrategy::SetInputData(vtkSmartPointer<vtkDataObject> data) {
     m_slice->GetProperty()->SetColorWindow(window);
     m_slice->GetProperty()->SetColorLevel(level);
 
+    if (m_lut) {
+        m_slice->GetProperty()->SetLookupTable(m_lut);
+    }
+
+    UpdatePlanePosition();
     // 重置 LookupTable
-    m_slice->GetProperty()->SetLookupTable(nullptr);
+    // m_slice->GetProperty()->SetLookupTable(nullptr);
 }
 
 void SliceStrategy::Attach(vtkSmartPointer<vtkRenderer> ren) {
@@ -432,6 +437,7 @@ void SliceStrategy::SetupCamera(vtkSmartPointer<vtkRenderer> ren) {
 
     ren->ResetCamera();
     ren->ResetCameraClippingRange();
+	ren->ResetCameraClippingRange();
 }
 
 
@@ -811,19 +817,23 @@ void ColoredPlanesStrategy::SetInputData(vtkSmartPointer<vtkDataObject> data) {
 
     // 根据数据边界定义每个平面的大小
     // Sagittal Plane (YZ)
-    m_planeSources[0]->SetOrigin(0, bounds[2], bounds[4]);
-    m_planeSources[0]->SetPoint1(0, bounds[3], bounds[4]);
-    m_planeSources[0]->SetPoint2(0, bounds[2], bounds[5]);
+    m_planeSources[0]->SetOrigin(bounds[0], bounds[2], bounds[4]);
+    m_planeSources[0]->SetPoint1(bounds[0], bounds[3], bounds[4]);
+    m_planeSources[0]->SetPoint2(bounds[0], bounds[2], bounds[5]);
 
     // Coronal Plane (XZ)
-    m_planeSources[1]->SetOrigin(bounds[0], 0, bounds[4]);
-    m_planeSources[1]->SetPoint1(bounds[1], 0, bounds[4]);
-    m_planeSources[1]->SetPoint2(bounds[0], 0, bounds[5]);
+    m_planeSources[1]->SetOrigin(bounds[0], bounds[2], bounds[4]);
+    m_planeSources[1]->SetPoint1(bounds[1], bounds[2], bounds[4]);
+    m_planeSources[1]->SetPoint2(bounds[0], bounds[2], bounds[5]);
 
     // Axial Plane (XY)
-    m_planeSources[2]->SetOrigin(bounds[0], bounds[2], 0);
-    m_planeSources[2]->SetPoint1(bounds[1], bounds[2], 0);
-    m_planeSources[2]->SetPoint2(bounds[0], bounds[3], 0);
+    m_planeSources[2]->SetOrigin(bounds[0], bounds[2], bounds[4]);
+    m_planeSources[2]->SetPoint1(bounds[1], bounds[2], bounds[4]);
+    m_planeSources[2]->SetPoint2(bounds[0], bounds[3], bounds[4]);
+
+    int dims[3];
+    m_imageData->GetDimensions(dims);
+    UpdateAllPositions(dims[0] / 2, dims[1] / 2, dims[2] / 2);
 }
 
 void ColoredPlanesStrategy::UpdateAllPositions(int x, int y, int z) {
@@ -842,8 +852,11 @@ void ColoredPlanesStrategy::UpdateAllPositions(int x, int y, int z) {
     double physY = origin[1] + y * spacing[1];
     double physZ = origin[2] + z * spacing[2];
 
-    // 3. 显式更新每个平面的三个关键点 (Origin, Point1, Point2)
+    physX = std::clamp(physX, bounds[0], bounds[1]);
+    physY = std::clamp(physY, bounds[2], bounds[3]);
+    physZ = std::clamp(physZ, bounds[4], bounds[5]);
 
+    // 3. 显式更新每个平面的三个关键点 (Origin, Point1, Point2)
     // --- 平面 0: 矢状面 (Sagittal, 法线 X) ---
     // X 固定为 physX，Y 范围 bounds[2]~bounds[3]，Z 范围 bounds[4]~bounds[5]
     m_planeSources[0]->SetOrigin(physX, bounds[2], bounds[4]); // 左下角
@@ -864,6 +877,7 @@ void ColoredPlanesStrategy::UpdateAllPositions(int x, int y, int z) {
 
     // 4. 通知管线更新
     for (int i = 0; i < 3; i++) {
+		m_planeSources[i]->Update();
         m_planeSources[i]->Modified();
     }
 }
