@@ -193,6 +193,12 @@ void IsoSurfaceStrategy::UpdateVisuals(const RenderParams& params, UpdateFlags f
         m_lastIsoValue = params.isoValue;
         m_hasLastIsoValue = true;
     }
+
+    if (HasFlag(flags, UpdateFlags::Visibility)) {
+        if (m_cubeAxes)
+            m_cubeAxes->SetVisibility(
+                (params.visibilityMask & VisFlags::RulerAxes) ? 1 : 0);
+    }
 }
 // ================= VolumeStrategy =================
 VolumeStrategy::VolumeStrategy() {
@@ -276,6 +282,12 @@ void VolumeStrategy::UpdateVisuals(const RenderParams& params, UpdateFlags flags
 
         if (params.material.shadeOn) prop->ShadeOn();
         else prop->ShadeOff();
+    }
+
+    if (HasFlag(flags, UpdateFlags::Visibility)) {
+        if (m_cubeAxes)
+            m_cubeAxes->SetVisibility(
+                (params.visibilityMask & VisFlags::RulerAxes) ? 1 : 0);
     }
 }
 
