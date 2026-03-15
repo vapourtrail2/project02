@@ -39,6 +39,7 @@
 #include <QWidget>      
 #include <QSizePolicy>  
 #include <QRect>        
+#include <QDebug>
 
 #include <QVTKOpenGLNativeWidget.h>
 #include <vtkGenericOpenGLRenderWindow.h>
@@ -70,7 +71,6 @@ CTViewer::CTViewer(QWidget* parent)
     buildTheTop();
     buildTheMiddle();  
     wireConnect();     
-  /*  setDefaults();   */   
 }
 
 CTViewer::~CTViewer() {
@@ -116,6 +116,7 @@ void CTViewer::wireConnect() {
     connectTabSignals();
     connectDocumentSignals();
     connectReconSignals();
+    connectDistanceSignals();
     connectAppSignals();
     connectWindowButtonSignals();
 }
@@ -429,6 +430,13 @@ void CTViewer::connectReconSignals() {
         });
 }
 
+void CTViewer::connectDistanceSignals() {
+    connect(pageStart_, &StartPagePage::distanceRequested, this, [this]() {
+		/*qDebug() << "Distance measure requested";*/
+		if (mprViews_) mprViews_->setToolMode(ToolMode::DistanceMeasure); // 切换到距离测量工具
+    });
+}
+
 void CTViewer::connectAppSignals() {
     if (!appController_) {
         return;
@@ -523,6 +531,7 @@ void CTViewer::onOpenRequested(const QString& path) {
         pageDocument_->notifySucc();
     }
 }
+
 
 void CTViewer::handleSessionChanged(const std::shared_ptr<AppSession>& session)
 {

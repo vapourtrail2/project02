@@ -167,12 +167,20 @@ QWidget* MeasurePage::buildRibbon06(QWidget* parent)
                 "QMenu{background:#2b2b2b; border:1px solid #3a3a3a;}"
                 "QMenu::item{color:#e0e0e0; padding:6px 24px;}"
                 "QMenu::item:selected{background:#3a3a3a;}"));
-            menu->addAction(QIcon(":/new/prefix1/icons_other/measure_icons/measure_tool_pull_down_menu/distance.PNG"), QStringLiteral("距离"));
+
+            auto* actDistance = menu->addAction(
+                QIcon(":/start_icons02/icons_other/start_icons/volume_input_pull_down_menu/CT_rebuild.png"),
+                QStringLiteral("测距"));
+
+          /*  connect(actDistance, &QAction::triggered, this, [this]() {
+                emit laodengshigou();
+                });*/
             menu->addAction(QIcon(":/new/prefix1/icons_other/measure_icons/measure_tool_pull_down_menu/angle_4points.PNG"), QStringLiteral("角度(4个点)"));
             menu->addAction(QIcon(":/new/prefix1/icons_other/measure_icons/measure_tool_pull_down_menu/angle_3points.PNG"), QStringLiteral("角度(3个点)"));
             menu->addAction(QIcon(":/new/prefix1/icons_other/measure_icons/measure_tool_pull_down_menu/fold_line_length.PNG"), QStringLiteral("折线长度"));
             menu->addAction(QIcon(":/new/prefix1/icons_other/measure_icons/measure_tool_pull_down_menu/max_min_distance.PNG"), QStringLiteral("最大/最小距离"));
             menu->addAction(QIcon(":/new/prefix1/icons_other/measure_icons/measure_tool_pull_down_menu/caliper.PNG"), QStringLiteral("卡尺"));
+
             button->setMenu(menu);
             button->setPopupMode(QToolButton::InstantPopup);
         }

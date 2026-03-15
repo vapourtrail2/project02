@@ -155,3 +155,15 @@ void ReconstructPage::refreshViews()
     if (m_ctxSagittal) m_ctxSagittal->Render();
     if (m_ctx3D) m_ctx3D->Render();
 }
+
+void ReconstructPage::setToolMode(ToolMode mode)
+{
+    if (m_ctxAxial)
+        m_ctxAxial->SetToolMode(mode);
+
+    if (m_ctxCoronal)
+		m_ctxCoronal->SetToolMode(mode);
+
+	if (m_ctxSagittal)
+		m_ctxSagittal->SetToolMode(mode);
+}

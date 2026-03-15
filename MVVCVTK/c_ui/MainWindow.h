@@ -68,6 +68,7 @@ private:
     void connectTabSignals();
     void connectDocumentSignals();
     void connectReconSignals();
+    void connectDistanceSignals();
     void connectAppSignals();
     void handleSessionChanged(const std::shared_ptr<AppSession>& session);
 
@@ -111,6 +112,7 @@ private:
     QPointer<ReconstructPage> mprViews_;
     QPointer<QStackedWidget> stack_;
     QPointer<QStackedWidget> secondstack_;
+	QPointer<QtRenderContext> renderContext_;
 
     std::unique_ptr<TabMap> tabMap_;
     std::unique_ptr<WorkspaceFlow> workspaceFlow_;

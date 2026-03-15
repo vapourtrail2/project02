@@ -23,7 +23,7 @@ public:
     void setSession(const std::shared_ptr<AppSession>& session);
     void setSharedState(const std::shared_ptr<SharedInteractionState>& state);
     void setAnalysisService(const std::shared_ptr<VolumeAnalysisService>& analysis);
-
+	void setToolMode(const QString& mode); 
 protected:
     void resizeEvent(QResizeEvent* e) override;
 

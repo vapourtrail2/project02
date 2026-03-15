@@ -17,10 +17,14 @@ public:
         std::shared_ptr<AbstractDataManager> data,
         std::shared_ptr<SharedInteractionState> state);
 
+public:
+    void setToolMode(ToolMode mode);
+
 private:
     void buildUi();
     void applyPrimary3DMode(VizMode mode);
     void refreshViews();
+
 
     QPointer<QWidget> viewAxial_;
     QPointer<QWidget> viewSagittal_;
