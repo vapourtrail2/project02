@@ -53,6 +53,8 @@ private:
     QComboBox* renderMode_ = nullptr;
     QCheckBox* clipPlanesToggle_ = nullptr;
     QCheckBox* crosshairToggle_ = nullptr;
+    QCheckBox* rulerAxesToggle_ = nullptr;
+
 
     std::shared_ptr<SharedInteractionState> state_;
     std::shared_ptr<VolumeAnalysisService> analysis_;

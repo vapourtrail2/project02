@@ -349,6 +349,14 @@ void QtRenderContext::SetToolMode(ToolMode mode)
 
     m_toolMode = mode;
 
+    //if (mode == ToolMode::distanceclear)
+    //{
+    //    m_distanceWidget->Delete();
+
+    //}
+    //else if (mode == ToolMode::angtleclear) { 
+    //    dele
+    //}
     if (m_distanceWidget) {
         (mode == ToolMode::DistanceMeasure) ? m_distanceWidget->On() : m_distanceWidget->Off();
     }

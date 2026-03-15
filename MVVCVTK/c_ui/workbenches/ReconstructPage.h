@@ -29,7 +29,7 @@ private:
 
     std::shared_ptr<AbstractDataManager> m_dataMgr;
     std::shared_ptr<SharedInteractionState> m_sharedState;
-    std::shared_ptr<void> m_lifeToken;
+    std::shared_ptr<void> m_lifeToken;//×´Ì¬Î»¹ÜÀí
 
     std::shared_ptr<MedicalVizService> m_svcAxial;
     std::shared_ptr<QtRenderContext>   m_ctxAxial;

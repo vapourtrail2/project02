@@ -93,6 +93,10 @@ RenderPanel::RenderPanel(QWidget* parent)
     crosshairToggle_ = new QCheckBox(QStringLiteral("2D Crosshair"), wlGroup);
     wv->addWidget(crosshairToggle_);
 
+    //标量尺控件
+    rulerAxesToggle_ = new QCheckBox(QStringLiteral("标量尺"),wlGroup);
+    wv->addWidget(rulerAxesToggle_);
+
     windowWidthLabel_ = new QLabel(QStringLiteral("WW: -"), wlGroup);
     windowWidthSlider_ = new QSlider(Qt::Horizontal, wlGroup);
     windowWidthSlider_->setRange(0, 1000);
@@ -217,6 +221,13 @@ RenderPanel::RenderPanel(QWidget* parent)
             return;
         }
         state_->SetElementVisible(VisFlags::Crosshair, checked);
+    });
+
+    connect(rulerAxesToggle_, &QCheckBox::toggled, this, [this](bool checked) {
+        if (!state_ || updatingUi_) {
+            return;
+        }
+        state_->SetElementVisible(VisFlags::RulerAxes, checked);
     });
 }
 

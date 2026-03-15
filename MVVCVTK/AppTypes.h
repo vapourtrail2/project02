@@ -15,6 +15,7 @@ enum class VizMode {
     CompositeIsoSurface
 };
 
+// 清空标志位
 enum class ToolMode {
     Navigation,
     DistanceMeasure,

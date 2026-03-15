@@ -47,8 +47,8 @@ InteractionResult Viewer2DHandler::Handle(const InteractionEvent& eve)
         || eve.vtkEventId == vtkCommand::MouseWheelBackwardEvent) {
         const int step = eve.ctrl ? 5 : 1;
         const int delta = (eve.vtkEventId == vtkCommand::MouseWheelForwardEvent) ? step : -step;
-        qDebug().noquote() << "[2D] wheel mode=" << ToModeName(eve.vizMode)
-                           << " delta=" << delta << " x=" << eve.x << " y=" << eve.y;
+        //qDebug().noquote() << "[2D] wheel mode=" << ToModeName(eve.vizMode)
+        //                   << " delta=" << delta << " x=" << eve.x << " y=" << eve.y;
         m_service->UpdateInteraction(delta);
         return { true, true };
     }
@@ -56,16 +56,16 @@ InteractionResult Viewer2DHandler::Handle(const InteractionEvent& eve)
     if (eve.vtkEventId == vtkCommand::RightButtonPressEvent && eve.shift) {
         m_enableDragCrosshair = true;
         m_crosshairMoveLogTick = 0;
-        qDebug().noquote() << "[2D] crosshair-press mode=" << ToModeName(eve.vizMode)
-                           << " x=" << eve.x << " y=" << eve.y << " shift=" << eve.shift;
+        //qDebug().noquote() << "[2D] crosshair-press mode=" << ToModeName(eve.vizMode)
+        //                   << " x=" << eve.x << " y=" << eve.y << " shift=" << eve.shift;
         m_service->SetInteracting(true);
         return { true, true };
     }
 
     if (eve.vtkEventId == vtkCommand::RightButtonReleaseEvent && m_enableDragCrosshair) {
         m_enableDragCrosshair = false;
-        qDebug().noquote() << "[2D] crosshair-release mode=" << ToModeName(eve.vizMode)
-                           << " x=" << eve.x << " y=" << eve.y;
+        //qDebug().noquote() << "[2D] crosshair-release mode=" << ToModeName(eve.vizMode)
+        //                   << " x=" << eve.x << " y=" << eve.y;
         m_service->SetInteracting(false);
         return { true, false };
     }
@@ -73,8 +73,8 @@ InteractionResult Viewer2DHandler::Handle(const InteractionEvent& eve)
     if (eve.vtkEventId == vtkCommand::RightButtonPressEvent && !eve.shift) {
         m_enableDragWindowLevel = true;
         m_windowLevelMoveLogTick = 0;
-        qDebug().noquote() << "[2D] wl-press mode=" << ToModeName(eve.vizMode)
-                           << " x=" << eve.x << " y=" << eve.y;
+        //qDebug().noquote() << "[2D] wl-press mode=" << ToModeName(eve.vizMode)
+        //                   << " x=" << eve.x << " y=" << eve.y;
         m_lastDragX = eve.x;
         m_lastDragY = eve.y;
         m_service->SetInteracting(true);
@@ -83,8 +83,8 @@ InteractionResult Viewer2DHandler::Handle(const InteractionEvent& eve)
 
     if (eve.vtkEventId == vtkCommand::RightButtonReleaseEvent && m_enableDragWindowLevel) {
         m_enableDragWindowLevel = false;
-        qDebug().noquote() << "[2D] wl-release mode=" << ToModeName(eve.vizMode)
-                           << " x=" << eve.x << " y=" << eve.y;
+        //qDebug().noquote() << "[2D] wl-release mode=" << ToModeName(eve.vizMode)
+        //                   << " x=" << eve.x << " y=" << eve.y;
         m_service->SetInteracting(false);
         return { true, false };
     }
@@ -92,7 +92,7 @@ InteractionResult Viewer2DHandler::Handle(const InteractionEvent& eve)
     if (eve.vtkEventId == vtkCommand::MouseMoveEvent) {
         if (m_enableDragCrosshair) {
             if (!m_renderer) {
-                qDebug().noquote() << "[2D] crosshair-move skipped: renderer=null";
+                //qDebug().noquote() << "[2D] crosshair-move skipped: renderer=null";
                 return {};
             }
 
@@ -101,7 +101,7 @@ InteractionResult Viewer2DHandler::Handle(const InteractionEvent& eve)
             m_renderer->WorldToDisplay();
             double* displayPoint = m_renderer->GetDisplayPoint();
             if (!displayPoint) {
-                qDebug().noquote() << "[2D] crosshair-move skipped: displayPoint=null";
+                //qDebug().noquote() << "[2D] crosshair-move skipped: displayPoint=null";
                 return { true, true };
             }
 
@@ -109,7 +109,7 @@ InteractionResult Viewer2DHandler::Handle(const InteractionEvent& eve)
             m_renderer->DisplayToWorld();
             double* worldPoint = m_renderer->GetWorldPoint();
             if (!worldPoint || std::abs(worldPoint[3]) < 1e-6) {
-                qDebug().noquote() << "[2D] crosshair-move skipped: invalid worldPoint";
+ /*               qDebug().noquote() << "[2D] crosshair-move skipped: invalid worldPoint";*/
                 return { true, true };
             }
 
@@ -129,9 +129,9 @@ InteractionResult Viewer2DHandler::Handle(const InteractionEvent& eve)
 
             ++m_crosshairMoveLogTick;
             if (m_crosshairMoveLogTick <= 5 || (m_crosshairMoveLogTick % 10) == 0) {
-                qDebug().noquote() << "[2D] crosshair-move mode=" << ToModeName(eve.vizMode)
-                                   << " x=" << eve.x << " y=" << eve.y << " axis=" << fixedAxis
-                                   << " world=(" << worldPos[0] << "," << worldPos[1] << "," << worldPos[2] << ")";
+                //qDebug().noquote() << "[2D] crosshair-move mode=" << ToModeName(eve.vizMode)
+                //                   << " x=" << eve.x << " y=" << eve.y << " axis=" << fixedAxis
+                //                   << " world=(" << worldPos[0] << "," << worldPos[1] << "," << worldPos[2] << ")";
             }
             m_service->SyncCursorToWorldPosition(worldPos, fixedAxis);
             return { true, true };
@@ -145,9 +145,9 @@ InteractionResult Viewer2DHandler::Handle(const InteractionEvent& eve)
 
             ++m_windowLevelMoveLogTick;
             if (m_windowLevelMoveLogTick <= 5 || (m_windowLevelMoveLogTick % 10) == 0) {
-                qDebug().noquote() << "[2D] wl-move mode=" << ToModeName(eve.vizMode)
-                                   << " x=" << eve.x << " y=" << eve.y
-                                   << " dx=" << dx << " dy=" << dy;
+                //qDebug().noquote() << "[2D] wl-move mode=" << ToModeName(eve.vizMode)
+                //                   << " x=" << eve.x << " y=" << eve.y
+                //                   << " dx=" << dx << " dy=" << dy;
             }
             m_service->AdjustWindowLevel(dx * kWWSensitivity, dy * kWCSensitivity);
             return { true, true };
