@@ -17,6 +17,8 @@
 #include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkPropPicker.h>
 #include <vtkRenderWindowInteractor.h>
+#include <vtkAxesActor.h>
+#include <vtkOrientationMarkerWidget.h>
 
 class QtRenderContext : public AbstractRenderContext
 {
@@ -29,9 +31,12 @@ public:
     void SetInteractionMode(VizMode mode) override;
     void SetToolMode(ToolMode mode);
     void BindService(std::shared_ptr<AbstractAppService> service) override;
+    void ToggleOrientationAxes(bool show);
 
 protected:
     void HandleVTKEvent(vtkObject* caller, long unsigned int eventId, void* callData) override;
+
+
 
 private:
     void SetupObservers();
@@ -54,9 +59,11 @@ private:
     vtkSmartPointer<vtkCellPicker> m_slicePicker;
     vtkSmartPointer<vtkDistanceWidget> m_distanceWidget;
     vtkSmartPointer<vtkAngleWidget> m_angleWidget;
+    vtkSmartPointer<vtkOrientationMarkerWidget> m_axesWidget;
 
     VizMode m_currentMode = VizMode::Volume;
     ToolMode m_toolMode = ToolMode::Navigation;
+
 
     int m_timerId = -1;
     bool m_observerInstalled = false;

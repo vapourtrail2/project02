@@ -70,6 +70,7 @@ void ReconstructPage::initWithData(
     m_ctxAxial->BindService(m_svcAxial);
     m_svcAxial->ShowSlice(VizMode::SliceAxial);
     m_ctxAxial->SetInteractionMode(VizMode::SliceAxial);
+    m_ctxAxial->ToggleOrientationAxes(true);
 
     m_svcCoronal = std::make_shared<MedicalVizService>(m_dataMgr, m_sharedState);
     m_ctxCoronal = std::make_shared<QtRenderContext>();
@@ -77,6 +78,7 @@ void ReconstructPage::initWithData(
     m_ctxCoronal->BindService(m_svcCoronal);
     m_svcCoronal->ShowSlice(VizMode::SliceCoronal);
     m_ctxCoronal->SetInteractionMode(VizMode::SliceCoronal);
+    m_ctxCoronal->ToggleOrientationAxes(true);
 
     m_svcSagittal = std::make_shared<MedicalVizService>(m_dataMgr, m_sharedState);
     m_ctxSagittal = std::make_shared<QtRenderContext>();
@@ -84,12 +86,15 @@ void ReconstructPage::initWithData(
     m_ctxSagittal->BindService(m_svcSagittal);
     m_svcSagittal->ShowSlice(VizMode::SliceSagittal);
     m_ctxSagittal->SetInteractionMode(VizMode::SliceSagittal);
+    m_ctxSagittal->ToggleOrientationAxes(true);
 
     m_svc3D = std::make_shared<MedicalVizService>(m_dataMgr, m_sharedState);
     m_ctx3D = std::make_shared<QtRenderContext>();
     m_ctx3D->SetQtWidget(getVtkWidget(viewReserved_));
     m_ctx3D->BindService(m_svc3D);
+    m_ctx3D->ToggleOrientationAxes(true);
     applyPrimary3DMode(m_sharedState->GetPrimary3DMode());
+
 
     if (m_sharedState) {
         m_sharedState->AddObserver(m_lifeToken, [this](UpdateFlags flags) {

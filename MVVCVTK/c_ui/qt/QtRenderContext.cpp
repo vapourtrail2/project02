@@ -11,6 +11,7 @@
 #include <vtkProp3D.h>
 #include <vtkRenderWindow.h>
 
+
 namespace {
 class WidgetInputFilter : public QObject
 {
@@ -500,5 +501,27 @@ void QtRenderContext::HandleVTKEvent(vtkObject* caller, long unsigned int eventI
     }
     if (result.abortVtk && m_eventCallback) {
         m_eventCallback->SetAbortFlag(1);
+    }
+}
+
+
+void QtRenderContext::ToggleOrientationAxes(bool show)
+{
+    if (show) {
+        if (!m_axesWidget) {
+            auto axes = vtkSmartPointer<vtkAxesActor>::New();
+            m_axesWidget = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
+            m_axesWidget->SetOrientationMarker(axes);
+            if (m_interactor) m_axesWidget->SetInteractor(m_interactor);
+            m_axesWidget->SetViewport(0.0, 0.0, 0.2, 0.2);
+            m_axesWidget->SetEnabled(1);
+            m_axesWidget->InteractiveOff();
+        }
+        else {
+            m_axesWidget->SetEnabled(1);
+        }
+    }
+    else {
+        if (m_axesWidget) m_axesWidget->SetEnabled(0);
     }
 }
