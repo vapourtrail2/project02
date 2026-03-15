@@ -7,7 +7,7 @@
 #include <QStyleFactory>
 #include "c_ui/MainWindow.h"
 
-//
+
 namespace app {
 
     App::App() = default;
