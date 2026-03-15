@@ -29,7 +29,7 @@ SceneTreePanel::SceneTreePanel(QWidget* parent)
     tree_->setHeaderHidden(true);
     tree_->setStyleSheet("QTreeWidget{background:#1f1f1f; border:1px solid #333;}");
 
-    root_ = new QTreeWidgetItem(tree_, QStringList() << QStringLiteral("Scene"));
+    root_ = new QTreeWidgetItem(tree_, QStringList() << QStringLiteral("场景"));
     root_->setExpanded(true);
 
     connect(tree_, &QTreeWidget::itemChanged, this, &SceneTreePanel::onItemChanged);
@@ -77,7 +77,7 @@ void SceneTreePanel::rebuildTree(const std::shared_ptr<AbstractDataManager>& dat
     }
 
     if (!dataMgr || !dataMgr->GetVtkImage()) {
-        volumeItem_ = new QTreeWidgetItem(root_, QStringList() << QStringLiteral("(No data loaded)"));
+        volumeItem_ = new QTreeWidgetItem(root_, QStringList() << QStringLiteral("(无数据加载)"));
         root_->setExpanded(true);
         return;
     }
@@ -85,7 +85,7 @@ void SceneTreePanel::rebuildTree(const std::shared_ptr<AbstractDataManager>& dat
     int dims[3] = { 0, 0, 0 };
     dataMgr->GetVtkImage()->GetDimensions(dims);
 
-    const QString name = QStringLiteral("Volume: %1 x %2 x %3  (%4)")
+    const QString name = QStringLiteral("体积: %1 x %2 x %3  (%4)")
         .arg(dims[0])
         .arg(dims[1])
         .arg(dims[2])
@@ -96,9 +96,9 @@ void SceneTreePanel::rebuildTree(const std::shared_ptr<AbstractDataManager>& dat
 
     helpersItem_ = new QTreeWidgetItem(root_, QStringList() << QStringLiteral("Helpers"));
     helpersItem_->setExpanded(true);
-    clipPlanesItem_ = MakeVisibilityItem(helpersItem_, QStringLiteral("Clip planes"), VisFlags::ClipPlanes);
-    crosshairItem_ = MakeVisibilityItem(helpersItem_, QStringLiteral("Crosshair"), VisFlags::Crosshair);
-    axesItem_ = MakeVisibilityItem(helpersItem_, QStringLiteral("Ruler axes"), VisFlags::RulerAxes);
+    clipPlanesItem_ = MakeVisibilityItem(helpersItem_, QStringLiteral("显示 MPR 平面"), VisFlags::ClipPlanes);
+    crosshairItem_ = MakeVisibilityItem(helpersItem_, QStringLiteral("十字线"), VisFlags::Crosshair);
+    axesItem_ = MakeVisibilityItem(helpersItem_, QStringLiteral("标量尺"), VisFlags::RulerAxes);
 
     root_->setExpanded(true);
     tree_->expandAll();

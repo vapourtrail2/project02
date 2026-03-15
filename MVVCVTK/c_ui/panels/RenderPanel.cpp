@@ -11,10 +11,8 @@
 #include <QStandardPaths>
 #include <QThread>
 #include <QVBoxLayout>
-
 #include <algorithm>
 #include <cmath>
-
 #include "AppController.h"
 #include "VolumeAnalysisService.h"
 
@@ -32,14 +30,14 @@ RenderPanel::RenderPanel(QWidget* parent)
     v->setContentsMargins(6, 6, 6, 6);
     v->setSpacing(8);
 
-    auto* histGroup = new QGroupBox(QStringLiteral("Histogram"), this);
+    auto* histGroup = new QGroupBox(QStringLiteral("直方图"), this);
     histGroup->setStyleSheet(
         "QGroupBox{color:#ddd; border:1px solid #333; margin-top:8px;}"
         "QGroupBox::title{subcontrol-origin: margin; left:8px;}"
     );
     auto* hv = new QVBoxLayout(histGroup);
 
-    histLabel_ = new QLabel(QStringLiteral("(Not loaded)"), histGroup);
+    histLabel_ = new QLabel(QStringLiteral("(未加载)"), histGroup);
     histLabel_->setFixedHeight(160);
     histLabel_->setMinimumWidth(0);
     histLabel_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
@@ -48,30 +46,30 @@ RenderPanel::RenderPanel(QWidget* parent)
     hv->addWidget(histLabel_);
     v->addWidget(histGroup);
 
-    auto* isoGroup = new QGroupBox(QStringLiteral("Threshold / ISO"), this);
+    auto* isoGroup = new QGroupBox(QStringLiteral("调节"), this);
     isoGroup->setStyleSheet(
         "QGroupBox{color:#ddd; border:1px solid #333; margin-top:8px;}"
         "QGroupBox::title{subcontrol-origin: margin; left:8px;}"
     );
     auto* iv = new QVBoxLayout(isoGroup);
 
-    isoValueLabel_ = new QLabel("ISO: -", isoGroup);
+    isoValueLabel_ = new QLabel(QStringLiteral("阈值: -"), isoGroup);
     isoSlider_ = new QSlider(Qt::Horizontal, isoGroup);
     isoSlider_->setRange(0, 1000);
     isoQuality_ = new QComboBox(isoGroup);
-    isoQuality_->addItem(QStringLiteral("Fast"), static_cast<int>(IsoRenderQuality::Fast));
-    isoQuality_->addItem(QStringLiteral("High Quality"), static_cast<int>(IsoRenderQuality::HighQuality));
+    isoQuality_->addItem(QStringLiteral("快速"), static_cast<int>(IsoRenderQuality::Fast));
+    isoQuality_->addItem(QStringLiteral("高质量"), static_cast<int>(IsoRenderQuality::HighQuality));
 
     iv->addWidget(isoValueLabel_);
     iv->addWidget(isoSlider_);
 
     auto* qualityRow = new QHBoxLayout();
-    qualityRow->addWidget(new QLabel(QStringLiteral("Quality"), isoGroup));
+    qualityRow->addWidget(new QLabel(QStringLiteral("质量"), isoGroup));
     qualityRow->addWidget(isoQuality_, 1);
     iv->addLayout(qualityRow);
     v->addWidget(isoGroup);
 
-    auto* wlGroup = new QGroupBox(QStringLiteral("Window / Level"), this);
+    auto* wlGroup = new QGroupBox(QStringLiteral("窗宽/窗位"), this);
     wlGroup->setStyleSheet(
         "QGroupBox{color:#ddd; border:1px solid #333; margin-top:8px;}"
         "QGroupBox::title{subcontrol-origin: margin; left:8px;}"
@@ -79,31 +77,31 @@ RenderPanel::RenderPanel(QWidget* parent)
     auto* wv = new QVBoxLayout(wlGroup);
 
     renderMode_ = new QComboBox(wlGroup);
-    renderMode_->addItem(QStringLiteral("Iso Surface"), static_cast<int>(VizMode::CompositeIsoSurface));
-    renderMode_->addItem(QStringLiteral("Volume Rendering"), static_cast<int>(VizMode::CompositeVolume));
+    renderMode_->addItem(QStringLiteral("等值面渲染"), static_cast<int>(VizMode::CompositeIsoSurface));
+    renderMode_->addItem(QStringLiteral("体渲染"), static_cast<int>(VizMode::CompositeVolume));
 
     auto* renderModeRow = new QHBoxLayout();
-    renderModeRow->addWidget(new QLabel(QStringLiteral("3D Model"), wlGroup));
+    renderModeRow->addWidget(new QLabel(QStringLiteral("3D 模型"), wlGroup));
     renderModeRow->addWidget(renderMode_, 1);
     wv->addLayout(renderModeRow);
 
-    clipPlanesToggle_ = new QCheckBox(QStringLiteral("Orthogonal Slice Planes"), wlGroup);
+    clipPlanesToggle_ = new QCheckBox(QStringLiteral("显示 MPR 平面"), wlGroup);
     wv->addWidget(clipPlanesToggle_);
 
-    crosshairToggle_ = new QCheckBox(QStringLiteral("2D Crosshair"), wlGroup);
+    crosshairToggle_ = new QCheckBox(QStringLiteral("十字线"), wlGroup);
     wv->addWidget(crosshairToggle_);
 
     //标量尺控件
     rulerAxesToggle_ = new QCheckBox(QStringLiteral("标量尺"),wlGroup);
     wv->addWidget(rulerAxesToggle_);
 
-    windowWidthLabel_ = new QLabel(QStringLiteral("WW: -"), wlGroup);
+    windowWidthLabel_ = new QLabel(QStringLiteral("窗宽: -"), wlGroup);
     windowWidthSlider_ = new QSlider(Qt::Horizontal, wlGroup);
     windowWidthSlider_->setRange(0, 1000);
     wv->addWidget(windowWidthLabel_);
     wv->addWidget(windowWidthSlider_);
 
-    windowCenterLabel_ = new QLabel(QStringLiteral("WC: -"), wlGroup);
+    windowCenterLabel_ = new QLabel(QStringLiteral("窗位: -"), wlGroup);
     windowCenterSlider_ = new QSlider(Qt::Horizontal, wlGroup);
     windowCenterSlider_->setRange(0, 1000);
     wv->addWidget(windowCenterLabel_);
@@ -118,8 +116,8 @@ RenderPanel::RenderPanel(QWidget* parent)
     };
 
     auto updateWindowLevelLabels = [this](double ww, double wc) {
-        windowWidthLabel_->setText(QString("WW: %1").arg(ww, 0, 'f', 2));
-        windowCenterLabel_->setText(QString("WC: %1").arg(wc, 0, 'f', 2));
+        windowWidthLabel_->setText(QString("窗宽: %1").arg(ww, 0, 'f', 2));
+        windowCenterLabel_->setText(QString("窗位: %1").arg(wc, 0, 'f', 2));
     };
 
     auto pushWindowLevel = [this, updateWindowLevelLabels]() {
@@ -146,7 +144,7 @@ RenderPanel::RenderPanel(QWidget* parent)
         }
 
         const double iso = sliderToIso(value);
-        isoValueLabel_->setText(QString("ISO: %1").arg(iso, 0, 'f', 2));
+        isoValueLabel_->setText(QString("阈值: %1").arg(iso, 0, 'f', 2));
     });
 
     connect(isoSlider_, &QSlider::sliderReleased, this, [this, sliderToIso]() {
@@ -259,9 +257,9 @@ void RenderPanel::setSharedState(const std::shared_ptr<SharedInteractionState>& 
 
     if (!state_) {
         updatingUi_ = true;
-        isoValueLabel_->setText("ISO: -");
-        windowWidthLabel_->setText("WW: -");
-        windowCenterLabel_->setText("WC: -");
+        isoValueLabel_->setText("阈值: -");
+        windowWidthLabel_->setText("窗宽: -");
+        windowCenterLabel_->setText("窗位: -");
         isoSlider_->setValue(0);
         windowWidthSlider_->setValue(0);
         windowCenterSlider_->setValue(0);
@@ -274,7 +272,7 @@ void RenderPanel::setSharedState(const std::shared_ptr<SharedInteractionState>& 
 
         histPixmap_ = QPixmap();
         histLabel_->setPixmap(QPixmap());
-        histLabel_->setText(QStringLiteral("(Not loaded)"));
+        histLabel_->setText(QStringLiteral("(未加载)"));
         return;
     }
 
@@ -336,7 +334,7 @@ void RenderPanel::syncFromState(UpdateFlags flags)
         }
         t = clamp01(t);
         isoSlider_->setValue(static_cast<int>(std::round(t * 1000.0)));
-        isoValueLabel_->setText(QString("ISO: %1").arg(iso, 0, 'f', 2));
+        isoValueLabel_->setText(QString("阈值: %1").arg(iso, 0, 'f', 2));
     }
 
     if (HasFlag(flags, UpdateFlags::IsoQuality) || flags == UpdateFlags::All) {
@@ -353,8 +351,8 @@ void RenderPanel::syncFromState(UpdateFlags flags)
         const auto wl = state_->GetWindowLevel();
         windowWidthSlider_->setValue(windowWidthToSlider(wl.windowWidth));
         windowCenterSlider_->setValue(windowCenterToSlider(wl.windowCenter));
-        windowWidthLabel_->setText(QString("WW: %1").arg(wl.windowWidth, 0, 'f', 2));
-        windowCenterLabel_->setText(QString("WC: %1").arg(wl.windowCenter, 0, 'f', 2));
+        windowWidthLabel_->setText(QString("窗宽: %1").arg(wl.windowWidth, 0, 'f', 2));
+        windowCenterLabel_->setText(QString("窗位: %1").arg(wl.windowCenter, 0, 'f', 2));
     }
 
     updatingUi_ = false;
@@ -365,12 +363,12 @@ void RenderPanel::rebuildHistogramPixmap()
     histPixmap_ = QPixmap();
     histLabel_->setPixmap(QPixmap());
     if (!analysis_) {
-        histLabel_->setText(QStringLiteral("(Not loaded)"));
+        histLabel_->setText(QStringLiteral("(未加载)"));
         return;
     }
     vtkSmartPointer<vtkTable> table = analysis_->GetHistogramData(512);
     if (!table || table->GetNumberOfRows() <= 0) {
-        histLabel_->setText(QStringLiteral("(Not loaded)"));
+        histLabel_->setText(QStringLiteral("(未加载)"));
         return;
     }
     vtkDataArray* values = vtkDataArray::SafeDownCast(table->GetColumnByName("LogFrequency"));
@@ -378,7 +376,7 @@ void RenderPanel::rebuildHistogramPixmap()
         values = vtkDataArray::SafeDownCast(table->GetColumnByName("Frequency"));
     }
     if (!values || values->GetNumberOfTuples() <= 0) {
-        histLabel_->setText(QStringLiteral("(Not loaded)"));
+        histLabel_->setText(QStringLiteral("(未加载)"));
         return;
     }
     const int imageWidth = 512;
@@ -398,7 +396,7 @@ void RenderPanel::rebuildHistogramPixmap()
     }
     if (maxValue <= 0.0) {
         painter.end();
-        histLabel_->setText(QStringLiteral("(Empty histogram)"));
+        histLabel_->setText(QStringLiteral("(直方图为空)"));
         return;
     }
     const vtkIdType count = values->GetNumberOfTuples();
