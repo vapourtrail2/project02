@@ -20,6 +20,7 @@
 #include "c_ui/nav/TabMap.h"
 #include "c_ui/nav/WorkspaceFlow.h"
 
+#include <qwindow.h>
 #include <QApplication>
 #include <QSize>
 #include <QStackedWidget>
@@ -247,6 +248,19 @@ void CTViewer::connectWindowButtonSignals() {
     connect(btnMaximize_, &QToolButton::clicked, this, [this]() {
         if (isMaximized()) {
             showNormal();
+
+            if (QScreen* screen = windowHandle() ? windowHandle()->screen()
+                : QGuiApplication::primaryScreen()) {
+                QRect avail = screen->availableGeometry();
+                int w = avail.width() * 0.75;
+                int h = avail.height() * 0.75;
+
+                resize(w, h);
+                move(
+                    avail.x() + (avail.width() - w) / 2,
+                    avail.y() + (avail.height() - h) / 2
+                );
+            }
         }
         else {
             showMaximized();
