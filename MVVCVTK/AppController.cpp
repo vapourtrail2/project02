@@ -114,15 +114,17 @@ bool AppController::openReconstructedData(
             sess->sharedState->SetCursorPosition(dims[0] / 2, dims[1] / 2, dims[2] / 2);
             sess->sharedState->SetIsoValue(range[0] + safeWindowWidth * 0.2);
 			sess->sharedState->NotifyDataReady(range[0], range[1]);
+           
         });
+    m_session = newSession;
+    emit sessionChanged(m_session);
 
     if (!queen)
     {
         if (errorOut) *errorOut = QStringLiteral("Service is busy or initialization failed."); 
 		return false;
     }
-	m_session = newSession;
-	emit sessionChanged(m_session);
+	
     return true;
 }
 

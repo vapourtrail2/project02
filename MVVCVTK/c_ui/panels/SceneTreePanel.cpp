@@ -52,7 +52,15 @@ void SceneTreePanel::setSession(
         return;
     }
 
-    state_->AddObserver(lifeToken_, [this](UpdateFlags flags) {
+    state_->AddObserver(lifeToken_, [this,dataMgr,sourcePath](UpdateFlags flags) {
+
+        if (HasFlag(flags,UpdateFlags::DataReady))
+        {
+            QMetaObject::invokeMethod(this, [this, dataMgr, sourcePath]() {
+                rebuildTree(dataMgr, sourcePath);
+            }, Qt::QueuedConnection);
+        }
+
         if (!HasFlag(flags, UpdateFlags::Visibility) && flags != UpdateFlags::All) {
             return;
         }
@@ -63,9 +71,8 @@ void SceneTreePanel::setSession(
         }
 
         QMetaObject::invokeMethod(this, [this]() { syncVisibility(); }, Qt::QueuedConnection);
-    });
+        });
 
-    syncVisibility();
 }
 
 void SceneTreePanel::rebuildTree(const std::shared_ptr<AbstractDataManager>& dataMgr, const QString& sourcePath)
