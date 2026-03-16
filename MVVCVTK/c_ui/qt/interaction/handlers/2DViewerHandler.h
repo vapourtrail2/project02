@@ -17,10 +17,18 @@ private:
     AbstractInteractiveService* m_service = nullptr;
     vtkCellPicker* m_picker = nullptr;
     vtkRenderer* m_renderer = nullptr;
+    bool m_enableDragZoom = false;
     bool m_enableDragCrosshair = false;
     bool m_enableDragWindowLevel = false;
+
+    //放大 缩小
+	int m_lastZoomX = 0;
+    int m_lastZoomY = 0;
+
     int m_lastDragX = 0;
     int m_lastDragY = 0;
+
     int m_crosshairMoveLogTick = 0;
     int m_windowLevelMoveLogTick = 0;
+    int m_ZoomMoveLog = 0;
 };

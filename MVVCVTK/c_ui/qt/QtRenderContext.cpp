@@ -472,13 +472,6 @@ void QtRenderContext::HandleVTKEvent(vtkObject* caller, long unsigned int eventI
         const bool shouldLog = (eventId != vtkCommand::MouseMoveEvent)
             || (++sSliceMoveLogTick <= 5)
             || ((sSliceMoveLogTick % 10) == 0);
-       /* if (shouldLog) {
-            qDebug().noquote() << "[VTK] event=" << ToVtkEventName(eventId)
-                               << " mode=" << static_cast<int>(m_currentMode)
-                               << " tool=" << static_cast<int>(m_toolMode)
-                               << " x=" << event.x << " y=" << event.y
-                               << " shift=" << event.shift << " ctrl=" << event.ctrl;
-        }*/
     }
 
     const RouterDispatchMode dispatchMode =
