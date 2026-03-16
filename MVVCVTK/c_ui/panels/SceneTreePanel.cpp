@@ -85,7 +85,7 @@ void SceneTreePanel::rebuildTree(const std::shared_ptr<AbstractDataManager>& dat
     int dims[3] = { 0, 0, 0 };
     dataMgr->GetVtkImage()->GetDimensions(dims);
 
-    const QString name = QStringLiteral("体积: %1 x %2 x %3  (%4)")
+    const QString name = QStringLiteral(": %1 x %2 x %3  (%4)")
         .arg(dims[0])
         .arg(dims[1])
         .arg(dims[2])

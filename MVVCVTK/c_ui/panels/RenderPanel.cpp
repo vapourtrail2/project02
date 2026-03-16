@@ -116,8 +116,8 @@ RenderPanel::RenderPanel(QWidget* parent)
     };
 
     auto updateWindowLevelLabels = [this](double ww, double wc) {
-        windowWidthLabel_->setText(QString("´°¿í: %1").arg(ww, 0, 'f', 2));
-        windowCenterLabel_->setText(QString("´°Î»: %1").arg(wc, 0, 'f', 2));
+        windowWidthLabel_->setText(QStringLiteral("´°¿í: %1").arg(ww, 0, 'f', 2));
+        windowCenterLabel_->setText(QStringLiteral("´°Î»: %1").arg(wc, 0, 'f', 2));
     };
 
     auto pushWindowLevel = [this, updateWindowLevelLabels]() {
@@ -144,7 +144,7 @@ RenderPanel::RenderPanel(QWidget* parent)
         }
 
         const double iso = sliderToIso(value);
-        isoValueLabel_->setText(QString("ãÐÖµ: %1").arg(iso, 0, 'f', 2));
+        isoValueLabel_->setText(QStringLiteral("ãÐÖµ: %1").arg(iso, 0, 'f', 2));
     });
 
     connect(isoSlider_, &QSlider::sliderReleased, this, [this, sliderToIso]() {
@@ -334,7 +334,7 @@ void RenderPanel::syncFromState(UpdateFlags flags)
         }
         t = clamp01(t);
         isoSlider_->setValue(static_cast<int>(std::round(t * 1000.0)));
-        isoValueLabel_->setText(QString("ãÐÖµ: %1").arg(iso, 0, 'f', 2));
+        isoValueLabel_->setText(QStringLiteral("ãÐÖµ: %1").arg(iso, 0, 'f', 2));
     }
 
     if (HasFlag(flags, UpdateFlags::IsoQuality) || flags == UpdateFlags::All) {
@@ -351,8 +351,8 @@ void RenderPanel::syncFromState(UpdateFlags flags)
         const auto wl = state_->GetWindowLevel();
         windowWidthSlider_->setValue(windowWidthToSlider(wl.windowWidth));
         windowCenterSlider_->setValue(windowCenterToSlider(wl.windowCenter));
-        windowWidthLabel_->setText(QString("´°¿í: %1").arg(wl.windowWidth, 0, 'f', 2));
-        windowCenterLabel_->setText(QString("´°Î»: %1").arg(wl.windowCenter, 0, 'f', 2));
+        windowWidthLabel_->setText(QStringLiteral("´°¿í: %1").arg(wl.windowWidth, 0, 'f', 2));
+        windowCenterLabel_->setText(QStringLiteral("´°Î»: %1").arg(wl.windowCenter, 0, 'f', 2));
     }
 
     updatingUi_ = false;
@@ -422,7 +422,7 @@ void RenderPanel::applyHistogramPixmap()
     if (targetSize.width() <= 0 || targetSize.height() <= 0) {
         return;
     }
-    histLabel_->setText(QString());
+    histLabel_->setText(QStringLiteral());
     histLabel_->setPixmap(
         histPixmap_.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation)
     );
