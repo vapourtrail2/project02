@@ -82,7 +82,7 @@ void DocumentPage::buildLeftDock()
     addSeparator();
 
     addItem(QStringLiteral("快速导入"));
-    addItem(QStringLiteral("CT重建"));
+    //addItem(QStringLiteral("CT重建"));
     addItem(QStringLiteral("导入"));
     addItem(QStringLiteral("导出"));
     addSeparator();
@@ -113,7 +113,7 @@ QWidget* DocumentPage::buildRightContent(QWidget* parent)
     auto bannerLayout = new QVBoxLayout(banner);
     bannerLayout->setContentsMargins(20, 16, 20, 16);
     bannerLayout->setSpacing(8);
-    auto title = new QLabel(QStringLiteral("欢迎使用 data_viewer_demo"), banner);
+    auto title = new QLabel(QStringLiteral("欢迎使用 GviewCT"), banner);
     title->setStyleSheet(QStringLiteral("font-size:24px; font-weight:700;"));
     bannerLayout->addWidget(title);
 
