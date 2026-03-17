@@ -160,10 +160,11 @@
       <AdditionalIncludeDirectories>C:\lib\opencv\build\include;$(SolutionDir)libs\include;C:\lib\vtk_install\include\vtk-9.4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)libs\lib;C:\lib\vtk_install\lib;C:\lib\opencv\build\x64\vc16\lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>UIReconstruct3D.lib;UIPhantomCalib.lib;opencv_world4120.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y /d "$(SolutionDir)libs\lib\*.dll" "$(TargetDir)"</Command>

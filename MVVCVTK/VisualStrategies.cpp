@@ -432,6 +432,7 @@ void SliceStrategy::SetupCamera(vtkSmartPointer<vtkRenderer> ren) {
         // AXIAL (轴状位): 从头顶往下看
         cam->SetPosition(imgCenter[0], imgCenter[1], imgCenter[2] + distance);
         cam->SetViewUp(0, 1, 0);
+        cam->Roll(180.0);
         break;
 
     case Orientation::CORONAL:
@@ -444,6 +445,7 @@ void SliceStrategy::SetupCamera(vtkSmartPointer<vtkRenderer> ren) {
         // SAGITTAL (矢状位): 从侧面看
         cam->SetPosition(imgCenter[0] + distance, imgCenter[1], imgCenter[2]);
         cam->SetViewUp(0, 0, 1); // Z轴是向上的
+        cam->Roll(270.0);
         break;
     }
 
