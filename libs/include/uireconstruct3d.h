@@ -4,7 +4,6 @@
 #include "uireconstruct3d_global.h"
 #include <QWidget>
 #include <QShowEvent>
-#include <array>
 
 namespace Recon3D
 {
@@ -22,7 +21,6 @@ public:
 	void getReconData(float*& data, std::array<float, 3>& spacing, std::array<float, 3>& origin, std::array<int, 3>& outSize);
 
 protected:
-	void closeEvent(QCloseEvent* event) override;
 	void showEvent(QShowEvent* event) override;
 
 signals:
@@ -31,4 +29,5 @@ signals:
 private:
 	Recon3D::MainWidget* m_mainWidget = nullptr;
 };
+
 
