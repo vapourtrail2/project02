@@ -331,7 +331,7 @@ void QtRenderContext::SetInteractionMode(VizMode mode)
     }
 
     if (IsSliceMode(mode)) {
-        auto style = vtkSmartPointer<vtkInteractorStyleUser>::New();
+        auto style = vtkSmartPointer<vtkInteractorStyleImage>::New();
         m_interactor->SetInteractorStyle(style);
     }
     else {

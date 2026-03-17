@@ -61,7 +61,7 @@ CTViewer::CTViewer(QWidget* parent)
 {
     //无边框窗口+深色主题 
     setWindowFlag(Qt::FramelessWindowHint);
-    setWindowTitle(QStringLiteral("data_viewer_demo"));
+    setWindowTitle(QStringLiteral("GviewCT"));
     setStyleSheet(QStringLiteral(
         "QMainWindow{background-color:#121212;}"
         "QMenuBar, QStatusBar{background-color:#1a1a1a; color:#e0e0e0;}"));

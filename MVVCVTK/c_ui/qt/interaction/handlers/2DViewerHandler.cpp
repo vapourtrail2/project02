@@ -52,7 +52,6 @@ InteractionResult Viewer2DHandler::Handle(const InteractionEvent& eve)
         return { true, true };
     }
 
-
     if (eve.vtkEventId == vtkCommand::RightButtonPressEvent ) {//十字线
         if (eve.shift) {
         m_enableDragCrosshair = true;
@@ -60,32 +59,19 @@ InteractionResult Viewer2DHandler::Handle(const InteractionEvent& eve)
         m_service->SetInteracting(true);
         return { true, true };
         }
-        else
-        {
-            m_enableDragZoom = true;
-			m_ZoomMoveLog = 0;
-			m_lastZoomX = eve.x;
-			m_lastZoomY = eve.y;
-			m_service->SetInteracting(true);
-			return { true, true };
-        }
+        //交给自带交互   2D 放大
+        return {};
     }
 
     if (eve.vtkEventId == vtkCommand::RightButtonReleaseEvent) {
         //统一收口
-        bool ok = false;
         if (m_enableDragCrosshair) {
             m_enableDragCrosshair = false;
-            ok = true;
-        }
-        if (m_enableDragZoom) {
-            m_enableDragZoom = false;
-            ok = true;
-		}
-        if (ok) {
             m_service->SetInteracting(false);
-            return { true, false };
+            return { true,true };
         }
+        //normal rightbutton
+        return {};
     }
 
     if (eve.vtkEventId == vtkCommand::LeftButtonPressEvent && !eve.shift) {
@@ -122,7 +108,6 @@ InteractionResult Viewer2DHandler::Handle(const InteractionEvent& eve)
             m_renderer->DisplayToWorld();
             double* worldPoint = m_renderer->GetWorldPoint();
             if (!worldPoint || std::abs(worldPoint[3]) < 1e-6) {
- 
                 return { true, true };
             }
 
@@ -145,40 +130,6 @@ InteractionResult Viewer2DHandler::Handle(const InteractionEvent& eve)
             m_service->SyncCursorToWorldPosition(worldPos, fixedAxis);
             return { true, true };
         }
-
-        if (m_enableDragZoom) {
-            if (!m_renderer) {
-                return {};
-            }
-
-            auto* camera = m_renderer->GetActiveCamera();
-            if (!camera) {
-                return { true , true };
-            }
-            
-			camera->ParallelProjectionOn();//确保是正交投影
-
-            const int dy = eve.y - m_lastZoomY;//增量
-			m_lastZoomX = eve.x;
-            m_lastZoomY = eve.y;
-
-			++m_ZoomMoveLog;
-			double whatsfuckingmean = camera->GetParallelScale(); // 调整缩放灵敏度
-			whatsfuckingmean *= (1.0 + dy * 0.01);//whatsfuckingmean越大，缩放越慢，反之越快
-
-            if (whatsfuckingmean < 0.1) {
-				whatsfuckingmean = 0.1;
-            }
-            if (whatsfuckingmean > 99999.0) {
-				whatsfuckingmean = 99999.0;
-            }
-
-            camera->SetParallelScale(whatsfuckingmean);
-            m_renderer->ResetCameraClippingRange();
-
-            return { true, true };
-        }
-
 
         if (m_enableDragWindowLevel) {
             const int dx = eve.x - m_lastDragX;
