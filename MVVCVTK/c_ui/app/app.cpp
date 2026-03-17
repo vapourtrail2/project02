@@ -7,7 +7,7 @@
 #include <QStyleFactory>
 #include "c_ui/MainWindow.h"
 
-//
+
 namespace app {
 
     App::App() = default;
@@ -16,6 +16,7 @@ namespace app {
     {
         // 创建并持有 QApplication 对象，确保 Qt 事件循环存在
         QApplication qtApp(argc, argv);
+        qtApp.setWindowIcon(QIcon("C:\\code\\project_deng\\MVVCVTK\\GviewCT.ico"));
 		applyGlobalStyle();
 
         CTViewer mainWindow;

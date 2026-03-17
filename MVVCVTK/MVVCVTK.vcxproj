@@ -177,6 +177,7 @@
     <ClInclude Include="AppService.h" />
     <ClInclude Include="AppState.h" />
     <ClInclude Include="MemMappedFile.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="VolumeAnalysisService.h" />
     <ClInclude Include="VolumeTransformService.h" />
     <QtMoc Include="c_ui\app\app.h" />
@@ -264,6 +265,12 @@
     <ClCompile Include="DataManager.cpp" />
     <ClCompile Include="ReconInteraction.cpp" />
     <ClCompile Include="VisualStrategies.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resource.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\..\Users\DELL\Desktop\GviewCT.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(QtMsBuild)\qt.targets" Condition="Exists('$(QtMsBuild)\qt.targets')" />
