@@ -92,7 +92,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>D:\git\vcpkg-master\installed\x64-windows\include;D:\CT-1209\VTK\lib\vtk_install\include\vtk-9.4;$(IncludePath)</IncludePath>
+    <IncludePath>D:\git\vcpkg-master\installed\x64-windows\include;D:\CT-1209\VTK\lib\vtk_install\include\vtk-9.4;C:\code\test_0323\main\MVVCVTK\core;$(IncludePath)</IncludePath>
     <TargetName>GviewCT</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

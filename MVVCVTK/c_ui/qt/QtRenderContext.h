@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AppInterfaces.h"
+//#include "core/MVVCVTK/MVVCVTK/AppInterfaces.h"
 #include "c_ui/qt/interaction/InteractionRouter.h"
 #include <QEvent>
 #include <QObject>
@@ -35,8 +36,6 @@ public:
 
 protected:
     void HandleVTKEvent(vtkObject* caller, long unsigned int eventId, void* callData) override;
-
-
 
 private:
     void SetupObservers();

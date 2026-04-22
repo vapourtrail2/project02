@@ -56,7 +56,6 @@
     <ClInclude Include="StrategyFactory.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    
     <ClInclude Include="MemMappedFile.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -66,7 +65,6 @@
     <ClInclude Include="VolumeTransformService.h">
       <Filter>头文件</Filter>
     </ClInclude>
-
     <ClInclude Include="c_ui\workbenches\PerformancePage.h">
       <Filter>c_ui\workbenches</Filter>
     </ClInclude>
@@ -142,16 +140,20 @@
     <ClInclude Include="c_ui\workbenches\common\IconMaps\WindowIconMap.h">
       <Filter>c_ui\workbenches\common</Filter>
     </ClInclude>
+    <ClInclude Include="AppState.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DataManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    
     <ClCompile Include="MemMappedFile.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-
     <ClCompile Include="VisualStrategies.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -248,6 +250,9 @@
     <ClCompile Include="c_ui\nav\WorkspaceFlow.cpp">
       <Filter>c_ui\nav</Filter>
     </ClCompile>
+    <ClCompile Include="DataConverters.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="c_ui\MainWindow.h">
@@ -311,5 +316,10 @@
       <Filter>c_ui\panels</Filter>
     </QtMoc>
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resource.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\..\Users\DELL\Desktop\GviewCT.ico" />
+  </ItemGroup>
 </Project>
-

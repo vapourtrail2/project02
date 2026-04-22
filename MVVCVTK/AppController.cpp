@@ -3,6 +3,7 @@
 #include <QFileInfo>
 #include <QDebug>
 #include <qapplication.h>
+
 namespace {
 std::shared_ptr<AbstractDataManager> CreateManagerForPath(const QString& path)
 {
