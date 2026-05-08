@@ -4,7 +4,6 @@
 #include "c_ui/qt/interaction/handlers/TimeUpdateHandler.h"
 #include <QMouseEvent>
 #include <QWheelEvent>
-#include <QDebug>
 #include <memory>
 #include <string>
 #include <vtkCommand.h>
@@ -37,9 +36,9 @@ private:
 
 bool IsSliceMode(VizMode mode)
 {
-    return mode == VizMode::SliceAxial
-        || mode == VizMode::SliceCoronal
-        || mode == VizMode::SliceSagittal;
+    return mode == VizMode::SliceTop_down
+        || mode == VizMode::SliceFront_back
+        || mode == VizMode::SliceLeft_right;
 }
 
 const char* ToVtkEventName(unsigned long eventId)
@@ -61,7 +60,7 @@ const char* ToVtkEventName(unsigned long eventId)
 QtRenderContext::QtRenderContext()
 {
     m_eventCallback = vtkSmartPointer<vtkCallbackCommand>::New();
-    m_eventCallback->SetCallback(AbstractRenderContext::DispatchVTKEvent);
+    m_eventCallback->SetCallback(AbstractRenderContext::SetVTKEventDispatched);
     m_eventCallback->SetClientData(this);
     m_picker = vtkSmartPointer<vtkPropPicker>::New();
     m_slicePicker = vtkSmartPointer<vtkCellPicker>::New();
@@ -70,9 +69,6 @@ QtRenderContext::QtRenderContext()
 
 QtRenderContext::~QtRenderContext()
 {
-    if (m_service) {
-        m_service->SetPresentCallback({});
-    }
     RemoveQtEventFilter();
     if (m_qtEventFilter) {
         delete m_qtEventFilter;
@@ -191,9 +187,7 @@ void QtRenderContext::SetQtWidget(QVTKOpenGLNativeWidget* widget)
         m_interactor->SetRenderWindow(m_renderWindow);
     }
 
-    if (m_interactor && !m_interactor->GetInitialized()) {
-        m_interactor->Initialize();
-    }
+    SetInteractorInitialized();
 
     if (m_interactor && !m_distanceWidget) {
         m_distanceWidget = vtkSmartPointer<vtkDistanceWidget>::New();
@@ -212,7 +206,6 @@ void QtRenderContext::SetQtWidget(QVTKOpenGLNativeWidget* widget)
     SetupObservers();
     BuildInteractionRouter();
     SetToolMode(m_toolMode);
-    UpdatePresentCallback();
     InstallQtEventFilter();
 
     if (m_renderWindow) {
@@ -220,12 +213,11 @@ void QtRenderContext::SetQtWidget(QVTKOpenGLNativeWidget* widget)
     }
 }
 
-void QtRenderContext::BindService(std::shared_ptr<AbstractAppService> service)
+void QtRenderContext::SetServiceBound(std::shared_ptr<AbstractAppService> service)
 {
-    AbstractRenderContext::BindService(service);
+    AbstractRenderContext::SetServiceBound(service);
     m_interactiveService = std::dynamic_pointer_cast<AbstractInteractiveService>(service);
 
-    UpdatePresentCallback();
     BuildInteractionRouter();
     SetupObservers();
     SetToolMode(m_toolMode);
@@ -280,26 +272,6 @@ void QtRenderContext::TeardownObservers()
     m_observerInstalled = false;
 }
 
-void QtRenderContext::UpdatePresentCallback()
-{
-    if (!m_service) {
-        return;
-    }
-
-    QPointer<QVTKOpenGLNativeWidget> widget = m_widget;
-    vtkSmartPointer<vtkRenderWindow> renderWindow = m_renderWindow;
-    m_service->SetPresentCallback([widget, renderWindow]() {
-        if (!renderWindow) {
-            return;
-        }
-
-        renderWindow->Render();
-        if (widget) {
-            widget->update();
-        }
-    });
-}
-
 void QtRenderContext::BuildInteractionRouter()
 {
     m_interactionRouter.Clear();
@@ -312,18 +284,23 @@ void QtRenderContext::BuildInteractionRouter()
     m_interactionRouter.Add(std::make_unique<Viewer3DHandler>(m_interactiveService.get(), m_picker.GetPointer(), m_renderer.GetPointer()));
 }
 
-void QtRenderContext::Start()
+void QtRenderContext::SetInteractorInitialized()//基类纯虚 在这里实现
 {
-    InstallQtEventFilter();
-    if (m_renderWindow) {
-        m_renderWindow->Render();
-    }
     if (m_interactor && !m_interactor->GetInitialized()) {
         m_interactor->Initialize();
     }
 }
 
-void QtRenderContext::SetInteractionMode(VizMode mode)
+void QtRenderContext::SetStarted()
+{
+    InstallQtEventFilter();
+    SetInteractorInitialized();
+    if (m_renderWindow) {
+        m_renderWindow->Render();
+    }
+}
+
+void QtRenderContext::SetCameraStyleByVizMode(VizMode mode)
 {
     m_currentMode = mode;
     if (!m_interactor || m_toolMode == ToolMode::ModelTransform) {
@@ -379,7 +356,7 @@ void QtRenderContext::SetToolMode(ToolMode mode)
         m_interactor->SetInteractorStyle(style);
     }
     else {
-        SetInteractionMode(m_currentMode);
+        SetCameraStyleByVizMode(m_currentMode);
     }
 
     if (m_interactiveService) {
@@ -387,7 +364,7 @@ void QtRenderContext::SetToolMode(ToolMode mode)
     }
 }
 
-void QtRenderContext::HandleVTKEvent(vtkObject* caller, long unsigned int eventId, void* callData)
+void QtRenderContext::SetVTKEventHandled(vtkObject* caller, long unsigned int eventId, void* callData)
 {
     (void)callData;
 
@@ -429,8 +406,8 @@ void QtRenderContext::HandleVTKEvent(vtkObject* caller, long unsigned int eventI
     if (m_toolMode == ToolMode::ModelTransform && eventId == vtkCommand::InteractionEvent) {
         if (vtkProp3D* prop = m_interactiveService->GetMainProp()) {
             if (prop->GetUserMatrix()) {
-                m_interactiveService->SyncModelMatrix(prop->GetUserMatrix());
-                m_interactiveService->MarkDirty();
+                m_interactiveService->SetModelMatrixSynced(prop->GetUserMatrix());
+                m_interactiveService->SetDirtyMarked();
             }
         }
         return;

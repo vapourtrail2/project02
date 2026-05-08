@@ -8,8 +8,6 @@
 #include <QTabBar>
 #include <QSplitter>
 #include <memory>
-#include "AppInterfaces.h"
-#include "AppState.h"
 #include "c_ui/workbenches/ReconstructPage.h"
 #include "c_ui/nav/UIState.h"
 
@@ -71,6 +69,7 @@ private:
     void connectDistanceSignals();
     void connectAngelSignals();
     void connectAppSignals();
+    void connectRenderSwitchSignals();
     void handleSessionChanged(const std::shared_ptr<AppSession>& session);
 
     void onTabChanged(int index);

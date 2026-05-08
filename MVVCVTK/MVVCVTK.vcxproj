@@ -176,7 +176,7 @@
     <ClInclude Include="AppInterfaces.h" />
     <ClInclude Include="AppService.h" />
     <ClInclude Include="AppState.h" />
-    <ClInclude Include="MemMappedFile.h" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\MemMappedFile.cpp" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="VolumeAnalysisService.h" />
     <ClInclude Include="VolumeTransformService.h" />
@@ -231,7 +231,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppController.cpp" />
-    <ClCompile Include="AppService.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\AppService.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\ColoredPlanesStrategy.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\CompositeStrategy.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\DataConverters.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\DataManager.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\ImageProcessor.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\IsHomogen.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\IsoSurfaceStrategy.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\MultiSliceStrategy.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\SliceStrategy.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\VolumeStrategy.cpp" />
     <ClCompile Include="c_ui\app\app.cpp" />
     <ClCompile Include="c_ui\main.cpp" />
     <ClCompile Include="c_ui\MainWindow.cpp" />
@@ -260,11 +270,7 @@
     <ClCompile Include="c_ui\workbenches\StartPage.cpp" />
     <ClCompile Include="c_ui\workbenches\VolumePage.cpp" />
     <ClCompile Include="c_ui\workbenches\WindowPage.cpp" />
-    <ClCompile Include="DataConverters.cpp" />
-    <ClCompile Include="MemMappedFile.cpp" />
-    <ClCompile Include="DataManager.cpp" />
     <ClCompile Include="ReconInteraction.cpp" />
-    <ClCompile Include="VisualStrategies.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />

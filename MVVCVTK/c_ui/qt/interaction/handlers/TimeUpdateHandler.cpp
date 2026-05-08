@@ -1,6 +1,6 @@
 ﻿#include "c_ui/qt/interaction/handlers/TimeUpdateHandler.h"
 
-#include "AppInterfaces.h"
+#include "core/MVVCVTK/MVVCVTK/AppInterfaces.h"
 
 #include <vtkCommand.h>
 #include <vtkRenderWindow.h>
@@ -21,12 +21,13 @@ InteractionResult TimeUpdateHandler::Handle(const InteractionEvent& eve)
         return { true, false };
     }
 
-    m_service->ProcessPendingUpdates();
+    m_service->SetPendingUpdatesProcessed();
 
     if (m_service->IsDirty()) {
-        if (m_service->PresentFrame()) {
-            m_service->SetDirty(false);
+        if (m_renderWindow) {
+            m_renderWindow->Render();
         }
+        m_service->SetDirty(false);
     }
     return { true, false };
 }

@@ -52,7 +52,7 @@ void SceneTreePanel::setSession(
         return;
     }
 
-    state_->AddObserver(lifeToken_, [this,dataMgr,sourcePath](UpdateFlags flags) {
+    state_->SetObserver(lifeToken_, [this,dataMgr,sourcePath](UpdateFlags flags) {
 
         if (HasFlag(flags,UpdateFlags::DataReady))
         {
@@ -103,9 +103,9 @@ void SceneTreePanel::rebuildTree(const std::shared_ptr<AbstractDataManager>& dat
 
     helpersItem_ = new QTreeWidgetItem(root_, QStringList() << QStringLiteral("Helpers"));
     helpersItem_->setExpanded(true);
-    clipPlanesItem_ = MakeVisibilityItem(helpersItem_, QStringLiteral("显示 MPR 平面"), VisFlags::ClipPlanes);
+    clipPlanesItem_ = MakeVisibilityItem(helpersItem_, QStringLiteral("显示 MPR 平面"), VisFlags::Planes3D);
     crosshairItem_ = MakeVisibilityItem(helpersItem_, QStringLiteral("十字线"), VisFlags::Crosshair);
-    axesItem_ = MakeVisibilityItem(helpersItem_, QStringLiteral("标量尺"), VisFlags::RulerAxes);
+    axesItem_ = MakeVisibilityItem(helpersItem_, QStringLiteral("标量尺"), VisFlags::Ruler);
 
     root_->setExpanded(true);
     tree_->expandAll();
@@ -127,9 +127,9 @@ void SceneTreePanel::syncVisibility()
         item->setCheckState(0, (mask & bit) ? Qt::Checked : Qt::Unchecked);
     };
 
-    applyCheck(clipPlanesItem_, VisFlags::ClipPlanes);
+    applyCheck(clipPlanesItem_, VisFlags::Planes3D);
     applyCheck(crosshairItem_, VisFlags::Crosshair);
-    applyCheck(axesItem_, VisFlags::RulerAxes);
+    applyCheck(axesItem_, VisFlags::Ruler);
 }
 
 void SceneTreePanel::clearTree()

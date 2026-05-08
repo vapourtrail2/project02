@@ -3,8 +3,8 @@
 #include <QTreeWidget>
 #include <memory>
 
-#include "AppInterfaces.h"
-#include "AppState.h"
+#include "core/MVVCVTK/MVVCVTK/AppInterfaces.h"
+#include "core/MVVCVTK/MVVCVTK/AppState.h"
 
 class SceneTreePanel : public QWidget
 {

@@ -13,8 +13,9 @@
 #include <QVBoxLayout>
 #include <algorithm>
 #include <cmath>
+
 #include "AppController.h"
-#include "VolumeAnalysisService.h"
+#include "core/MVVCVTK/MVVCVTK/VolumeAnalysisService.h"
 
 static inline double clamp01(double v)
 {
@@ -29,7 +30,7 @@ RenderPanel::RenderPanel(QWidget* parent)
     auto* v = new QVBoxLayout(this);
     v->setContentsMargins(6, 6, 6, 6);
     v->setSpacing(8);
-
+    // 直方图屏蔽，不能用死数据
     auto* histGroup = new QGroupBox(QStringLiteral("直方图"), this);
     histGroup->setStyleSheet(
         "QGroupBox{color:#ddd; border:1px solid #333; margin-top:8px;}"
@@ -57,16 +58,16 @@ RenderPanel::RenderPanel(QWidget* parent)
     isoSlider_ = new QSlider(Qt::Horizontal, isoGroup);
     isoSlider_->setRange(0, 1000);
     isoQuality_ = new QComboBox(isoGroup);
-    isoQuality_->addItem(QStringLiteral("快速"), static_cast<int>(IsoRenderQuality::Fast));
-    isoQuality_->addItem(QStringLiteral("高质量"), static_cast<int>(IsoRenderQuality::HighQuality));
-
+    //isoQuality_->addItem(QStringLiteral("快速"), static_cast<int>(IsoRenderQuality::Fast));
+    //isoQuality_->addItem(QStringLiteral("高质量"), static_cast<int>(IsoRenderQuality::HighQuality));
+    // 用我提供的降采样接口
     iv->addWidget(isoValueLabel_);
     iv->addWidget(isoSlider_);
 
-    auto* qualityRow = new QHBoxLayout();
+   /* auto* qualityRow = new QHBoxLayout();
     qualityRow->addWidget(new QLabel(QStringLiteral("质量"), isoGroup));
     qualityRow->addWidget(isoQuality_, 1);
-    iv->addLayout(qualityRow);
+    iv->addLayout(qualityRow);*/
     v->addWidget(isoGroup);
 
     auto* wlGroup = new QGroupBox(QStringLiteral("窗宽/窗位"), this);
@@ -189,14 +190,14 @@ RenderPanel::RenderPanel(QWidget* parent)
     connect(windowWidthSlider_, &QSlider::sliderReleased, this, finishWindowLevelInteraction);
     connect(windowCenterSlider_, &QSlider::sliderReleased, this, finishWindowLevelInteraction);
 
-    connect(isoQuality_, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int index) {
+  /*  connect(isoQuality_, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int index) {
         if (!state_ || updatingUi_ || index < 0) {
             return;
         }
 
         const auto quality = static_cast<IsoRenderQuality>(isoQuality_->itemData(index).toInt());
         state_->SetIsoRenderQuality(quality);
-    });
+    });*/
 
     connect(renderMode_, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int index) {
         if (!state_ || updatingUi_ || index < 0) {
@@ -204,14 +205,14 @@ RenderPanel::RenderPanel(QWidget* parent)
         }
 
         const auto mode = static_cast<VizMode>(renderMode_->itemData(index).toInt());
-        state_->SetPrimary3DMode(mode);
+		emit primary3DModeRequested(mode);
     });
 
     connect(clipPlanesToggle_, &QCheckBox::toggled, this, [this](bool checked) {
         if (!state_ || updatingUi_) {
             return;
         }
-        state_->SetElementVisible(VisFlags::ClipPlanes, checked);
+        state_->SetElementVisible(VisFlags::Planes3D, checked);
     });
 
     connect(crosshairToggle_, &QCheckBox::toggled, this, [this](bool checked) {
@@ -225,7 +226,7 @@ RenderPanel::RenderPanel(QWidget* parent)
         if (!state_ || updatingUi_) {
             return;
         }
-        state_->SetElementVisible(VisFlags::RulerAxes, checked);
+        state_->SetElementVisible(VisFlags::Ruler, checked);
     });
 }
 
@@ -276,7 +277,7 @@ void RenderPanel::setSharedState(const std::shared_ptr<SharedInteractionState>& 
         return;
     }
 
-    state_->AddObserver(lifeToken_, [this](UpdateFlags flags) {
+    state_->SetObserver(lifeToken_, [this](UpdateFlags flags) {
         if (QThread::currentThread() == thread()) {
             syncFromState(flags);
             return;
@@ -311,19 +312,19 @@ void RenderPanel::syncFromState(UpdateFlags flags)
         rebuildHistogramPixmap();
     }
 
-    if (HasFlag(flags, UpdateFlags::RenderMode) || flags == UpdateFlags::All) {
+    /*if (HasFlag(flags, UpdateFlags::RenderMode) || flags == UpdateFlags::All) {
         const int mode = static_cast<int>(state_->GetPrimary3DMode());
         const int index = renderMode_->findData(mode);
         if (index >= 0) {
             renderMode_->setCurrentIndex(index);
         }
-    }
+    }*/
 
     if (HasFlag(flags, UpdateFlags::Visibility) || flags == UpdateFlags::All) {
         const std::uint32_t mask = state_->GetVisibilityMask();
-        clipPlanesToggle_->setChecked((mask & VisFlags::ClipPlanes) != 0);
+        clipPlanesToggle_->setChecked((mask & VisFlags::Planes3D) != 0);
         crosshairToggle_->setChecked((mask & VisFlags::Crosshair) != 0);
-		rulerAxesToggle_->setChecked((mask & VisFlags::RulerAxes) != 0);
+		rulerAxesToggle_->setChecked((mask & VisFlags::Ruler) != 0);
     }
 
     if (HasFlag(flags, UpdateFlags::IsoValue) || flags == UpdateFlags::All) {
@@ -337,13 +338,13 @@ void RenderPanel::syncFromState(UpdateFlags flags)
         isoValueLabel_->setText(QStringLiteral("阈值: %1").arg(iso, 0, 'f', 2));
     }
 
-    if (HasFlag(flags, UpdateFlags::IsoQuality) || flags == UpdateFlags::All) {
+  /*  if (HasFlag(flags, UpdateFlags::IsoQuality) || flags == UpdateFlags::All) {
         const int quality = static_cast<int>(state_->GetIsoRenderQuality());
         const int index = isoQuality_->findData(quality);
         if (index >= 0) {
             isoQuality_->setCurrentIndex(index);
         }
-    }
+    }*/
 
     if (HasFlag(flags, UpdateFlags::WindowLevel)
         || HasFlag(flags, UpdateFlags::DataReady)

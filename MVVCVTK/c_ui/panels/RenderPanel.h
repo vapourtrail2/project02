@@ -8,7 +8,7 @@
 #include <QWidget>
 #include <memory>
 
-#include "AppState.h"
+#include "core/MVVCVTK/MVVCVTK/AppState.h"
 
 struct AppSession;
 class VolumeAnalysisService;
@@ -24,6 +24,10 @@ public:
     void setSharedState(const std::shared_ptr<SharedInteractionState>& state);
     void setAnalysisService(const std::shared_ptr<VolumeAnalysisService>& analysis);
 	void setToolMode(const QString& mode); 
+
+signals:
+    void primary3DModeRequested(VizMode mode);
+
 protected:
     void resizeEvent(QResizeEvent* e) override;
 

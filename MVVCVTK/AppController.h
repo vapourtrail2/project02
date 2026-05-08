@@ -3,19 +3,23 @@
 #include <array>
 #include <memory>
 #include <QString>
-#include "DataManager.h"
-#include "AppState.h"
-#include "AppService.h"
-#include "VolumeAnalysisService.h"
-#include <atomic>
 
+#include "core/MVVCVTK/MVVCVTK/DataManager.h"
+#include "core/MVVCVTK/MVVCVTK/AppState.h"  
+#include "core/MVVCVTK/MVVCVTK/AppService.h"
+#include "core/MVVCVTK/MVVCVTK/VolumeAnalysisService.h"
+//把这一套后端对象，也就是后端的原子操作组起来 变成session 保持同步 供ui使用 其实也就是会话层
+//打开文件
+//创建当前这次加载所需要的后端对象
+//保存“当前数据会话”
+//把这次会话交给各个页面
 struct AppSession
 {
     std::shared_ptr<AbstractDataManager> dataMgr;
-    std::shared_ptr<SharedInteractionState> sharedState;
-    std::shared_ptr<VolumeAnalysisService> analysisService;
+    std::shared_ptr<SharedInteractionState> sharedState; // ban makeshare
+    std::shared_ptr<VolumeAnalysisService> analysisService; // std::function<void(bool)> 
 	std::shared_ptr<MedicalVizService> service;
-    QString sourcePath;
+    QString sourcePath; // ban
 };
 
 class AppController : public QObject
@@ -32,7 +36,7 @@ public:
         const std::array<int, 3>& dims,
         const std::array<float, 3>& spacing,
         const std::array<float, 3>& origin,
-        const QString& sourcePath,
+        const QString& sourcePath,  
         QString* errorOut = nullptr);
 
     void clearSession();
@@ -42,7 +46,6 @@ signals:
 
 private:
     std::shared_ptr<AbstractDataManager> createDataManagerForPath(const QString& path) const;
-    bool finalizeSession(const std::shared_ptr<AppSession>& newSession, QString* errorOut);
 
     std::shared_ptr<AppSession> m_session;
 };

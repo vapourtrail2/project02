@@ -1,6 +1,6 @@
 ﻿#include "c_ui/qt/interaction/handlers/3DViewerHandler.h"
 
-#include "AppInterfaces.h"
+#include "core/MVVCVTK/MVVCVTK/AppInterfaces.h"
 #include <vtkActor.h>
 #include <vtkCommand.h>
 #include <vtkPropPicker.h>
@@ -61,7 +61,7 @@ InteractionResult Viewer3DHandler::Handle(const InteractionEvent& eve)
                 rw->SetDesiredUpdateRate(0.001);
             }
             m_service->SetInteracting(false);
-            m_service->MarkDirty();
+            m_service->SetDirtyMarked();
             m_isDragging = false;
             m_dragAxis = -1;
             m_lastMouseX = -1;
@@ -125,14 +125,13 @@ InteractionResult Viewer3DHandler::Handle(const InteractionEvent& eve)
             return { true, true };
         }
 
-        //鼠标位移映射为slice增量
-        //if (m_dragAxis == 1 || m_dragAxis == 2 || m_dragAxis == 0 ) {
-        //    sliceDelta = -sliceDelta;
-        //}
+        m_service->SetSliceScrolled(sliceDelta);//修改
+        if (m_renderer) {
+            if (auto* rw = m_renderer->GetRenderWindow()) {
+                rw->Render();
+            }
+        }
 
-
-        m_service->UpdateInteractionAxis(m_dragAxis, sliceDelta);
-        m_service->PresentFrame();
         return { true, true };
     }
 

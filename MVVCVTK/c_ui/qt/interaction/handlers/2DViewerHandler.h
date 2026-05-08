@@ -20,9 +20,14 @@ private:
     bool m_enableDragCrosshair = false;
     bool m_enableDragWindowLevel = false;
 
-    int m_lastDragX = 0;
-    int m_lastDragY = 0;
+    /*int m_lastDragX = 0;
+    int m_lastDragY = 0;*/
 
     int m_crosshairMoveLogTick = 0;
     int m_windowLevelMoveLogTick = 0;
+
+    int m_windowLevelStartX = 0;
+    int m_windowLevelStartY = 0;
+    double m_startWindowWidth = 1.0;
+    double m_startWindowCenter = 0.0;
 };

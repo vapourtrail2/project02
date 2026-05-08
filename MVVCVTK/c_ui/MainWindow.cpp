@@ -121,6 +121,7 @@ void CTViewer::wireConnect() {
 	connectAngelSignals();
     connectAppSignals();
     connectWindowButtonSignals();
+    connectRenderSwitchSignals();
 }
 
 void CTViewer::buildTitleBar(QWidget* topBarContainer, QVBoxLayout* topBarLayout) 
@@ -468,6 +469,16 @@ void CTViewer::connectAppSignals() {
         });
 }
 
+void CTViewer::connectRenderSwitchSignals()
+{
+    connect(renderPanel_, &RenderPanel::primary3DModeRequested, this, [this](VizMode mode) {
+        if (mprViews_) {
+            mprViews_->setPrimary3DMode(mode);
+        }
+        });
+}
+
+
 //架构优化 buildxxx 和 applyxxx分离，build只负责算，apply只负责改界面 
 UiState CTViewer::buildUiState(int index) const{
     UiState state;
@@ -538,6 +549,8 @@ void CTViewer::onOpenRequested(const QString& path) {
     QString err;
 
     const bool ok = workspaceFlow_ && workspaceFlow_->openFile(path, &err);
+	// 写一个等待事件，判断sessionChanged信号里发来的状态，
+    // 如果在合理时间内没有收到或者收到的状态是失败的，就提示用户可能打开失败了
     if (!ok) {
         const QString msg = err.isEmpty() ? QStringLiteral("打开失败") : err;
         statusBar()->showMessage(msg, 3000);

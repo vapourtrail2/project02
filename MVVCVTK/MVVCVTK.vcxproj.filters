@@ -148,16 +148,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="DataManager.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="MemMappedFile.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="VisualStrategies.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="AppService.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="c_ui\main.cpp">
@@ -250,7 +241,37 @@
     <ClCompile Include="c_ui\nav\WorkspaceFlow.cpp">
       <Filter>c_ui\nav</Filter>
     </ClCompile>
-    <ClCompile Include="DataConverters.cpp">
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\AppService.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\ColoredPlanesStrategy.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\CompositeStrategy.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\DataConverters.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\DataManager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\ImageProcessor.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\IsHomogen.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\IsoSurfaceStrategy.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\MultiSliceStrategy.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\SliceStrategy.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\VolumeStrategy.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

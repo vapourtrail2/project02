@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "AppInterfaces.h"
+#include "core/MVVCVTK/MVVCVTK/AppInterfaces.h"
 #include <string>
 
 class vtkRenderWindowInteractor;

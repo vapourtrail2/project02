@@ -3,9 +3,9 @@
 #include <QPointer>
 
 #include <memory>
-#include "AppService.h"
-#include "DataManager.h"
-#include "AppState.h"
+#include "core/MVVCVTK/MVVCVTK/AppService.h"
+#include "core/MVVCVTK/MVVCVTK/DataManager.h"
+#include "core/MVVCVTK/MVVCVTK/AppState.h"
 #include "c_ui/qt/QtRenderContext.h"
 
 class ReconstructPage : public QWidget
@@ -19,13 +19,15 @@ public:
 
 public:
     void setToolMode(ToolMode mode);
+	void setPrimary3DMode(VizMode mode);
 
 private:
     void buildUi();
-    void applyPrimary3DMode(VizMode mode);
     void refreshViews();
 
-
+    void applyPrimary3DMode(VizMode mode);
+    void request3DRebuildFromCurrentImage();
+        
     QPointer<QWidget> viewAxial_;
     QPointer<QWidget> viewSagittal_;
     QPointer<QWidget> viewCoronal_;
@@ -43,5 +45,6 @@ private:
     std::shared_ptr<QtRenderContext>   m_ctxSagittal;
     std::shared_ptr<MedicalVizService> m_svc3D;
     std::shared_ptr<QtRenderContext>   m_ctx3D;
-    VizMode m_current3DMode = static_cast<VizMode>(-1);
+
+    VizMode m_current3DMode = VizMode::CompositeIsoSurface;
 };

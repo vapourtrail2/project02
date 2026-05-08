@@ -1,7 +1,6 @@
 #pragma once
 
-#include "AppInterfaces.h"
-//#include "core/MVVCVTK/MVVCVTK/AppInterfaces.h"
+#include "core/MVVCVTK/MVVCVTK/AppInterfaces.h"
 #include "c_ui/qt/interaction/InteractionRouter.h"
 #include <QEvent>
 #include <QObject>
@@ -28,21 +27,21 @@ public:
     ~QtRenderContext() override;
 
     void SetQtWidget(QVTKOpenGLNativeWidget* widget);
-    void Start() override;
-    void SetInteractionMode(VizMode mode) override;
+    void SetStarted() override;
+    void SetCameraStyleByVizMode(VizMode mode) override;
     void SetToolMode(ToolMode mode);
-    void BindService(std::shared_ptr<AbstractAppService> service) override;
+    void SetServiceBound(std::shared_ptr<AbstractAppService> service) override;
     void ToggleOrientationAxes(bool show);
+    void SetInteractorInitialized() override;//≤π…œ
 
 protected:
-    void HandleVTKEvent(vtkObject* caller, long unsigned int eventId, void* callData) override;
+    void SetVTKEventHandled(vtkObject* caller, long unsigned int eventId, void* callData) override;
 
 private:
     void SetupObservers();
     void TeardownObservers();
     void BuildInteractionRouter();
     void DetachRendererFromWindow();
-    void UpdatePresentCallback();
     bool HandleQtInputEvent(QEvent* event);
     void InstallQtEventFilter();
     void RemoveQtEventFilter();

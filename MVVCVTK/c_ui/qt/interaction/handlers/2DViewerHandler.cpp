@@ -1,6 +1,6 @@
 ﻿#include "c_ui/qt/interaction/handlers/2DViewerHandler.h"
-#include "AppInterfaces.h"
-#include <QDebug>
+#include "core/MVVCVTK/MVVCVTK/AppInterfaces.h"
+
 #include <vtkCellPicker.h>
 #include <vtkCommand.h>
 #include <vtkRenderer.h>
@@ -12,23 +12,20 @@
 namespace {
 bool IsSliceMode(VizMode mode)
 {
-    return mode == VizMode::SliceAxial
-        || mode == VizMode::SliceCoronal
-        || mode == VizMode::SliceSagittal;
+    return mode == VizMode::SliceTop_down
+        || mode == VizMode::SliceFront_back
+        || mode == VizMode::SliceLeft_right;
 }
 
 const char* ToModeName(VizMode mode)
-{
+    {
     switch (mode) {
-    case VizMode::SliceAxial: return "Axial";
-    case VizMode::SliceCoronal: return "Coronal";
-    case VizMode::SliceSagittal: return "Sagittal";
+    case VizMode::SliceTop_down: return "Axial";
+    case VizMode::SliceFront_back: return "Coronal";
+    case VizMode::SliceLeft_right: return "Sagittal";
     default: return "Other";
     }
-}
-
-constexpr double kWWSensitivity = 2.0;
-constexpr double kWCSensitivity = 2.0;
+    }
 }
 
 Viewer2DHandler::Viewer2DHandler(AbstractInteractiveService* service, vtkCellPicker* picker, vtkRenderer* renderer)
@@ -48,7 +45,7 @@ InteractionResult Viewer2DHandler::Handle(const InteractionEvent& eve)
         || eve.vtkEventId == vtkCommand::MouseWheelBackwardEvent) {
         const int step = eve.ctrl ? 5 : 1;
         const int delta = (eve.vtkEventId == vtkCommand::MouseWheelForwardEvent) ? step : -step;
-        m_service->UpdateInteraction(delta);
+        m_service->SetSliceScrolled(delta);
         return { true, true };
     }
 
@@ -73,12 +70,19 @@ InteractionResult Viewer2DHandler::Handle(const InteractionEvent& eve)
         //normal rightbutton
         return {};
     }
-
+    
+    //替换交互
     if (eve.vtkEventId == vtkCommand::LeftButtonPressEvent && !eve.shift) {
         m_enableDragWindowLevel = true;
         m_windowLevelMoveLogTick = 0;
-        m_lastDragX = eve.x;
-        m_lastDragY = eve.y;
+
+        m_windowLevelStartX = eve.x;
+        m_windowLevelStartY = eve.y;
+
+        const auto wl = m_service->GetWindowLevel();
+        m_startWindowWidth = wl.windowWidth;
+        m_startWindowCenter = wl.windowCenter;
+
         m_service->SetInteracting(true);
         return { true, true };
     }
@@ -95,7 +99,7 @@ InteractionResult Viewer2DHandler::Handle(const InteractionEvent& eve)
                 return {};
             }
 
-            const auto cursorWorld = m_service->GetCursorWorldPosition();
+            const auto cursorWorld = m_service->GetCursorWorld();//change
             m_renderer->SetWorldPoint(cursorWorld[0], cursorWorld[1], cursorWorld[2], 1.0);
             m_renderer->WorldToDisplay();
             double* displayPoint = m_renderer->GetDisplayPoint();
@@ -118,28 +122,44 @@ InteractionResult Viewer2DHandler::Handle(const InteractionEvent& eve)
             };
 
             int fixedAxis = 2;
-            if (eve.vizMode == VizMode::SliceCoronal) {
+            if (eve.vizMode == VizMode::SliceFront_back) {
                 fixedAxis = 1;
             }
-            else if (eve.vizMode == VizMode::SliceSagittal) {
+            else if (eve.vizMode == VizMode::SliceLeft_right) {
                 fixedAxis = 0;
             }
 
             ++m_crosshairMoveLogTick;
 
-            m_service->SyncCursorToWorldPosition(worldPos, fixedAxis);
+            m_service->SetCursorWorldPosition(worldPos, fixedAxis);
             return { true, true };
         }
-
+        
+		//调整窗宽窗位
         if (m_enableDragWindowLevel) {
-            const int dx = eve.x - m_lastDragX;
-            const int dy = eve.y - m_lastDragY;
-            m_lastDragX = eve.x;
-            m_lastDragY = eve.y;
+            const int totalDx = eve.x - m_windowLevelStartX;
+            const int totalDy = eve.y - m_windowLevelStartY;
+
+            int viewWidth = 1;
+            int viewHeight = 1;
+            if (m_renderer && m_renderer->GetRenderWindow()) {
+                int* size = m_renderer->GetRenderWindow()->GetSize();
+                if (size) {
+                    viewWidth = std::max(1, size[0]);     
+                    viewHeight = std::max(1, size[1]);
+                }
+            }
 
             ++m_windowLevelMoveLogTick;
 
-            m_service->AdjustWindowLevel(dx * kWWSensitivity, dy * kWCSensitivity);
+            m_service->SetWindowLevelAdjusted(
+                totalDx,
+                totalDy,
+                viewWidth,
+                viewHeight,
+                m_startWindowWidth,
+                m_startWindowCenter);
+
             return { true, true };
         }
 
