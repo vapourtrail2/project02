@@ -1,7 +1,7 @@
 #include "c_ui/qt/QtRenderContext.h"
-#include "c_ui/qt/interaction/handlers/2DViewerHandler.h"
-#include "c_ui/qt/interaction/handlers/3DViewerHandler.h"
-#include "c_ui/qt/interaction/handlers/TimeUpdateHandler.h"
+#include "core/MVVCVTK/MVVCVTK/Viewer2DHandler.h"
+#include "core/MVVCVTK/MVVCVTK/Viewer3DHandler.h"
+#include "core/MVVCVTK/MVVCVTK/TimeUpdateHandler.h"
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <memory>
@@ -9,7 +9,6 @@
 #include <vtkCommand.h>
 #include <vtkProp3D.h>
 #include <vtkRenderWindow.h>
-
 
 namespace {
 class WidgetInputFilter : public QObject
@@ -274,14 +273,24 @@ void QtRenderContext::TeardownObservers()
 
 void QtRenderContext::BuildInteractionRouter()
 {
-    m_interactionRouter.Clear();
-    if (!m_interactiveService) {
-        return;
-    }
+    m_interactionRouter.SetHandlersCleared();
 
-    m_interactionRouter.Add(std::make_unique<TimeUpdateHandler>(m_interactiveService.get(), m_renderWindow.GetPointer()));
-    m_interactionRouter.Add(std::make_unique<Viewer2DHandler>(m_interactiveService.get(), m_slicePicker.GetPointer(), m_renderer.GetPointer()));
-    m_interactionRouter.Add(std::make_unique<Viewer3DHandler>(m_interactiveService.get(), m_picker.GetPointer(), m_renderer.GetPointer()));
+    m_interactionRouter.SetHandlerAdded(
+        std::make_unique<TimeUpdateHandler>(
+            m_interactiveService.get(),
+            m_renderWindow.GetPointer()));
+
+    m_interactionRouter.SetHandlerAdded(
+        std::make_unique<Viewer2DHandler>(
+            m_interactiveService.get(),
+            m_picker.GetPointer(),
+            m_renderer.GetPointer()));
+
+    m_interactionRouter.SetHandlerAdded(
+        std::make_unique<Viewer3DHandler>(
+            m_interactiveService.get(),
+            m_picker.GetPointer(),
+            m_renderer.GetPointer()));
 }
 
 void QtRenderContext::SetInteractorInitialized()//基类纯虚 在这里实现
@@ -454,7 +463,7 @@ void QtRenderContext::SetVTKEventHandled(vtkObject* caller, long unsigned int ev
     const RouterDispatchMode dispatchMode =
         (eventId == vtkCommand::TimerEvent) ? RouterDispatchMode::Broadcast : RouterDispatchMode::FirstMatch;
 
-    const InteractionResult result = m_interactionRouter.Dispatch(event, dispatchMode);
+    const InteractionResult result = m_interactionRouter.GetDispatchResult(event, dispatchMode);
     if (IsSliceMode(m_currentMode)
         && eventId != vtkCommand::TimerEvent
         && (eventId == vtkCommand::RightButtonPressEvent

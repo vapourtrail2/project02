@@ -13,7 +13,6 @@
 #include <QListWidgetItem>
 #include <QFileDialog>
 #include <QDialog>
-#include "AppState.h"
 
 DocumentPage::DocumentPage(QWidget* parent)
     : QWidget(parent)

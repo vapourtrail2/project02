@@ -172,14 +172,38 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <QtMoc Include="AppController.h" />
-    <ClInclude Include="AppTypes.h" />
-    <ClInclude Include="AppInterfaces.h" />
-    <ClInclude Include="AppService.h" />
-    <ClInclude Include="AppState.h" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\InteractionRouter.cpp" />
     <ClCompile Include="core\MVVCVTK\MVVCVTK\MemMappedFile.cpp" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\AppInterfaces.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\AppService.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\AppState.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\AppTypes.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\BaseVisualStrategy.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\ColoredPlanesStrategy.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\CompositeStrategy.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\DataConverters.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\DataManager.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\IInteractionHandler.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\ImageProcessor.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\InteractionEvent.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\InteractionResult.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\InteractionRouter.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\IsHomogen.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\IsoSurfaceStrategy.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\MemMappedFile.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\MultiSliceStrategy.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\SliceStrategy.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\StrategyFactory.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\SurfaceRefiner.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\TimeUpdateHandler.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\Viewer2DHandler.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\Viewer3DHandler.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\VoidDetector.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\VolumeAnalysisService.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\VolumeBuffer.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\VolumeStrategy.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\VolumeTransformService.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="VolumeAnalysisService.h" />
-    <ClInclude Include="VolumeTransformService.h" />
     <QtMoc Include="c_ui\app\app.h" />
     <QtMoc Include="c_ui\MainWindow.h" />
     <QtMoc Include="c_ui\panels\SceneTreePanel.h" />
@@ -187,13 +211,6 @@
     <ClInclude Include="c_ui\nav\TabMap.h" />
     <ClInclude Include="c_ui\nav\UIState.h" />
     <ClInclude Include="c_ui\nav\WorkspaceFlow.h" />
-    <ClInclude Include="c_ui\qt\interaction\handlers\2DViewerHandler.h" />
-    <ClInclude Include="c_ui\qt\interaction\handlers\3DViewerHandler.h" />
-    <ClInclude Include="c_ui\qt\interaction\handlers\TimeUpdateHandler.h" />
-    <ClInclude Include="c_ui\qt\interaction\IInteractionHandler.h" />
-    <ClInclude Include="c_ui\qt\interaction\InteractionEvent.h" />
-    <ClInclude Include="c_ui\qt\interaction\InteractionResult.h" />
-    <ClInclude Include="c_ui\qt\interaction\InteractionRouter.h" />
     <ClInclude Include="c_ui\qt\QtRenderContext.h" />
     <QtMoc Include="c_ui\workbenches\AlignmentPage.h" />
     <QtMoc Include="c_ui\workbenches\AnalysisPage.h" />
@@ -224,10 +241,6 @@
     <QtMoc Include="c_ui\workbenches\StartPage.h" />
     <QtMoc Include="c_ui\workbenches\VolumePage.h" />
     <QtMoc Include="c_ui\workbenches\WindowPage.h" />
-    <ClInclude Include="DataConverters.h" />
-    <ClInclude Include="DataManager.h" />
-    <ClInclude Include="StrategyFactory.h" />
-    <ClInclude Include="VisualStrategies.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppController.cpp" />
@@ -241,6 +254,9 @@
     <ClCompile Include="core\MVVCVTK\MVVCVTK\IsoSurfaceStrategy.cpp" />
     <ClCompile Include="core\MVVCVTK\MVVCVTK\MultiSliceStrategy.cpp" />
     <ClCompile Include="core\MVVCVTK\MVVCVTK\SliceStrategy.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\TimeUpdateHandler.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\Viewer2DHandler.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\Viewer3DHandler.cpp" />
     <ClCompile Include="core\MVVCVTK\MVVCVTK\VolumeStrategy.cpp" />
     <ClCompile Include="c_ui\app\app.cpp" />
     <ClCompile Include="c_ui\main.cpp" />
@@ -249,10 +265,6 @@
     <ClCompile Include="c_ui\nav\WorkspaceFlow.cpp" />
     <ClCompile Include="c_ui\panels\RenderPanel.cpp" />
     <ClCompile Include="c_ui\panels\SceneTreePanel.cpp" />
-    <ClCompile Include="c_ui\qt\interaction\handlers\2DViewerHandler.cpp" />
-    <ClCompile Include="c_ui\qt\interaction\handlers\3DViewerHandler.cpp" />
-    <ClCompile Include="c_ui\qt\interaction\handlers\TimeUpdateHandler.cpp" />
-    <ClCompile Include="c_ui\qt\interaction\InteractionRouter.cpp" />
     <ClCompile Include="c_ui\qt\QtRenderContext.cpp" />
     <ClCompile Include="c_ui\workbenches\AlignmentPage.cpp" />
     <ClCompile Include="c_ui\workbenches\AnalysisPage.cpp" />
