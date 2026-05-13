@@ -3,11 +3,11 @@
 #include <array>
 #include <memory>
 #include <QString>
-
-#include "core/MVVCVTK/MVVCVTK/DataManager.h"
-#include "core/MVVCVTK/MVVCVTK/AppState.h"  
-#include "core/MVVCVTK/MVVCVTK/AppService.h"
-#include "core/MVVCVTK/MVVCVTK/VolumeAnalysisService.h"
+#include "Data/DataManager.h"
+#include "App/AppInterfaces.h"
+#include "App/AppState.h"  
+#include "Service/AppService.h"
+#include "Service/VolumeAnalysisService.h"
 //把这一套后端对象，也就是后端的原子操作组起来 变成session 保持同步 供ui使用 其实也就是会话层
 //打开文件
 //创建当前这次加载所需要的后端对象
@@ -15,7 +15,7 @@
 //把这次会话交给各个页面
 struct AppSession
 {
-    std::shared_ptr<AbstractDataManager> dataMgr;
+    std::shared_ptr<AbstractDataManager> dataMgr;//用抽象接口
     std::shared_ptr<SharedInteractionState> sharedState; // ban makeshare
     std::shared_ptr<VolumeAnalysisService> analysisService; // std::function<void(bool)> 
 	std::shared_ptr<MedicalVizService> service;

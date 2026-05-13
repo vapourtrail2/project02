@@ -1,7 +1,5 @@
 ﻿#include "AppController.h"
-#include "core/MVVCVTK/MVVCVTK/AppService.h"
 #include <QFileInfo>
-#include <QDebug>
 #include <qapplication.h>
 
 //会话协调层，负责管理 AppSession 的生命周期和状态转换
@@ -39,6 +37,7 @@ bool AppController::openFile(const QString& path, QString* errorOut)
 	newSession->analysisService = std::make_shared<VolumeAnalysisService>(newSession->dataMgr);
     
 	auto weakSession = std::weak_ptr<AppSession>(newSession);
+    
     newSession->service->SetFileLoadedAsync(p.toStdString(),
         [weakSession](bool ok)
         {
@@ -92,7 +91,7 @@ bool AppController::openReconstructedData(
     
 	// 弱引用，用于托管回调中的 this 指针，避免循环引用导致内存泄漏
 	auto weakSession = std::weak_ptr<AppSession>(newSession);
-    const bool started = newSession->service->SetFromBufferAsync(data, dims, spacing, origin, [weakSession]
+    const bool started = newSession->service->SetReloadFromBufferAsync(data, dims, spacing, origin, [weakSession]
     (bool ok) 
         {
             // 同上

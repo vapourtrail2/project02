@@ -15,7 +15,7 @@
 #include <cmath>
 
 #include "AppController.h"
-#include "core/MVVCVTK/MVVCVTK/VolumeAnalysisService.h"
+#include "Service/VolumeAnalysisService.h"
 
 static inline double clamp01(double v)
 {
@@ -30,7 +30,9 @@ RenderPanel::RenderPanel(QWidget* parent)
     auto* v = new QVBoxLayout(this);
     v->setContentsMargins(6, 6, 6, 6);
     v->setSpacing(8);
+
     // 直方图屏蔽，不能用死数据
+    // 直方图区域
     auto* histGroup = new QGroupBox(QStringLiteral("直方图"), this);
     histGroup->setStyleSheet(
         "QGroupBox{color:#ddd; border:1px solid #333; margin-top:8px;}"
@@ -45,8 +47,10 @@ RenderPanel::RenderPanel(QWidget* parent)
     histLabel_->setAlignment(Qt::AlignCenter);
     histLabel_->setStyleSheet("QLabel{background:#111; border:1px solid #444; color:#888;}");
     hv->addWidget(histLabel_);
+
     v->addWidget(histGroup);
 
+    //调节区域
     auto* isoGroup = new QGroupBox(QStringLiteral("调节"), this);
     isoGroup->setStyleSheet(
         "QGroupBox{color:#ddd; border:1px solid #333; margin-top:8px;}"
@@ -57,20 +61,14 @@ RenderPanel::RenderPanel(QWidget* parent)
     isoValueLabel_ = new QLabel(QStringLiteral("阈值: -"), isoGroup);
     isoSlider_ = new QSlider(Qt::Horizontal, isoGroup);
     isoSlider_->setRange(0, 1000);
-    isoQuality_ = new QComboBox(isoGroup);
-    //isoQuality_->addItem(QStringLiteral("快速"), static_cast<int>(IsoRenderQuality::Fast));
-    //isoQuality_->addItem(QStringLiteral("高质量"), static_cast<int>(IsoRenderQuality::HighQuality));
+    
     // 用我提供的降采样接口
     iv->addWidget(isoValueLabel_);
     iv->addWidget(isoSlider_);
-
-   /* auto* qualityRow = new QHBoxLayout();
-    qualityRow->addWidget(new QLabel(QStringLiteral("质量"), isoGroup));
-    qualityRow->addWidget(isoQuality_, 1);
-    iv->addLayout(qualityRow);*/
     v->addWidget(isoGroup);
 
-    auto* wlGroup = new QGroupBox(QStringLiteral("窗宽/窗位"), this);
+    //设置区域
+    auto* wlGroup = new QGroupBox(QStringLiteral("设置"), this);
     wlGroup->setStyleSheet(
         "QGroupBox{color:#ddd; border:1px solid #333; margin-top:8px;}"
         "QGroupBox::title{subcontrol-origin: margin; left:8px;}"
@@ -146,15 +144,13 @@ RenderPanel::RenderPanel(QWidget* parent)
 
         const double iso = sliderToIso(value);
         isoValueLabel_->setText(QStringLiteral("阈值: %1").arg(iso, 0, 'f', 2));
+        state_->SetIsoValue(iso);
     });
 
     connect(isoSlider_, &QSlider::sliderReleased, this, [this, sliderToIso]() {
         if (!state_ || updatingUi_) {
             return;
         }
-
-        const double iso = sliderToIso(isoSlider_->value());
-        state_->SetIsoValue(iso);
         state_->SetInteracting(false);
     });
 
@@ -188,16 +184,8 @@ RenderPanel::RenderPanel(QWidget* parent)
     };
 
     connect(windowWidthSlider_, &QSlider::sliderReleased, this, finishWindowLevelInteraction);
+
     connect(windowCenterSlider_, &QSlider::sliderReleased, this, finishWindowLevelInteraction);
-
-  /*  connect(isoQuality_, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int index) {
-        if (!state_ || updatingUi_ || index < 0) {
-            return;
-        }
-
-        const auto quality = static_cast<IsoRenderQuality>(isoQuality_->itemData(index).toInt());
-        state_->SetIsoRenderQuality(quality);
-    });*/
 
     connect(renderMode_, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int index) {
         if (!state_ || updatingUi_ || index < 0) {
@@ -264,7 +252,6 @@ void RenderPanel::setSharedState(const std::shared_ptr<SharedInteractionState>& 
         isoSlider_->setValue(0);
         windowWidthSlider_->setValue(0);
         windowCenterSlider_->setValue(0);
-        isoQuality_->setCurrentIndex(0);
         renderMode_->setCurrentIndex(0);
         clipPlanesToggle_->setChecked(true);
         crosshairToggle_->setChecked(true);
@@ -338,14 +325,6 @@ void RenderPanel::syncFromState(UpdateFlags flags)
         isoValueLabel_->setText(QStringLiteral("阈值: %1").arg(iso, 0, 'f', 2));
     }
 
-  /*  if (HasFlag(flags, UpdateFlags::IsoQuality) || flags == UpdateFlags::All) {
-        const int quality = static_cast<int>(state_->GetIsoRenderQuality());
-        const int index = isoQuality_->findData(quality);
-        if (index >= 0) {
-            isoQuality_->setCurrentIndex(index);
-        }
-    }*/
-
     if (HasFlag(flags, UpdateFlags::WindowLevel)
         || HasFlag(flags, UpdateFlags::DataReady)
         || flags == UpdateFlags::All) {
@@ -414,6 +393,7 @@ void RenderPanel::rebuildHistogramPixmap()
     histPixmap_ = QPixmap::fromImage(image);
     applyHistogramPixmap();
 }
+
 void RenderPanel::applyHistogramPixmap()
 {
     if (histPixmap_.isNull()) {

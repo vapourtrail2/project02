@@ -1,9 +1,7 @@
 #include "ReconstructPage.h"
-
 #include <QGridLayout>
 #include <QMetaObject>
 #include <QWidget>
-
 #include <QVTKOpenGLNativeWidget.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
@@ -92,23 +90,43 @@ void ReconstructPage::initWithData(
     m_svc3D->SetVizMode(m_current3DMode);
 	m_ctx3D->SetCameraStyleByVizMode(m_current3DMode);
     
-    if (m_dataMgr) {
-        if (m_dataMgr->GetVtkImage()!= nullptr) {
-			auto img = m_dataMgr->GetVtkImage();
+	//加这个的目的是为了在数据准备好或者spacing改变时刷新界面，之前的版本是直接在外面调用refreshViews()，但这样可能会有时序问题，导致界面没有及时更新。通过设置观察者，当数据准备好或者spacing改变时自动调用refreshViews()，可以确保界面始终与数据状态保持同步。
+    m_sharedState->SetObserver(m_lifeToken, [this](UpdateFlags flags) {
+        const bool needsRefresh =
+            HasFlag(flags, UpdateFlags::All);
+
+        if (!needsRefresh) {
+			return;
+        }
+
+        QMetaObject::invokeMethod(this, [this]() {
+            refreshViews();
+            }, Qt::QueuedConnection);
+        });
+
+    //可能是GetVtkImage()!= nullptr那个问题
+	auto img = m_dataMgr->GetVtkImage();
+    if (img) {
+        int dims[3] = { 0,0,0 };
+        img->GetDimensions(dims);
+        if (dims[0] > 0 && dims[1] > 0 && dims[2] > 0) {
             double range[2];
-			double spacing[3];
+            double spacing[3];
             img->GetScalarRange(range);
-			img->GetSpacing(spacing);
-            m_sharedState->SetDataReady(range[0], range[1],
-                { spacing[0], spacing[1], spacing[2] });
+            img->GetSpacing(spacing);
+            m_sharedState->SetFileDataReady(
+                range[0], 
+                range[1],
+               { spacing[0], spacing[1], spacing[2] });
         }
     }
-    refreshViews();
-
+    
     if (m_ctxAxial) m_ctxAxial->SetStarted();
     if (m_ctxCoronal) m_ctxCoronal->SetStarted();
     if (m_ctxSagittal) m_ctxSagittal->SetStarted();
     if (m_ctx3D) m_ctx3D->SetStarted();
+
+    refreshViews();
 }
 
 void ReconstructPage::refreshViews()
@@ -123,8 +141,6 @@ void ReconstructPage::refreshViews()
     if (m_ctxSagittal) m_ctxSagittal->SetRendered();
     if (m_ctx3D) m_ctx3D->SetRendered();
 }
-
-
 
 void ReconstructPage::setToolMode(ToolMode mode)
 {
@@ -186,7 +202,7 @@ void ReconstructPage::request3DRebuildFromCurrentImage()
 	img->GetScalarRange(range);
     img->GetSpacing(spacing);
 
-    m_sharedState->SetDataReady(range[0], range[1],
+    m_sharedState->SetReloadDataReady(range[0], range[1],
 		{ spacing[0], spacing[1], spacing[2] });
 
 	m_sharedState->SetWindowLevel(w1.windowWidth,w1.windowCenter);

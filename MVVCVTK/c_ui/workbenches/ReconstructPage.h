@@ -1,11 +1,10 @@
 #pragma once
 #include <QWidget>
 #include <QPointer>
-
 #include <memory>
-#include "core/MVVCVTK/MVVCVTK/AppService.h"
-#include "core/MVVCVTK/MVVCVTK/DataManager.h"
-#include "core/MVVCVTK/MVVCVTK/AppState.h"
+#include "Service/AppService.h"
+#include "Data/DataManager.h"
+#include "App/AppState.h"
 #include "c_ui/qt/QtRenderContext.h"
 
 class ReconstructPage : public QWidget

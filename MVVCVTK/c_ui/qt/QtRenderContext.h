@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/MVVCVTK/MVVCVTK/AppInterfaces.h"
-#include "core/MVVCVTK/MVVCVTK/InteractionRouter.h"
+#include "App/AppInterfaces.h"
+#include "Interaction/InteractionRouter.h"
 #include <QEvent>
 #include <QObject>
 #include <QPointer>

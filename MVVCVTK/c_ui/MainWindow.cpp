@@ -12,7 +12,6 @@
 #include "c_ui/workbenches/ReportPage.h"
 #include "c_ui/workbenches/WindowPage.h"
 #include "c_ui/workbenches/AnimationPage.h"
-#include "c_ui/workbenches/PerformancePage.h"
 #include "c_ui/workbenches/ReconstructPage.h"
 #include "AppController.h"
 #include "c_ui/panels/RenderPanel.h"

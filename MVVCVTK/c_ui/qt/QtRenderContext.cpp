@@ -1,7 +1,7 @@
 #include "c_ui/qt/QtRenderContext.h"
-#include "core/MVVCVTK/MVVCVTK/Viewer2DHandler.h"
-#include "core/MVVCVTK/MVVCVTK/Viewer3DHandler.h"
-#include "core/MVVCVTK/MVVCVTK/TimeUpdateHandler.h"
+#include "Interaction/Viewer2DHandler.h"
+#include "Interaction/Viewer3DHandler.h"
+#include "Interaction/TimeUpdateHandler.h"
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <memory>
@@ -326,6 +326,7 @@ void QtRenderContext::SetCameraStyleByVizMode(VizMode mode)
     }
 }
 
+ /*测量需要重写 5/13*/
 void QtRenderContext::SetToolMode(ToolMode mode)
 {
     if (m_toolMode == ToolMode::ModelTransform && m_interactiveService) {
@@ -336,14 +337,6 @@ void QtRenderContext::SetToolMode(ToolMode mode)
 
     m_toolMode = mode;
 
-    //if (mode == ToolMode::distanceclear)
-    //{
-    //    m_distanceWidget->Delete();
-
-    //}
-    //else if (mode == ToolMode::angtleclear) { 
-    //    dele
-    //}
     if (m_distanceWidget) {
         (mode == ToolMode::DistanceMeasure) ? m_distanceWidget->On() : m_distanceWidget->Off();
     }
@@ -368,9 +361,9 @@ void QtRenderContext::SetToolMode(ToolMode mode)
         SetCameraStyleByVizMode(m_currentMode);
     }
 
-    if (m_interactiveService) {
+    /*if (m_interactiveService) {
         m_interactiveService->SetDirty(true);
-    }
+    }*/
 }
 
 void QtRenderContext::SetVTKEventHandled(vtkObject* caller, long unsigned int eventId, void* callData)
@@ -421,7 +414,7 @@ void QtRenderContext::SetVTKEventHandled(vtkObject* caller, long unsigned int ev
         }
         return;
     }
-
+        
     if (m_toolMode == ToolMode::DistanceMeasure || m_toolMode == ToolMode::AngleMeasure) {
         if (eventId == vtkCommand::LeftButtonPressEvent
             || eventId == vtkCommand::LeftButtonReleaseEvent

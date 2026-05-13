@@ -134,7 +134,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>C:\lib\opencv\build\include;$(SolutionDir)libs\include;C:\lib\vtk_install\include\vtk-9.4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Service\GapMeshOverlayService;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Service\MeasureAlgoService;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Utils;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Math\GapAnalysis;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Math\MeasurementAlgo;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Strategies\GapMeshOverlayStrategy;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Strategies\MeasureAlgoStrategy;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Strategies;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Render;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Interaction;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Service;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Data;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\App;$(ProjectDir)core\MVVCVTK\MVVCVTK\include;C:\lib\opencv\build\include;$(SolutionDir)libs\include;C:\lib\vtk_install\include\vtk-9.4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -157,7 +157,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>C:\lib\opencv\build\include;$(SolutionDir)libs\include;C:\lib\vtk_install\include\vtk-9.4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Service\GapMeshOverlayService;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Service\MeasureAlgoService;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Utils;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Math\GapAnalysis;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Math\MeasurementAlgo;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Strategies\GapMeshOverlayStrategy;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Strategies\MeasureAlgoStrategy;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Strategies;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Render;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Interaction;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Service;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Data;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\App;$(ProjectDir)core\MVVCVTK\MVVCVTK\include;C:\lib\opencv\build\include;$(SolutionDir)libs\include;C:\lib\vtk_install\include\vtk-9.4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -172,37 +172,46 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <QtMoc Include="AppController.h" />
-    <ClCompile Include="core\MVVCVTK\MVVCVTK\InteractionRouter.cpp" />
-    <ClCompile Include="core\MVVCVTK\MVVCVTK\MemMappedFile.cpp" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\AppInterfaces.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\AppService.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\AppState.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\AppTypes.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\BaseVisualStrategy.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\ColoredPlanesStrategy.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\CompositeStrategy.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\DataConverters.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\DataManager.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\IInteractionHandler.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\ImageProcessor.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\InteractionEvent.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\InteractionResult.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\InteractionRouter.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\IsHomogen.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\IsoSurfaceStrategy.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\MemMappedFile.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\MultiSliceStrategy.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\SliceStrategy.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\StrategyFactory.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\SurfaceRefiner.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\TimeUpdateHandler.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\Viewer2DHandler.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\Viewer3DHandler.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\VoidDetector.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\VolumeAnalysisService.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\VolumeBuffer.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\VolumeStrategy.h" />
-    <ClInclude Include="core\MVVCVTK\MVVCVTK\VolumeTransformService.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\App\AppInterfaces.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\App\AppState.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\App\AppTypes.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Data\DataConverters.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Data\DataManager.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Interaction\IInteractionHandler.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Interaction\InteractionEvent.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Interaction\InteractionResult.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Interaction\InteractionRouter.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Interaction\TimeUpdateHandler.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Interaction\Viewer2DHandler.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Interaction\Viewer3DHandler.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Math\GapAnalysis\GapAnalysisTypes.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Math\GapAnalysis\SurfaceRefiner.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Math\GapAnalysis\VoidDetector.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Math\GapAnalysis\VolumeBuffer.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Math\MeasurementAlgo\MeasurementTypes.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Render\StdRenderContext.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Render\StrategyFactory.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Service\AppService.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Service\GapMeshOverlayService\GapAnalysisService.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Service\MeasureAlgoService\MeasurementInteractionHost.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Service\MeasureAlgoService\MeasurementService.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Service\VolumeAnalysisService.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Strategies\AngleMeasurementStrategy.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Strategies\BaseVisualStrategy.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Strategies\ColoredPlanesStrategy.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Strategies\CompositeStrategy.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Strategies\GapMeshOverlayStrategy\GapAlgorithmOverlayStrategies.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Strategies\IsoSurfaceStrategy.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Strategies\MeasureAlgoStrategy\IMeasurementStrategy.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Strategies\MeasureAlgoStrategy\LengthMeasurementStrategy.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Strategies\MultiSliceStrategy.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Strategies\SliceStrategy.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Strategies\VolumeStrategy.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Utils\ImageProcessor.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Utils\InteractionComputeService.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Utils\MeasurementComputeService.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Utils\MeasurementCsvExporter.h" />
+    <ClInclude Include="core\MVVCVTK\MVVCVTK\include\Utils\MemMappedFile.h" />
     <ClInclude Include="resource.h" />
     <QtMoc Include="c_ui\app\app.h" />
     <QtMoc Include="c_ui\MainWindow.h" />
@@ -234,7 +243,6 @@
     <ClInclude Include="c_ui\workbenches\common\IconMaps\VolumeIconMap.h" />
     <ClInclude Include="c_ui\workbenches\common\IconMaps\WindowIconMap.h" />
     <ClInclude Include="c_ui\workbenches\common\RibbonCommon.h" />
-    <ClInclude Include="c_ui\workbenches\PerformancePage.h" />
     <QtMoc Include="c_ui\workbenches\ReconstructPage.h" />
     <QtMoc Include="c_ui\workbenches\ReportPage.h" />
     <QtMoc Include="c_ui\workbenches\SelectPage.h" />
@@ -244,20 +252,25 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppController.cpp" />
-    <ClCompile Include="core\MVVCVTK\MVVCVTK\AppService.cpp" />
-    <ClCompile Include="core\MVVCVTK\MVVCVTK\ColoredPlanesStrategy.cpp" />
-    <ClCompile Include="core\MVVCVTK\MVVCVTK\CompositeStrategy.cpp" />
-    <ClCompile Include="core\MVVCVTK\MVVCVTK\DataConverters.cpp" />
-    <ClCompile Include="core\MVVCVTK\MVVCVTK\DataManager.cpp" />
-    <ClCompile Include="core\MVVCVTK\MVVCVTK\ImageProcessor.cpp" />
-    <ClCompile Include="core\MVVCVTK\MVVCVTK\IsHomogen.cpp" />
-    <ClCompile Include="core\MVVCVTK\MVVCVTK\IsoSurfaceStrategy.cpp" />
-    <ClCompile Include="core\MVVCVTK\MVVCVTK\MultiSliceStrategy.cpp" />
-    <ClCompile Include="core\MVVCVTK\MVVCVTK\SliceStrategy.cpp" />
-    <ClCompile Include="core\MVVCVTK\MVVCVTK\TimeUpdateHandler.cpp" />
-    <ClCompile Include="core\MVVCVTK\MVVCVTK\Viewer2DHandler.cpp" />
-    <ClCompile Include="core\MVVCVTK\MVVCVTK\Viewer3DHandler.cpp" />
-    <ClCompile Include="core\MVVCVTK\MVVCVTK\VolumeStrategy.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\src\Data\DataConverters.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\src\Data\DataManager.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\src\Interaction\InteractionRouter.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\src\Interaction\TimeUpdateHandler.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\src\Interaction\Viewer2DHandler.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\src\Interaction\Viewer3DHandler.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\src\Service\AppService.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\src\Service\MeasurementInteractionHost.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\src\Service\MeasurementService.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\src\Strategies\AngleMeasurementStrategy.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\src\Strategies\ColoredPlanesStrategy.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\src\Strategies\CompositeStrategy.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\src\Strategies\IsoSurfaceStrategy.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\src\Strategies\LengthMeasurementStrategy.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\src\Strategies\MultiSliceStrategy.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\src\Strategies\SliceStrategy.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\src\Strategies\VolumeStrategy.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\src\Utils\ImageProcessor.cpp" />
+    <ClCompile Include="core\MVVCVTK\MVVCVTK\src\Utils\MemMappedFile.cpp" />
     <ClCompile Include="c_ui\app\app.cpp" />
     <ClCompile Include="c_ui\main.cpp" />
     <ClCompile Include="c_ui\MainWindow.cpp" />
@@ -275,7 +288,6 @@
     <ClCompile Include="c_ui\workbenches\GeometryPage.cpp" />
     <ClCompile Include="c_ui\workbenches\HelpPage.cpp" />
     <ClCompile Include="c_ui\workbenches\MeasurePage.cpp" />
-    <ClCompile Include="c_ui\workbenches\PerformancePage.cpp" />
     <ClCompile Include="c_ui\workbenches\ReconstructPage.cpp" />
     <ClCompile Include="c_ui\workbenches\ReportPage.cpp" />
     <ClCompile Include="c_ui\workbenches\SelectPage.cpp" />

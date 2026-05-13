@@ -8,7 +8,7 @@
 #include <QWidget>
 #include <memory>
 
-#include "core/MVVCVTK/MVVCVTK/AppState.h"
+#include "App/AppState.h"
 
 struct AppSession;
 class VolumeAnalysisService;
@@ -23,7 +23,7 @@ public:
     void setSession(const std::shared_ptr<AppSession>& session);
     void setSharedState(const std::shared_ptr<SharedInteractionState>& state);
     void setAnalysisService(const std::shared_ptr<VolumeAnalysisService>& analysis);
-	void setToolMode(const QString& mode); 
+	/*void setToolMode(const QString& mode); */
 
 signals:
     void primary3DModeRequested(VizMode mode);
@@ -53,7 +53,6 @@ private:
     QSlider* isoSlider_ = nullptr;
     QSlider* windowWidthSlider_ = nullptr;
     QSlider* windowCenterSlider_ = nullptr;
-    QComboBox* isoQuality_ = nullptr;
     QComboBox* renderMode_ = nullptr;
     QCheckBox* clipPlanesToggle_ = nullptr;
     QCheckBox* crosshairToggle_ = nullptr;
