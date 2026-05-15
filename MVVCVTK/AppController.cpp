@@ -20,7 +20,11 @@ AppController::AppController(QObject* parent)
 {
 }
 
-bool AppController::openFile(const QString& path, QString* errorOut)
+bool AppController::openFile(const QString& path, 
+    const std::array<float, 3>& spacing,
+    const std::array<float, 3>& origin,
+    QString* errorOut
+    )
 {
     const QString p = path.trimmed();
     if (p.isEmpty()) {
@@ -39,6 +43,8 @@ bool AppController::openFile(const QString& path, QString* errorOut)
 	auto weakSession = std::weak_ptr<AppSession>(newSession);
     
     newSession->service->SetFileLoadedAsync(p.toStdString(),
+        spacing,
+        origin,
         [weakSession](bool ok)
         {
             // 所以这里的设值是没有任何影响的，不影响业务，我已经设了初始值，可以删去

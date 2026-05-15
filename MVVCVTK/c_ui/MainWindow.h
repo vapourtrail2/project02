@@ -7,6 +7,7 @@
 #include <QStackedWidget>
 #include <QTabBar>
 #include <QSplitter>
+#include <array>
 #include <memory>
 #include "c_ui/workbenches/ReconstructPage.h"
 #include "c_ui/nav/UIState.h"
@@ -73,7 +74,9 @@ private:
     void handleSessionChanged(const std::shared_ptr<AppSession>& session);
 
     void onTabChanged(int index);
-    void onOpenRequested(const QString& path);
+    void onOpenRequested(const QString& path, 
+        const std::array<float,3> & spacing,
+        const std::array<float,3>& origin);
 
 private:
     bool draggingWindow_ = false;

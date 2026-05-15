@@ -1,5 +1,4 @@
 ﻿#include "c_ui/nav/WorkspaceFlow.h"
-
 #include "AppController.h"
 #include "c_ui/workbenches/ReconstructPage.h"
 #include "c_ui/panels/SceneTreePanel.h"
@@ -10,7 +9,7 @@ WorkspaceFlow::WorkspaceFlow(AppController* controller)
 {
 }
 
-bool WorkspaceFlow::openFile(const QString& path, QString* err)
+bool WorkspaceFlow::openFile(const QString& path ,const std::array<float,3> & spacing, const std::array<float, 3>& origin,QString* err)
 {
     if (!controller_) {
         if (err) {
@@ -18,7 +17,7 @@ bool WorkspaceFlow::openFile(const QString& path, QString* err)
         }
         return false;
     }
-    return controller_->openFile(path, err);
+    return controller_->openFile(path,spacing, origin, err);
 }
 
 bool WorkspaceFlow::openReconstructedData(
@@ -85,9 +84,9 @@ bool WorkspaceFlow::openAndBind(
     RenderPanel* renderPanel,
     QString* err)
 {
-    if (!openFile(path, err)) {
+    /*if (!openFile(path, err,)) {
         return false;
-    }
+    }*/
 
     if (!bindSession(reconstructPage, scenePanel, renderPanel, err)) {
         return false;

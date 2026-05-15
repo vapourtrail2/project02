@@ -16,7 +16,7 @@ class WorkspaceFlow
 public:
     explicit WorkspaceFlow(AppController* controller);
 
-    bool openFile(const QString& path, QString* err);
+    bool openFile(const QString& path, const std::array<float,3> &spacing, const std::array<float, 3>& origin, QString* error);
     bool openReconstructedData(
         const float* data,
         const std::array<int, 3>& dims,

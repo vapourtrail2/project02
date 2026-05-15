@@ -13,6 +13,9 @@
 #include <QListWidgetItem>
 #include <QFileDialog>
 #include <QDialog>
+#include <QStackedWidget>
+#include <QDoubleSpinBox>
+#include <QFormLayout>
 
 DocumentPage::DocumentPage(QWidget* parent)
     : QWidget(parent)
@@ -144,86 +147,6 @@ QWidget* DocumentPage::buildRightContent(QWidget* parent)
     tipsLayout->addStretch();
     vl->addWidget(tipsFrame);
 
-    // 模块入口按钮
-    //auto moduleFrame = new QFrame(right);
-    //moduleFrame->setObjectName(QStringLiteral("moduleFrame"));
-    //moduleFrame->setStyleSheet(QStringLiteral(
-    //    "QFrame#moduleFrame{background:#322F30; border-radius:10px;}"
-    //    "QFrame#moduleFrame QPushButton{background:#2C2C2C; border-radius:8px; border:1px solid #333;"
-    //    " color:#f5f5f5; font-size:16px; padding:18px 12px;}"
-    //    "QFrame#moduleFrame QPushButton:hover{background:#2C2C2C; border-color:#4d6fff;}"
-    //    "QFrame#moduleFrame QLabel{color:#f5f5f5;}"));
-    //auto moduleLayout = new QVBoxLayout(moduleFrame);
-    //moduleLayout->setContentsMargins(20, 18, 20, 18);
-    //moduleLayout->setSpacing(12);
-    //auto moduleTitle = new QLabel(QStringLiteral("选择最适合您工作流程的“开始”选项卡"), moduleFrame);
-    //moduleTitle->setStyleSheet(QStringLiteral("font-size:16px; font-weight:600;"));
-    //moduleLayout->addWidget(moduleTitle);
-
-    //auto grid = new QGridLayout();
-    //grid->setHorizontalSpacing(16);
-    //grid->setVerticalSpacing(16);
-    //btnVisCheck_ = new QPushButton(QStringLiteral("视觉检查"), moduleFrame);
-    //btnPorosity_ = new QPushButton(QStringLiteral("孔隙度"), moduleFrame);
-    //btnMetrology_ = new QPushButton(QStringLiteral("计量"), moduleFrame);
-    //btnMaterial_ = new QPushButton(QStringLiteral("材料"), moduleFrame);
-    //for (auto* b : { btnVisCheck_.data(), btnPorosity_.data(), btnMetrology_.data(), btnMaterial_.data() })
-    //    b->setMinimumSize(160, 70);
-    //grid->addWidget(btnVisCheck_, 0, 0);
-    //grid->addWidget(btnPorosity_, 0, 1);
-    //grid->addWidget(btnMetrology_, 0, 2);
-    //grid->addWidget(btnMaterial_, 0, 3);
-    //moduleLayout->addLayout(grid);
-    //vl->addWidget(moduleFrame);
-
-    //// 最近项目
-    //auto recentFrame = new QFrame(right);
-    //recentFrame->setObjectName(QStringLiteral("recentFrame"));
-    //recentFrame->setStyleSheet(QStringLiteral(
-    //    "QFrame#recentFrame{background:#322F30; border-radius:10px;}"
-    //    "QFrame#recentFrame QLabel{color:#f5f5f5;}"
-    //    "QFrame#recentFrame QHeaderView::section{background:#2c2c2c; color:#f0f0f0; border:0;}"
-    //    "QFrame#recentFrame QTableWidget{background:transparent; border:0; color:#f5f5f5;}"
-    //    "QFrame#recentFrame QTableWidget::item:selected{background-color:#3d65f5;}"));
-    //auto recentLayout = new QVBoxLayout(recentFrame);
-    //recentLayout->setContentsMargins(20, 18, 20, 18);
-    //recentLayout->setSpacing(12);
-
-    //auto recentTitle = new QLabel(QStringLiteral("最近项目"), recentFrame);
-    //recentTitle->setStyleSheet(QStringLiteral("font-size:16px; font-weight:600;"));
-    //recentLayout->addWidget(recentTitle);
-
-    //tableRecent_ = new QTableWidget(0, 3, recentFrame);
-    //tableRecent_->setHorizontalHeaderLabels({ QStringLiteral("名称"), QStringLiteral("位置"), QStringLiteral("上次打开") });
-    //tableRecent_->horizontalHeader()->setStretchLastSection(true);
-    //tableRecent_->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    //tableRecent_->verticalHeader()->setVisible(false);
-    //tableRecent_->setShowGrid(false);
-    //tableRecent_->setSelectionBehavior(QAbstractItemView::SelectRows);
-    //tableRecent_->setSelectionMode(QAbstractItemView::SingleSelection);
-    //tableRecent_->setAlternatingRowColors(true);
-    //tableRecent_->setStyleSheet(QStringLiteral(
-    //    "QTableWidget{alternate-background-color:#2C2C2C;}"
-    //    "QTableWidget QTableCornerButton::section{background:#2c2c2c;}"));
-
-    //struct RecentItem { QString name; QString path; QString time; };
-    //const QList<RecentItem> recents = {
-    //    { QStringLiteral("发动机缸体.vgl"), QStringLiteral("D:/Projects/CT/EngineBlock"), QStringLiteral("今天 09:24") },
-    //    { QStringLiteral("齿轮箱.vgl"),     QStringLiteral("D:/Projects/CT/GearBox"),     QStringLiteral("昨天 17:42") },
-    //    { QStringLiteral("叶片扫描.vgi"),   QStringLiteral("E:/Scan/Blade"),              QStringLiteral("2024-05-12") },
-    //    { QStringLiteral("材料试样.raw"),   QStringLiteral("E:/Lab/Materials"),           QStringLiteral("2024-04-28") }
-    //};
-    //for (const auto& it : recents) {
-    //    int row = tableRecent_->rowCount();
-    //    tableRecent_->insertRow(row);
-    //    tableRecent_->setItem(row, 0, new QTableWidgetItem(it.name));
-    //    tableRecent_->setItem(row, 1, new QTableWidgetItem(it.path));
-    //    tableRecent_->setItem(row, 2, new QTableWidgetItem(it.time));
-    //}
-    //tableRecent_->setMinimumHeight(220);
-    //recentLayout->addWidget(tableRecent_);
-    //vl->addWidget(recentFrame);
-
     vl->addStretch();
     return right;
 }
@@ -258,7 +181,7 @@ void DocumentPage::showOpenDialog()
 {
     if (!docDialog_) {
         docDialog_ = new QDialog(this);
-		docDialog_->setFixedSize(300, 110);
+		docDialog_->setFixedSize(460, 260);
         docDialog_->setModal(true);
         docDialog_->setWindowTitle(QStringLiteral("打开"));
        
@@ -266,38 +189,108 @@ void DocumentPage::showOpenDialog()
         dialogLayout->setContentsMargins(14, 14, 14, 14);
         dialogLayout->setSpacing(12);
 
-        auto* introLabel = new QLabel(QStringLiteral("请选择RAW，然后点击“加载”。"), docDialog_);
+        //importStack
+		importStack_ = new QStackedWidget(docDialog_);
+		dialogLayout->addWidget(importStack_);
+
+        //第一页 选择文件
+		auto* filePage = new QWidget(docDialog_);
+		auto* fileLayout = new QVBoxLayout(filePage);
+		fileLayout->setContentsMargins(0, 0, 0, 0);
+		fileLayout->setSpacing(12);
+
+        auto* introLabel = new QLabel(QStringLiteral("请选择RAW文件，然后点击“下一步”。"), filePage);
         introLabel->setWordWrap(true);
-        dialogLayout->addWidget(introLabel);
+        fileLayout->addWidget(introLabel);
 
         // 输入与按钮区域
         auto* inputRow = new QHBoxLayout();
         inputRow->setSpacing(8);
-        auto* dirLabel = new QLabel(QStringLiteral("目录:"), docDialog_);
+        auto* dirLabel = new QLabel(QStringLiteral("文件:"), filePage);
         inputRow->addWidget(dirLabel);
 
-        inputDicomDirectory_ = new QLineEdit(docDialog_);
-        inputDicomDirectory_->setPlaceholderText(QStringLiteral("选择或输入 RAW 文件"));
-		inputRow->addWidget(inputDicomDirectory_, 1);
+        inputPath_ = new QLineEdit(filePage);
+        inputPath_->setPlaceholderText(QStringLiteral("选择或输入 RAW 文件"));
+		inputRow->addWidget(inputPath_, 1);
 
-        btnDicomBrowse_ = new QPushButton(QStringLiteral("浏览..."), docDialog_);
-        inputRow->addWidget(btnDicomBrowse_);
+        btnBrowse_ = new QPushButton(QStringLiteral("浏览..."), filePage);
+        inputRow->addWidget(btnBrowse_);
 
-        dialogLayout->addLayout(inputRow);
+        fileLayout->addLayout(inputRow);
+		fileLayout->addStretch();
 
-        // 状态与动作行
+		importStack_->addWidget(filePage);
+
+		//第二页 填写信息
+		auto* infoPage = new QWidget(docDialog_);
+		auto* infoLayout = new QFormLayout(infoPage);//QFormLayout用于标签和输入的配对显示
+		infoLayout->setContentsMargins(0, 0, 0, 0);
+		infoLayout->setSpacing(12);
+
+        auto makeNum_1 = [this]() {
+            auto* box = new QDoubleSpinBox(docDialog_);
+            box->setDecimals(3);
+            box->setRange(-100000.0, 100000.0);
+            box->setSingleStep(0.1);
+            box->setSuffix(QStringLiteral("mm"));
+            return box;
+        };
+
+        auto makeNum_2 = [this]() {
+            auto* box = new QDoubleSpinBox(docDialog_);
+            box->setDecimals(2);
+            box->setRange(-100000.0, 100000.0);
+            box->setSingleStep(0.1);
+            /*box->setSuffix(QStringLiteral("mm"));*/
+            return box;
+            };
+
+		spacingX_ = makeNum_1();
+		spacingY_ = makeNum_1();
+		spacingZ_ = makeNum_1();
+
+		spacingX_->setValue(0.02125);
+		spacingY_->setValue(0.02125);
+		spacingZ_->setValue(0.02125);
+
+        originX_ = makeNum_2();
+        originY_ = makeNum_2();
+        originZ_ = makeNum_2();
+
+        originX_->setValue(0.0);
+        originY_->setValue(0.0);
+        originZ_->setValue(0.0);
+
+		infoLayout->addRow(QStringLiteral("像素间距X:"), spacingX_);
+		infoLayout->addRow(QStringLiteral("像素间距Y:"), spacingY_);
+		infoLayout->addRow(QStringLiteral("像素间距Z:"), spacingZ_);
+		infoLayout->addRow(QStringLiteral("原点X:"), originX_);
+		infoLayout->addRow(QStringLiteral("原点Y:"), originY_);
+		infoLayout->addRow(QStringLiteral("原点Z:"), originZ_);
+
+        importStack_->addWidget(infoPage);
+
+        
+		// 底部状态与操作按钮
         auto* actionRow = new QHBoxLayout();
         actionRow->setSpacing(8);
         dicomStatusLabel_ = new QLabel(QStringLiteral("尚未加载数据"), docDialog_);
         dicomStatusLabel_->setStyleSheet(QStringLiteral("color:#d0d0d0;"));
         actionRow->addWidget(dicomStatusLabel_, 1);
 
-        btnDicomLoad_ = new QPushButton(QStringLiteral("加载"), docDialog_);
-        btnDicomLoad_->setDefault(true);
-        actionRow->addWidget(btnDicomLoad_);
+        btnBack_ = new QPushButton(QStringLiteral("上一步"), docDialog_);
+        btnBack_->setVisible(false);
+		actionRow->addWidget(btnBack_);
+
+		btnNext_ = new QPushButton(QStringLiteral("下一步"), docDialog_);
+		actionRow->addWidget(btnNext_);
+
+        btnLoad_ = new QPushButton(QStringLiteral("加载"), docDialog_);
+        btnLoad_->setDefault(true);
+        actionRow->addWidget(btnLoad_);
         dialogLayout->addLayout(actionRow);
 
-        connect(btnDicomBrowse_, &QPushButton::clicked, this, [this]() {
+        connect(btnBrowse_, &QPushButton::clicked, this, [this]() {
             const QString filePath = QFileDialog::getOpenFileName(//读文件
                 this,
                 QStringLiteral("选择数据文件"),
@@ -306,15 +299,44 @@ void DocumentPage::showOpenDialog()
             );
 
             if (!filePath.isEmpty()) {
-                inputDicomDirectory_->setText(filePath); // 显示路径
+                inputPath_->setText(filePath); // 显示路径
             }
             });
+
+        connect(btnNext_, &QPushButton::clicked, this, [this]() {
+			const QString path = inputPath_->text().trimmed();
+            if (path.isEmpty()) {
+                updateStatusLabel(QStringLiteral("路径为空，请选择文件。"), true);
+                return;
+            }
+
+		    importStack_->setCurrentIndex(1);
+            btnBack_->setVisible(true);
+			btnNext_->setVisible(false);
+            btnLoad_->setVisible(true);
+            updateStatusLabel(QStringLiteral("请填写分辨率和原点。"), false);
+            });
+
+        connect(btnBack_, &QPushButton::clicked, this, [this]() {
+            importStack_->setCurrentIndex(0);
+            btnBack_->setVisible(false);
+            btnNext_->setVisible(true);
+            btnLoad_->setVisible(false);
+            updateStatusLabel(QStringLiteral("请选择 RAW 文件"), false);
+            });
+
+
         // 加载按钮连接
-        connect(btnDicomLoad_, &QPushButton::clicked, this, [this]() {
-            loadFilePath(inputDicomDirectory_->text().trimmed());
+        connect(btnLoad_, &QPushButton::clicked, this, [this]() {//connect该怎么传
+            loadFilePath(inputPath_->text().trimmed());
             });
     }
 
+    importStack_->setCurrentIndex(0);
+    btnBack_->setVisible(false);
+    btnNext_->setVisible(true);
+    btnLoad_->setVisible(false);
+    
     // 每次展示前重置状态文案
     updateStatusLabel(QStringLiteral("尚未加载数据"), false);
     docDialog_->show();
@@ -322,7 +344,6 @@ void DocumentPage::showOpenDialog()
     docDialog_->activateWindow();
 }
 
-// 考虑：更改架构 数据生命周期属于某个页面 而不是属于会话(session) 应属于会话
 void DocumentPage::loadFilePath(const QString& path)
 {
     const QString p = path.trimmed();
@@ -331,9 +352,21 @@ void DocumentPage::loadFilePath(const QString& path)
         return;
     }
 
-    // 这里只发请求，不做实际 LoadData
+    std::array<float, 3> spacing{
+        static_cast<float>(spacingX_->value()),
+        static_cast<float>(spacingY_->value()),
+        static_cast<float>(spacingZ_->value())
+    };
+
+    std::array<float, 3> origin{
+        static_cast<float>(originX_->value()),
+        static_cast<float>(originY_->value()),
+        static_cast<float>(originZ_->value())
+    };
+
+
     updateStatusLabel(QStringLiteral("正在加载..."), false);
-    emit openRequested(p);
+    emit openRequested(p,spacing,origin);   
 }
 
 void DocumentPage::notifySucc()

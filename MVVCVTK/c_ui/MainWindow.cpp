@@ -544,10 +544,10 @@ void CTViewer::onTabChanged(int index) {
     applyUiState(state);
 }
 
-void CTViewer::onOpenRequested(const QString& path) {
+void CTViewer::onOpenRequested(const QString& path, const std::array<float,3>& spacing, const std::array<float, 3>& origin) 
+{
     QString err;
-
-    const bool ok = workspaceFlow_ && workspaceFlow_->openFile(path, &err);
+    const bool ok = workspaceFlow_ && workspaceFlow_->openFile(path,spacing,origin, &err);
 	// 写一个等待事件，判断sessionChanged信号里发来的状态，
     // 如果在合理时间内没有收到或者收到的状态是失败的，就提示用户可能打开失败了
     if (!ok) {

@@ -380,7 +380,7 @@ void RenderPanel::rebuildHistogramPixmap()
         return;
     }
     const vtkIdType count = values->GetNumberOfTuples();
-    for (vtkIdType i = 0; i < count; ++i) {
+	for (vtkIdType i = 0; i < count; ++i) {
         const double value = values->GetComponent(i, 0);
         const double t = value / maxValue;
         const int x0 = static_cast<int>((static_cast<double>(i) * imageWidth) / count);
@@ -405,7 +405,7 @@ void RenderPanel::applyHistogramPixmap()
     }
     histLabel_->setText(QStringLiteral());
     histLabel_->setPixmap(
-        histPixmap_.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation)
+		histPixmap_.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation)
     );
 }
 
