@@ -20,6 +20,8 @@ signals:
 	void distanceRequested();
 	void angleRequested();
 	void ctReconRequested();
+    //void sliceStackSaveRequested();
+
 
 private:
 	QWidget* buildRibbon01(QWidget* parent);

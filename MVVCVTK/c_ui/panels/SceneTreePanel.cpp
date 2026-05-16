@@ -14,7 +14,7 @@ QTreeWidgetItem* MakeVisibilityItem(QTreeWidgetItem* parent, const QString& labe
     auto* item = new QTreeWidgetItem(parent, QStringList() << label);
     item->setFlags(item->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemIsSelectable);
     item->setData(0, kFlagRole, static_cast<qulonglong>(flagBit));
-    item->setCheckState(0, Qt::Checked);
+    item->setCheckState(0, Qt::Unchecked);
     return item;
 }
 }
@@ -75,8 +75,16 @@ void SceneTreePanel::setSession(
 
 }
 
-void SceneTreePanel::rebuildTree(const std::shared_ptr<AbstractDataManager>& dataMgr, const QString& sourcePath)
+void SceneTreePanel::rebuildTree(
+    const std::shared_ptr<AbstractDataManager>& dataMgr,
+    const QString& sourcePath)
 {
+    if (!tree_) {
+        return;
+    }
+
+    const QSignalBlocker blocker(tree_);
+
     clearTree();
 
     if (!root_) {
@@ -103,12 +111,15 @@ void SceneTreePanel::rebuildTree(const std::shared_ptr<AbstractDataManager>& dat
 
     helpersItem_ = new QTreeWidgetItem(root_, QStringList() << QStringLiteral("Helpers"));
     helpersItem_->setExpanded(true);
+
     clipPlanesItem_ = MakeVisibilityItem(helpersItem_, QStringLiteral("显示 MPR 平面"), VisFlags::Planes3D);
     crosshairItem_ = MakeVisibilityItem(helpersItem_, QStringLiteral("十字线"), VisFlags::Crosshair);
     axesItem_ = MakeVisibilityItem(helpersItem_, QStringLiteral("标量尺"), VisFlags::Ruler);
 
     root_->setExpanded(true);
     tree_->expandAll();
+
+    syncVisibility();
 }
 
 void SceneTreePanel::syncVisibility()

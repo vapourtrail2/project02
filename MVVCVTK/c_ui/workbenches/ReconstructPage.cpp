@@ -93,7 +93,7 @@ void ReconstructPage::initWithData(
 	//加这个的目的是为了在数据准备好或者spacing改变时刷新界面，之前的版本是直接在外面调用refreshViews()，但这样可能会有时序问题，导致界面没有及时更新。通过设置观察者，当数据准备好或者spacing改变时自动调用refreshViews()，可以确保界面始终与数据状态保持同步。
     m_sharedState->SetObserver(m_lifeToken, [this](UpdateFlags flags) {
         const bool needsRefresh =
-            HasFlag(flags, UpdateFlags::All);
+            HasFlag(flags, UpdateFlags::All) || HasFlag(flags, UpdateFlags::DataReady);
 
         if (!needsRefresh) {
 			return;
@@ -114,10 +114,10 @@ void ReconstructPage::initWithData(
             double spacing[3];
             img->GetScalarRange(range);
             img->GetSpacing(spacing);
-            m_sharedState->SetFileDataReady(
+           /* m_sharedState->SetFileDataReady(
                 range[0], 
                 range[1],
-               { spacing[0], spacing[1], spacing[2] });
+               { spacing[0], spacing[1], spacing[2] });*/
         }
     }
     

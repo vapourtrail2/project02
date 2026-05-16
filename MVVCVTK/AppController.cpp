@@ -45,30 +45,8 @@ bool AppController::openFile(const QString& path,
     newSession->service->SetFileLoadedAsync(p.toStdString(),
         spacing,
         origin,
-        [weakSession](bool ok)
-        {
-            // 所以这里的设值是没有任何影响的，不影响业务，我已经设了初始值，可以删去
-            // 在后台线程，只允许操作 SharedState
-            // 这里的设值可以抽离，或者删去，放在这里只是做验证
-            auto sess = weakSession.lock();
-            if (!sess || !ok) return;
-
-            auto img = sess->dataMgr->GetVtkImage();
-            if (!img) return;
-
-            // 拆解findingsetup的逻辑，直接在这里设置初始窗口/层级和iso值，避免重复调用notifyDataReady导致界面刷新两次
-            double range[2];
-            img->GetScalarRange(range);
-            int dims[3];
-            img->GetDimensions(dims);
-            const double rangeSpan = range[1] - range[0];
-            const double safeWindowWidth = rangeSpan > 0.0 ? rangeSpan : 1.0;
-            const double windowCenter = range[0] + safeWindowWidth * 0.5;
-
-            sess->sharedState->SetIsoValue(range[0] + safeWindowWidth * 0.2);
-
-            // 状态机有问题，信号应该是这里发出
-        });
+        [](bool){}
+    );
     m_session = newSession;
     emit sessionChanged(m_session);
 	return true;
@@ -97,28 +75,10 @@ bool AppController::openReconstructedData(
     
 	// 弱引用，用于托管回调中的 this 指针，避免循环引用导致内存泄漏
 	auto weakSession = std::weak_ptr<AppSession>(newSession);
-    const bool started = newSession->service->SetReloadFromBufferAsync(data, dims, spacing, origin, [weakSession]
-    (bool ok) 
-        {
-            // 同上
-			auto sess = weakSession.lock();
-            if (!sess || !ok) return;
-
-			auto img = sess->dataMgr->GetVtkImage();
-            if (!img) return;
-
-			// 拆解findingsetup的逻辑，直接在这里设置初始窗口/层级和iso值，避免重复调用notifyDataReady导致界面刷新两次
-			double range[2];
-            img->GetScalarRange(range);
-            int dims[3];
-            img->GetDimensions(dims);
-            const double rangeSpan = range[1] - range[0];
-            const double safeWindowWidth = rangeSpan > 0.0 ? rangeSpan : 1.0;
-            const double windowCenter = range[0] + safeWindowWidth * 0.5;
-            
-            sess->sharedState->SetIsoValue(range[0] + safeWindowWidth * 0.2);
-            
-        });
+    const bool started = newSession->service->SetReloadFromBufferAsync(data, dims, spacing, origin, []
+    (bool)
+        {}
+    );
     m_session = newSession;
     emit sessionChanged(m_session);
 

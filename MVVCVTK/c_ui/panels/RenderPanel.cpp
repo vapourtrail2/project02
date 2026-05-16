@@ -107,7 +107,7 @@ RenderPanel::RenderPanel(QWidget* parent)
     wv->addWidget(windowCenterSlider_);
 
     v->addWidget(wlGroup);
-    v->addStretch();
+    /*v->addStretch();*/
 
     auto sliderToIso = [this](int value) {
         const double t = static_cast<double>(value) / 1000.0;
@@ -193,6 +193,8 @@ RenderPanel::RenderPanel(QWidget* parent)
         }
 
         const auto mode = static_cast<VizMode>(renderMode_->itemData(index).toInt());
+        state_->SetElementVisible(VisFlags::Ruler, false);
+        rulerAxesToggle_->setChecked(false);
 		emit primary3DModeRequested(mode);
     });
 
@@ -255,7 +257,7 @@ void RenderPanel::setSharedState(const std::shared_ptr<SharedInteractionState>& 
         renderMode_->setCurrentIndex(0);
         clipPlanesToggle_->setChecked(true);
         crosshairToggle_->setChecked(true);
-		rulerAxesToggle_->setChecked(true);
+		rulerAxesToggle_->setChecked(false);
         updatingUi_ = false;
 
         histPixmap_ = QPixmap();
@@ -263,6 +265,8 @@ void RenderPanel::setSharedState(const std::shared_ptr<SharedInteractionState>& 
         histLabel_->setText(QStringLiteral("(Î´¼ÓÔØ)"));
         return;
     }
+
+    state_->SetElementVisible(VisFlags::Ruler, false);
 
     state_->SetObserver(lifeToken_, [this](UpdateFlags flags) {
         if (QThread::currentThread() == thread()) {

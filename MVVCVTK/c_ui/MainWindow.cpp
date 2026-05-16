@@ -389,8 +389,13 @@ void CTViewer::buildWorkspacePage() {
     workspaceSplit_->setStretchFactor(0, 120); // 左侧视口占5份
     workspaceSplit_->setStretchFactor(1, 2); // 右侧面板占2份
 
-    rightSplit_->setStretchFactor(0, 3); // 渲染区域占3份
-    rightSplit_->setStretchFactor(1, 2); // 场景树占2份
+    //这样是对的
+    rightSplit_->setStretchFactor(0, 0);
+    rightSplit_->setStretchFactor(1, 1);
+    rightSplit_->setSizes({ 520, 260 });
+
+    renderPanel_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    renderPanel_->setMaximumHeight(520);
 
     secondstack_->addWidget(workspacePage_);
 }
