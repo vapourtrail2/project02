@@ -608,7 +608,7 @@ void CTViewer::onOpenRequested(const QString& path, const std::array<float,3>& s
 
 
     if (pageDocument_) {
-        pageDocument_->notifySucc();
+        pageDocument_->closeOpenDialog();
     }
 }
 

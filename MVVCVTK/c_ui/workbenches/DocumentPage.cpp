@@ -369,6 +369,13 @@ void DocumentPage::loadFilePath(const QString& path)
     emit openRequested(p,spacing,origin);   
 }
 
+void DocumentPage::closeOpenDialog()
+{
+    if (docDialog_) {
+        docDialog_->accept();
+    }
+}
+
 void DocumentPage::notifySucc()
 {
     updateStatusLabel(QStringLiteral("数据加载成功。"), false);

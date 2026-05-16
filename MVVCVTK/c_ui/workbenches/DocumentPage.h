@@ -21,6 +21,7 @@ public:
     explicit DocumentPage(QWidget* parent = nullptr);
     void notifySucc();
 	void notifyFail(const QString& reason);
+    void closeOpenDialog();
 
 signals:
     void requestSwitchTo(const QString& page);
@@ -37,8 +38,8 @@ private:
     void wireLeftDockSignals();
 	void showOpenDialog();
     void updateStatusLabel(const QString& text, bool isError);
-    void loadFilePath(const QString& path/*, const std::array<float, 3> &spacing, const std::array<float,3> & origin*/);
-
+    void loadFilePath(const QString& path);
+   
     QPointer<QListWidget> listNav_;
     QPointer<QPushButton> btnUndo_;
     QPointer<QPushButton> btnKeep_;
