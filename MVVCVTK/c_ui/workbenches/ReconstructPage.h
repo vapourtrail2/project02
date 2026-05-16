@@ -1,6 +1,8 @@
 #pragma once
 #include <QWidget>
-#include <QPointer>
+#include <QPointer> 
+#include <QString>
+#include <functional>
 #include <memory>
 #include "Service/AppService.h"
 #include "Data/DataManager.h"
@@ -15,10 +17,13 @@ public:
     void initWithData(
         std::shared_ptr<AbstractDataManager> data,
         std::shared_ptr<SharedInteractionState> state);
-
-public:
     void setToolMode(ToolMode mode);
 	void setPrimary3DMode(VizMode mode);
+    bool saveSliceStackAsync(
+        const QString& outputDir,
+        VizMode sliceMode,
+        std::function<void(bool)> onComplete = nullptr);
+
 
 private:
     void buildUi();

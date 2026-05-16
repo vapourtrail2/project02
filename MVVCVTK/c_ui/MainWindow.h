@@ -50,7 +50,6 @@ private:
     void buildTheTop();
     void buildTheMiddle();
     void wireConnect();
- /*   void setDefaults();*/   //固定到左上角
     void updateMaximizeButtonIcon();
     void openCtReconUi();
 
@@ -77,6 +76,9 @@ private:
     void onOpenRequested(const QString& path, 
         const std::array<float,3> & spacing,
         const std::array<float,3>& origin);
+
+    void showSaveSliceStackDialog();
+
 
 private:
     bool draggingWindow_ = false;

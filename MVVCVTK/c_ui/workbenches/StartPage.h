@@ -20,7 +20,7 @@ signals:
 	void distanceRequested();
 	void angleRequested();
 	void ctReconRequested();
-    //void sliceStackSaveRequested();
+    void sliceStackSaveRequested();
 
 
 private:

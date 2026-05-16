@@ -173,8 +173,17 @@ QWidget* StartPagePage::buildRibbon01(QWidget* parent)
                 "QMenu{background:#2b2b2b; border:1px solid #3a3a3a;}"
                 "QMenu::item{color:#e0e0e0; padding:6px 24px;}"
                 "QMenu::item:selected{background:#3a3a3a;}"));
-            menu02->addAction(QIcon(":/start_icons01/icons_other/start_icons/save_image.png"), QStringLiteral("保存图像"));
-            menu02->addAction(QIcon(":/start_icons01/icons_other/start_icons/save_image.png"), QStringLiteral("保存影片/图像堆栈"));
+            menu02->addAction(
+                QIcon(":/start_icons01/icons_other/start_icons/save_image.png"),
+                QStringLiteral("保存图像"));
+
+            auto* actSaveSliceStack = menu02->addAction(
+                QIcon(":/start_icons01/icons_other/start_icons/save_image.png"),
+                QStringLiteral("保存影片/图像堆栈"));
+
+            connect(actSaveSliceStack, &QAction::triggered, this, [this]() {
+                emit sliceStackSaveRequested();
+                });
             button->setMenu(menu02);
             button->setPopupMode(QToolButton::InstantPopup);//点击按钮时直接弹出菜单
         }

@@ -2,6 +2,7 @@
 #include <QGridLayout>
 #include <QMetaObject>
 #include <QWidget>
+#include <QDir>
 #include <QVTKOpenGLNativeWidget.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
@@ -167,6 +168,47 @@ void ReconstructPage::setPrimary3DMode(VizMode mode)
     }
 
     applyPrimary3DMode(mode);
+}
+
+bool ReconstructPage::saveSliceStackAsync(
+    const QString& outputDir,
+    VizMode sliceMode,
+    std::function<void(bool)> onComplete)
+{
+    const QString dir = outputDir.trimmed();
+    if (dir.isEmpty()) {
+        return false;
+    }
+
+    std::shared_ptr<MedicalVizService> service;
+
+    switch (sliceMode) {
+    case VizMode::SliceTop_down:
+        service = m_svcAxial;
+        break;
+    case VizMode::SliceFront_back:
+        service = m_svcCoronal;
+        break;
+    case VizMode::SliceLeft_right:
+        service = m_svcSagittal;
+        break;
+    default:
+        return false;
+    }
+
+    if (!service) {
+        return false;
+    }
+
+    service->SetVizMode(sliceMode);
+
+    const QByteArray localPath = QDir::toNativeSeparators(dir).toLocal8Bit();
+    service->SetSliceImagesSavedAsync(
+        localPath.constData(),
+        0.0,
+        std::move(onComplete));
+
+    return true;
 }
 
 void ReconstructPage::applyPrimary3DMode(VizMode mode)

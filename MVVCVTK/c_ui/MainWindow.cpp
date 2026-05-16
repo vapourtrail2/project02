@@ -40,6 +40,14 @@
 #include <QSizePolicy>  
 #include <QRect>        
 #include <QDebug>
+#include <QComboBox>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QFileDialog>
+#include <QFormLayout>
+#include <QMessageBox>
+#include <QPointer>
+
 
 #include <QVTKOpenGLNativeWidget.h>
 #include <vtkGenericOpenGLRenderWindow.h>
@@ -448,6 +456,12 @@ void CTViewer::connectReconSignals() {
     connect(pageStart_, &StartPagePage::ctReconRequested, this, [this]() {
         openCtReconUi();
         });
+
+    connect(pageStart_, &StartPagePage::sliceStackSaveRequested, this, [this]() {
+        showSaveSliceStackDialog();
+        });
+
+
 }
 
 void CTViewer::connectDistanceSignals() {
@@ -481,6 +495,8 @@ void CTViewer::connectRenderSwitchSignals()
         }
         });
 }
+
+
 
 
 //架构优化 buildxxx 和 applyxxx分离，build只负责算，apply只负责改界面 
@@ -568,6 +584,104 @@ void CTViewer::onOpenRequested(const QString& path, const std::array<float,3>& s
         pageDocument_->notifySucc();
     }
 }
+
+//保存切片
+void CTViewer::showSaveSliceStackDialog()
+{
+    if (!mprViews_ || !workspaceFlow_ || !workspaceFlow_->hasData()) {
+        QMessageBox::warning(this, QStringLiteral("保存图像堆栈"), QStringLiteral("请先加载数据。"));
+        return;
+    }
+
+    QDialog dialog(this);
+    dialog.setWindowTitle(QStringLiteral("保存影片/图像堆栈"));
+    dialog.resize(720, 420);
+
+    auto* root = new QVBoxLayout(&dialog);
+    auto* body = new QHBoxLayout();
+
+    auto* preview = new QLabel(QStringLiteral("预览\n\n当前版本先使用占位预览"), &dialog);
+    preview->setMinimumSize(460, 300);
+    preview->setAlignment(Qt::AlignCenter);
+    preview->setStyleSheet(QStringLiteral(
+        "QLabel{background:#202020; color:#bdbdbd; border:1px solid #444;}"));
+
+    auto* form = new QFormLayout();
+    auto* directionCombo = new QComboBox(&dialog);
+    directionCombo->addItem(QStringLiteral("轴向 / Top-down"), static_cast<int>(VizMode::SliceTop_down));
+    directionCombo->addItem(QStringLiteral("冠状 / Front-back"), static_cast<int>(VizMode::SliceFront_back));
+    directionCombo->addItem(QStringLiteral("矢状 / Left-right"), static_cast<int>(VizMode::SliceLeft_right));
+
+    auto* statusLabel = new QLabel(QStringLiteral("选择方向后点击保存。"), &dialog);
+    statusLabel->setStyleSheet(QStringLiteral("color:#cfcfcf;"));
+
+    form->addRow(QStringLiteral("方向:"), directionCombo);
+    form->addRow(statusLabel);
+
+    body->addWidget(preview, 1);
+    body->addLayout(form);
+
+    auto* buttons = new QDialogButtonBox(&dialog);
+    auto* saveButton = buttons->addButton(QStringLiteral("保存..."), QDialogButtonBox::AcceptRole);
+    buttons->addButton(QStringLiteral("取消"), QDialogButtonBox::RejectRole);
+
+    root->addLayout(body);
+    root->addWidget(buttons);
+
+    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+    connect(saveButton, &QPushButton::clicked, &dialog, [this, &dialog, directionCombo, statusLabel, saveButton]() {
+        const QString dir = QFileDialog::getExistingDirectory(
+            &dialog,
+            QStringLiteral("选择保存目录"));
+
+        if (dir.isEmpty()) {
+            return;
+        }
+
+        const auto mode = static_cast<VizMode>(directionCombo->currentData().toInt());
+
+        saveButton->setEnabled(false);
+        statusLabel->setText(QStringLiteral("正在保存切片堆栈..."));
+
+        QPointer<QDialog> dialogPtr(&dialog);
+        QPointer<QLabel> statusPtr(statusLabel);
+        QPointer<QPushButton> saveButtonPtr(saveButton);
+
+        const bool started = mprViews_->saveSliceStackAsync(
+            dir,
+            mode,
+            [dialogPtr, statusPtr, saveButtonPtr](bool ok) {
+                QMetaObject::invokeMethod(qApp, [dialogPtr, statusPtr, saveButtonPtr, ok]() {
+                    if (!dialogPtr) {
+                        return;
+                    }
+
+                    if (statusPtr) {
+                        statusPtr->setText(ok
+                            ? QStringLiteral("保存完成。")
+                            : QStringLiteral("保存失败。"));
+                    }
+
+                    if (saveButtonPtr) {
+                        saveButtonPtr->setEnabled(true);
+                    }
+
+                    if (ok) {
+                        dialogPtr->accept();
+                    }
+                    }, Qt::QueuedConnection);
+            });
+
+        if (!started) {
+            statusLabel->setText(QStringLiteral("保存任务启动失败。"));
+            saveButton->setEnabled(true);
+        }
+        });
+
+    dialog.exec();
+}
+
 
 
 void CTViewer::handleSessionChanged(const std::shared_ptr<AppSession>& session)
