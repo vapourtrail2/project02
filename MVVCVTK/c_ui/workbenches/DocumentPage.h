@@ -14,7 +14,6 @@ class QVBoxLayout;//为什么要加前置声明
 class QStackedWidget;
 class QDoubleSpinBox;
 
-
 class DocumentPage : public QWidget
 {
     Q_OBJECT

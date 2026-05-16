@@ -47,7 +47,8 @@
 #include <QFormLayout>
 #include <QMessageBox>
 #include <QPointer>
-
+#include <QProgressDialog>
+#include <QMetaObject>
 
 #include <QVTKOpenGLNativeWidget.h>
 #include <vtkGenericOpenGLRenderWindow.h>
@@ -567,11 +568,36 @@ void CTViewer::onTabChanged(int index) {
 
 void CTViewer::onOpenRequested(const QString& path, const std::array<float,3>& spacing, const std::array<float, 3>& origin) 
 {
+    if (loadProgressDialog_) {
+        loadProgressDialog_->close();
+        loadProgressDialog_.clear();
+    }
+
+    loadProgressDialog_ = new QProgressDialog(
+        QStringLiteral("正在加载数据，请稍候..."),
+        QStringLiteral("取消"),
+        0,
+        0,
+        this);
+
+    loadProgressDialog_->setWindowTitle(QStringLiteral("加载中"));
+    loadProgressDialog_->setWindowModality(Qt::ApplicationModal);
+    loadProgressDialog_->setMinimumDuration(0);
+    loadProgressDialog_->setAutoClose(false);
+    loadProgressDialog_->setAutoReset(false);
+    loadProgressDialog_->setRange(0, 0);
+    loadProgressDialog_->show();
+
     QString err;
     const bool ok = workspaceFlow_ && workspaceFlow_->openFile(path,spacing,origin, &err);
 	// 写一个等待事件，判断sessionChanged信号里发来的状态，
     // 如果在合理时间内没有收到或者收到的状态是失败的，就提示用户可能打开失败了
     if (!ok) {
+        if (loadProgressDialog_) {
+            loadProgressDialog_->close();
+            loadProgressDialog_.clear();
+        }
+
         const QString msg = err.isEmpty() ? QStringLiteral("打开失败") : err;
         statusBar()->showMessage(msg, 3000);
         if (pageDocument_) {
@@ -579,6 +605,7 @@ void CTViewer::onOpenRequested(const QString& path, const std::array<float,3>& s
         }
         return;
     }
+
 
     if (pageDocument_) {
         pageDocument_->notifySucc();
@@ -691,6 +718,13 @@ void CTViewer::handleSessionChanged(const std::shared_ptr<AppSession>& session)
     }
 
     if (!session) {
+        if (loadProgressDialog_) {
+            loadProgressDialog_->close();
+            loadProgressDialog_.clear();
+        }
+
+        loadNotifyToken_.reset();
+
         if (tabBar_) {
             applyUiState(buildUiState(tabBar_->currentIndex()));
         }
@@ -701,6 +735,13 @@ void CTViewer::handleSessionChanged(const std::shared_ptr<AppSession>& session)
     const bool ok = workspaceFlow_->bindSession(mprViews_, scenePanel_, renderPanel_, &err);
 
     if (!ok) {
+        if (loadProgressDialog_) {
+            loadProgressDialog_->close();
+            loadProgressDialog_.clear();
+        }
+
+        loadNotifyToken_.reset();
+
         if (auto* bar = statusBar()) {
             bar->showMessage(
                 err.isEmpty() ? QStringLiteral("Failed to bind workspace session.") : err,
@@ -708,6 +749,45 @@ void CTViewer::handleSessionChanged(const std::shared_ptr<AppSession>& session)
         }
         return;
     }
+
+    loadNotifyToken_ = std::make_shared<int>(1);
+
+    session->sharedState->SetObserver(loadNotifyToken_, [this](UpdateFlags flags) {
+        if (HasFlag(flags, UpdateFlags::DataReady)) {
+            QMetaObject::invokeMethod(this, [this]() {
+                if (loadProgressDialog_) {
+                    loadProgressDialog_->close();
+                    loadProgressDialog_.clear();
+                }
+
+                loadNotifyToken_.reset();
+
+                if (pageDocument_) {
+                    pageDocument_->notifySucc();
+                }
+                }, Qt::QueuedConnection);
+            return;
+        }
+
+        if (HasFlag(flags, UpdateFlags::LoadFailed)) {
+            QMetaObject::invokeMethod(this, [this]() {
+                if (loadProgressDialog_) {
+                    loadProgressDialog_->close();
+                    loadProgressDialog_.clear();
+                }
+
+                loadNotifyToken_.reset();
+
+                if (pageDocument_) {
+                    pageDocument_->notifyFail(QStringLiteral("加载失败"));
+                }
+
+                if (auto* bar = statusBar()) {
+                    bar->showMessage(QStringLiteral("加载失败"), 3000);
+                }
+                }, Qt::QueuedConnection);
+        }
+        });
 
     if (!tabBar_) {
         return;
@@ -720,6 +800,7 @@ void CTViewer::handleSessionChanged(const std::shared_ptr<AppSession>& session)
 
     applyUiState(buildUiState(tabBar_->currentIndex()));
 }
+
 
 bool CTViewer::eventFilter(QObject* watched, QEvent* event)//实现标题栏拖动
 {

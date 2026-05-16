@@ -33,6 +33,8 @@ struct AppSession;
 class RenderPanel;
 class SceneTreePanel;
 
+class QProgressDialog;//进度条
+
 class TabMap;
 class WorkspaceFlow;
 
@@ -132,6 +134,9 @@ private:
     QPointer<QSplitter> rightSplit_;
     QPointer<SceneTreePanel> scenePanel_;
     QPointer<RenderPanel> renderPanel_;
+
+    QPointer<QProgressDialog> loadProgressDialog_;
+    std::shared_ptr<void> loadNotifyToken_;//进度条    
 
     int iconHeight_ = 100;
 };
