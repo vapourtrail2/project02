@@ -22,6 +22,7 @@ public:
     bool saveSliceStackAsync(
         const QString& outputDir,
         VizMode sliceMode,
+        const double& angle,
         std::function<void(bool)> onComplete = nullptr);
 
 

@@ -173,6 +173,7 @@ void ReconstructPage::setPrimary3DMode(VizMode mode)
 bool ReconstructPage::saveSliceStackAsync(
     const QString& outputDir,
     VizMode sliceMode,
+    const double& angel,
     std::function<void(bool)> onComplete)
 {
     const QString dir = outputDir.trimmed();
@@ -180,33 +181,27 @@ bool ReconstructPage::saveSliceStackAsync(
         return false;
     }
 
-    std::shared_ptr<MedicalVizService> service;
+    const QByteArray localPath = QDir::toNativeSeparators(dir).toLocal8Bit();
 
     switch (sliceMode) {
     case VizMode::SliceTop_down:
-        service = m_svcAxial;
+        m_svcAxial->SetSliceImagesSavedAsync(localPath.constData(),
+            angel,
+            std::move(onComplete));
         break;
     case VizMode::SliceFront_back:
-        service = m_svcCoronal;
+        m_svcCoronal->SetSliceImagesSavedAsync(localPath.constData(),
+            angel,
+            std::move(onComplete));
         break;
     case VizMode::SliceLeft_right:
-        service = m_svcSagittal;
+        m_svcSagittal->SetSliceImagesSavedAsync(localPath.constData(),
+            angel,
+            std::move(onComplete));
         break;
     default:
         return false;
     }
-
-    if (!service) {
-        return false;
-    }
-
-    service->SetVizMode(sliceMode);
-
-    const QByteArray localPath = QDir::toNativeSeparators(dir).toLocal8Bit();
-    service->SetSliceImagesSavedAsync(
-        localPath.constData(),
-        0.0,
-        std::move(onComplete));
 
     return true;
 }

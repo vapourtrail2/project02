@@ -622,30 +622,39 @@ void CTViewer::showSaveSliceStackDialog()
 
     QDialog dialog(this);
     dialog.setWindowTitle(QStringLiteral("保存影片/图像堆栈"));
-    dialog.resize(720, 420);
+    dialog.resize(400, 270);
 
     auto* root = new QVBoxLayout(&dialog);
     auto* body = new QHBoxLayout();
 
-    auto* preview = new QLabel(QStringLiteral("预览\n\n当前版本先使用占位预览"), &dialog);
+ /*   auto* preview = new QLabel(QStringLiteral("预览\n\n当前版本先使用占位预览"), &dialog);
     preview->setMinimumSize(460, 300);
     preview->setAlignment(Qt::AlignCenter);
     preview->setStyleSheet(QStringLiteral(
-        "QLabel{background:#202020; color:#bdbdbd; border:1px solid #444;}"));
+        "QLabel{background:#202020; color:#bdbdbd; border:1px solid #444;}"));*/
 
     auto* form = new QFormLayout();
-    auto* directionCombo = new QComboBox(&dialog);
-    directionCombo->addItem(QStringLiteral("轴向 / Top-down"), static_cast<int>(VizMode::SliceTop_down));
-    directionCombo->addItem(QStringLiteral("冠状 / Front-back"), static_cast<int>(VizMode::SliceFront_back));
-    directionCombo->addItem(QStringLiteral("矢状 / Left-right"), static_cast<int>(VizMode::SliceLeft_right));
+    auto* direction = new QComboBox(&dialog);
+    direction->addItem(QStringLiteral("轴向"), static_cast<int>(VizMode::SliceTop_down));
+    direction->addItem(QStringLiteral("冠状"), static_cast<int>(VizMode::SliceFront_back));
+    direction->addItem(QStringLiteral("矢状"), static_cast<int>(VizMode::SliceLeft_right));
 
-    auto* statusLabel = new QLabel(QStringLiteral("选择方向后点击保存。"), &dialog);
+    form->addRow(QStringLiteral("方向:"), direction);
+  
+    auto* angle = new QDoubleSpinBox(this);
+    angle->setRange(0.0, 180.0);
+    angle->setDecimals(1);
+    angle->setSingleStep(1.0);
+    angle->setSuffix("  deg");
+    angle->setValue(0.0);
+
+    form->addRow(QStringLiteral("角度:"), angle);
+
+    auto* statusLabel = new QLabel(QStringLiteral("选择方向和输入角度后点击保存。"), &dialog);
     statusLabel->setStyleSheet(QStringLiteral("color:#cfcfcf;"));
-
-    form->addRow(QStringLiteral("方向:"), directionCombo);
     form->addRow(statusLabel);
 
-    body->addWidget(preview, 1);
+    /*body->addWidget(preview, 1);*/
     body->addLayout(form);
 
     auto* buttons = new QDialogButtonBox(&dialog);
@@ -657,16 +666,17 @@ void CTViewer::showSaveSliceStackDialog()
 
     connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
 
-    connect(saveButton, &QPushButton::clicked, &dialog, [this, &dialog, directionCombo, statusLabel, saveButton]() {
-        const QString dir = QFileDialog::getExistingDirectory(
-            &dialog,
+    connect(saveButton, &QPushButton::clicked, &dialog, [this, &dialog, direction, angle,statusLabel, saveButton]() {
+        const QString dir = QFileDialog::getExistingDirectory(//弹出一个“选择文件夹”系统对话框
+            &dialog,//父窗口
             QStringLiteral("选择保存目录"));
 
         if (dir.isEmpty()) {
             return;
         }
 
-        const auto mode = static_cast<VizMode>(directionCombo->currentData().toInt());
+        const auto mode = static_cast<VizMode>(direction->currentData().toInt());
+        const auto angleValue = static_cast<double>(angle->value());
 
         saveButton->setEnabled(false);
         statusLabel->setText(QStringLiteral("正在保存切片堆栈..."));
@@ -678,6 +688,7 @@ void CTViewer::showSaveSliceStackDialog()
         const bool started = mprViews_->saveSliceStackAsync(
             dir,
             mode,
+            angleValue,
             [dialogPtr, statusPtr, saveButtonPtr](bool ok) {
                 QMetaObject::invokeMethod(qApp, [dialogPtr, statusPtr, saveButtonPtr, ok]() {
                     if (!dialogPtr) {

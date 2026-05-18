@@ -9,6 +9,7 @@
 #include <QSplitter>
 #include <array>
 #include <memory>
+#include <QDoubleSpinBox>
 #include "c_ui/workbenches/ReconstructPage.h"
 #include "c_ui/nav/UIState.h"
 
