@@ -158,6 +158,8 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Service\GapMeshOverlayService;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Service\MeasureAlgoService;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Utils;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Math\GapAnalysis;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Math\MeasurementAlgo;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Strategies\GapMeshOverlayStrategy;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Strategies\MeasureAlgoStrategy;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Strategies;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Render;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Interaction;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Service;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\Data;$(ProjectDir)core\MVVCVTK\MVVCVTK\include\App;$(ProjectDir)core\MVVCVTK\MVVCVTK\include;C:\lib\opencv\build\include;$(SolutionDir)libs\include;C:\lib\vtk_install\include\vtk-9.4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>
+ %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

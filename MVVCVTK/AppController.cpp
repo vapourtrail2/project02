@@ -75,19 +75,19 @@ bool AppController::openReconstructedData(
     
 	// 弱引用，用于托管回调中的 this 指针，避免循环引用导致内存泄漏
 	auto weakSession = std::weak_ptr<AppSession>(newSession);
-    const bool started = newSession->service->SetReloadFromBufferAsync(data, dims, spacing, origin, []
-    (bool)
-        {}
+    const bool started = newSession->service->SetReloadFromBufferAsync(data, dims, spacing, origin, 
+        [](bool){}
     );
-    m_session = newSession;
-    emit sessionChanged(m_session);
 
     if (!started)
     {
-        if (errorOut) *errorOut = QStringLiteral("Service is busy or initialization failed."); 
-		return false;
+        if (errorOut) *errorOut = QStringLiteral("Service is busy or initialization failed.");
+        return false;
     }
-	
+
+    m_session = newSession;
+    emit sessionChanged(m_session);
+
     return true;
 }
 

@@ -109,7 +109,7 @@ void SceneTreePanel::rebuildTree(
     volumeItem_ = new QTreeWidgetItem(root_, QStringList() << name);
     volumeItem_->setExpanded(true);
 
-    helpersItem_ = new QTreeWidgetItem(root_, QStringList() << QStringLiteral("Helpers"));
+    helpersItem_ = new QTreeWidgetItem(root_, QStringList() << QStringLiteral("设置"));
     helpersItem_->setExpanded(true);
 
     clipPlanesItem_ = MakeVisibilityItem(helpersItem_, QStringLiteral("显示 MPR 平面"), VisFlags::Planes3D);

@@ -3,6 +3,7 @@
 #include "c_ui/MainWindow.h"
 #include "c_ui/nav/WorkspaceFlow.h"
 #include "c_ui/workbenches/StartPage.h"
+#include <QProgressDialog>
 #include <qstatusbar.h>
 
 void CTViewer::openCtReconUi()
@@ -22,6 +23,28 @@ void CTViewer::openCtReconUi()
                 }
                 return;
             }
+            
+            //进度条
+            if (loadProgressDialog_) {
+                loadProgressDialog_->close();
+                loadProgressDialog_.clear();
+            }
+
+            loadProgressDialog_ = new QProgressDialog(
+                QStringLiteral("Loading..."),
+                QString(),
+                0,
+                0,
+                this);
+
+            loadProgressDialog_->setWindowTitle(QStringLiteral("Loading"));
+            loadProgressDialog_->setWindowModality(Qt::ApplicationModal);
+            loadProgressDialog_->setMinimumDuration(0);
+            loadProgressDialog_->setAutoClose(false);
+            loadProgressDialog_->setAutoReset(false);
+            loadProgressDialog_->setCancelButton(nullptr);
+            loadProgressDialog_->setRange(0, 0);
+            loadProgressDialog_->show();
 
             QString err;
             const bool ok = workspaceFlow_ && workspaceFlow_->openReconstructedData(
@@ -33,6 +56,11 @@ void CTViewer::openCtReconUi()
                 &err);
 
             if (!ok) {
+                if (loadProgressDialog_) {
+                    loadProgressDialog_->close();
+                    loadProgressDialog_.clear();
+                }
+
                 if (auto* bar = statusBar()) {
                     bar->showMessage(
                         err.isEmpty() ? QStringLiteral("Failed to open reconstruction session.") : err,

@@ -574,13 +574,13 @@ void CTViewer::onOpenRequested(const QString& path, const std::array<float,3>& s
     }
 
     loadProgressDialog_ = new QProgressDialog(
-        QStringLiteral("正在加载数据，请稍候..."),
+        QStringLiteral("Loading..."),
         QStringLiteral("取消"),
         0,
         0,
         this);
 
-    loadProgressDialog_->setWindowTitle(QStringLiteral("加载中"));
+    loadProgressDialog_->setWindowTitle(QStringLiteral("Loading"));
     loadProgressDialog_->setWindowModality(Qt::ApplicationModal);
     loadProgressDialog_->setMinimumDuration(0);
     loadProgressDialog_->setAutoClose(false);
@@ -627,12 +627,6 @@ void CTViewer::showSaveSliceStackDialog()
     auto* root = new QVBoxLayout(&dialog);
     auto* body = new QHBoxLayout();
 
- /*   auto* preview = new QLabel(QStringLiteral("预览\n\n当前版本先使用占位预览"), &dialog);
-    preview->setMinimumSize(460, 300);
-    preview->setAlignment(Qt::AlignCenter);
-    preview->setStyleSheet(QStringLiteral(
-        "QLabel{background:#202020; color:#bdbdbd; border:1px solid #444;}"));*/
-
     auto* form = new QFormLayout();
     auto* direction = new QComboBox(&dialog);
     direction->addItem(QStringLiteral("轴向"), static_cast<int>(VizMode::SliceTop_down));
@@ -654,7 +648,6 @@ void CTViewer::showSaveSliceStackDialog()
     statusLabel->setStyleSheet(QStringLiteral("color:#cfcfcf;"));
     form->addRow(statusLabel);
 
-    /*body->addWidget(preview, 1);*/
     body->addLayout(form);
 
     auto* buttons = new QDialogButtonBox(&dialog);
