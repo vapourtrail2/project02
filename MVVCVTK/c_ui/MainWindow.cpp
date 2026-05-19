@@ -590,8 +590,7 @@ void CTViewer::onOpenRequested(const QString& path, const std::array<float,3>& s
 
     QString err;
     const bool ok = workspaceFlow_ && workspaceFlow_->openFile(path,spacing,origin, &err);
-	// 写一个等待事件，判断sessionChanged信号里发来的状态，
-    // 如果在合理时间内没有收到或者收到的状态是失败的，就提示用户可能打开失败了
+
     if (!ok) {
         if (loadProgressDialog_) {
             loadProgressDialog_->close();
@@ -629,9 +628,9 @@ void CTViewer::showSaveSliceStackDialog()
 
     auto* form = new QFormLayout();
     auto* direction = new QComboBox(&dialog);
-    direction->addItem(QStringLiteral("轴向"), static_cast<int>(VizMode::SliceTop_down));
-    direction->addItem(QStringLiteral("冠状"), static_cast<int>(VizMode::SliceFront_back));
-    direction->addItem(QStringLiteral("矢状"), static_cast<int>(VizMode::SliceLeft_right));
+    direction->addItem(QStringLiteral("从上到下(轴向)"), static_cast<int>(VizMode::SliceTop_down));
+    direction->addItem(QStringLiteral("从前到后(径向)"), static_cast<int>(VizMode::SliceFront_back));
+    direction->addItem(QStringLiteral("从左到右(切向)"), static_cast<int>(VizMode::SliceLeft_right));
 
     form->addRow(QStringLiteral("方向:"), direction);
   
